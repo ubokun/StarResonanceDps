@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Newtonsoft.Json.Linq;
+using StarResonanceDps.Core.CombatRuntime.DataTypes.Skills;
 using StarResonanceDps.App.Models;
 using StarResonanceDps.App.Models.Widgets;
 using StarResonanceDps.App.ViewModels;
@@ -21,9 +23,9 @@ public static class PlayerBuildCapture
         return completion.Task;
     }
 
-    private static SavedPlayerBuild Capture(long characterId)
+    internal static SavedPlayerBuild Capture(long characterId, Encounter? specifiedEncounter = null)
     {
-        var source = MeterSnapshotProvider.GetBuildPlayer(characterId)
+        var source = MeterSnapshotProvider.GetBuildPlayer(characterId, specifiedEncounter)
             ?? throw new InvalidOperationException("表示中の集計にプレイヤー情報がありません。");
         var (encounter, player, entity) = source;
         // Only players with actual combat records can be linked, never nearby roster entries alone.
@@ -31,6 +33,15 @@ public static class PlayerBuildCapture
             && !entity.IsNamedInCombatEventLog))
             throw new InvalidOperationException("このプレイヤーには集計の戦闘記録がありません。");
         var tree = PlayerTalentTreeWidgetViewModel.ResolveTree(player);
+        var skillLevels = entity.GetAttrKV("AttrSkillLevelIdList") switch
+        {
+            List<SkillLevelInfo> list => list,
+            JArray array => array.ToObject<List<SkillLevelInfo>>(),
+            _ => null
+        };
+        var learnedImagines = skillLevels?.Where(x => CombatDataCatalog.IsSkillImagine(x.SkillId,
+            CombatDataCatalog.GetSkillIconName(x.SkillId, x.Icon))).Select(x => new { x.SkillId, x.Tier, x.CurrentLevel })
+            .OrderBy(x => x.SkillId).ToArray();
         var abilities = tree?.Nodes.Where(x => x.IsAbility || x.IsSpecRoot).Select(node => new
         {
             node.Id, node.TalentId,
@@ -45,6 +56,7 @@ public static class PlayerBuildCapture
             EquipmentState = player.EquipmentData?.State,
             Equipment = player.EquipmentData?.Items.OrderBy(x => x.Slot).ToArray(),
             Abilities = abilities,
+            LearnedImagines = learnedImagines,
             TalentNodes = player.TalentNodeIds?.Order().ToArray(),
             Replacements = player.LastReplaceableSkills?.OrderBy(x => x.Key).ToArray()
         });
@@ -65,8 +77,15 @@ public static class PlayerBuildCapture
             details.AppendLine($"{CombatDataCatalog.GetBuffName(id)} [#{id}]");
         details.AppendLine("\n【装備】");
         if (player.EquipmentData is null) details.AppendLine("未取得");
+        else if (player.EquipmentData.State == StarResonanceDps.Core.Models.PlayerEquipmentDataState.Invalid)
+            details.AppendLine("受信した装備情報を解析できませんでした。");
         else foreach (var equipment in player.EquipmentData.Items)
             details.AppendLine($"スロット {equipment.Slot}：装備 #{equipment.EquipmentId}");
+        details.AppendLine("\n【確認できた習得イマジン（装備確定ではありません）】");
+        if (learnedImagines is null) details.AppendLine("未取得");
+        else if (learnedImagines.Length == 0) details.AppendLine("受信した一覧にイマジンなし");
+        else foreach (var imagine in learnedImagines)
+            details.AppendLine($"{CombatDataCatalog.GetSkillDisplayName(imagine.SkillId)} [#{imagine.SkillId}] 改造段階 {imagine.Tier} / Lv {imagine.CurrentLevel}");
         // Avoid the graph helper's live skill-grade caches when capturing historical records.
         var activations = encounter.GetSkillActivationsFrom(entity.UUID, 0, out _).Select(record =>
         {
@@ -74,13 +93,13 @@ public static class PlayerBuildCapture
             return new MetricGraphSkillActivation(Math.Max(0, encounter.ToCombatOffset(record.Timestamp)?.TotalSeconds ?? 0),
                 record.SkillId, icon, name, frame, imagine, null);
         }).ToArray();
-        details.AppendLine("\n【使用を確認したイマジン】");
+        details.AppendLine($"\n【この取得時の集計 #{encounter.EncounterId} で使用を確認したイマジン】");
         var imagines = activations.Where(x => x.UsesImagineAsset).DistinctBy(x => x.SkillId).ToArray();
         if (imagines.Length == 0) details.AppendLine("使用記録なし（未装備とは限りません）");
         foreach (var imagine in imagines) details.AppendLine($"{imagine.Name} [#{imagine.SkillId}]");
         // Include observed imagine identity in the build key, without attributing it to every other encounter.
         raw = JsonSerializer.Serialize(new { Build = JsonSerializer.Deserialize<JsonElement>(raw),
-            Imagines = imagines.Select(x => new { x.SkillId, x.Grade }).OrderBy(x => x.SkillId) });
+            Imagines = learnedImagines is null ? imagines.Select(x => new { x.SkillId, x.Grade }).OrderBy(x => x.SkillId).ToArray() : null });
         var timeline = string.Join(Environment.NewLine, activations.Select(x =>
             $"{TimeSpan.FromSeconds(x.Seconds):hh\\:mm\\:ss\\.fff}  {x.Name} [#{x.SkillId}]"));
         return new SavedPlayerBuild

@@ -23,6 +23,7 @@ namespace StarResonanceDps.Core.CombatRuntime
 
         public static void StartNewMap()
         {
+            CustomCombatFeatures.ClearQuest();
             Log.Information($"{DateTime.Now} - BattleStateMachine.StartNewMap");
 
             // 始まった計測はマップ移動で終える(下の作り直しが計測の注記つきで保存する)。待機中はそのまま待つ。
@@ -57,6 +58,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         internal static void ResetDungeonStateToStartup()
         {
+            CustomCombatFeatures.ClearQuest();
             DeferredEncounterEndFinalTime = null;
 
             DungeonStateHistory.Clear();
@@ -73,8 +75,10 @@ namespace StarResonanceDps.Core.CombatRuntime
             DeferredEncounterEndFinalData = null;
         }
 
-        public static void DungeonStateHistoryAdd(EDungeonState dungeonState)
+        public static void DungeonStateHistoryAdd(EDungeonState dungeonState, DateTime? arrivalUtc = null, int? serverStartSeconds = null)
         {
+            var isNewPlaying = dungeonState == EDungeonState.DungeonStatePlaying
+                && (DungeonStateHistory.IsEmpty || DungeonStateHistory.Last().Key != dungeonState);
             DungeonStateHistory.Enqueue(new KeyValuePair<EDungeonState, DateTime>(dungeonState, DateTime.Now));
             Log.Information($"{DateTime.Now} - BattleStateMachine.DungeonStateHistoryAdd: {dungeonState}");
             DungeonStateChanged?.Invoke();
@@ -82,6 +86,7 @@ namespace StarResonanceDps.Core.CombatRuntime
 
             if (dungeonState == EDungeonState.DungeonStateNull)
             {
+                CustomCombatFeatures.ClearQuest();
 
                 // 届くのはマップ移動の直後で、保持はマップ移動の作り直しから引き継ぐ。
                 EncounterManager.EnterDungeon(keepPastEncounterInMeter: true);
@@ -90,19 +95,24 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
             else if (dungeonState == EDungeonState.DungeonStatePlaying)
             {
+                if (!isNewPlaying) return;
+                var receivedUtc = arrivalUtc ?? DateTime.UtcNow;
+                var startUtc = CustomCombatFeatures.ResolveQuestStart(receivedUtc, serverStartSeconds);
+                CustomCombatFeatures.BeginQuest(startUtc, startUtc != receivedUtc);
                 // 開始までの待ち時間の記録を別の戦闘に分けるのは設定「進行で自動リセット」の一部なので、無効なら区切らずに続ける。
                 // 記録が無ければ、作り直しても何も保存されない(回を作った時刻がダンジョンの開始になり、制限時間はそこから測る)ので、設定によらず行う。
                 if (!EncounterManager.Current.HasStatsBeenRecorded())
                 {
                     EncounterManager.EnterDungeon(keepPastEncounterInMeter: true);
                 }
-                else if (CombatRuntimeSettings.SplitEncountersOnNewPhases)
+                else if (CombatRuntimeSettings.SplitEncountersOnNewPhases || CustomCombatFeatures.ResetOnQuestTransition || CustomCombatFeatures.SyncQuestClock)
                 {
                     EncounterManager.EnterDungeon(keepPastEncounterInMeter: true, force: true, reason: EncounterStartReason.Force);
                 }
             }
             else if (dungeonState == EDungeonState.DungeonStateEnd)
             {
+                CustomCombatFeatures.ClearQuest();
                 // ダンジョンが終わったら予告のバーを残さない(残すとバーの終わりに通知とタイムラインの行が出る)。計測中も同じ。
                 Services.BossDbmBarStore.Instance.Clear();
 

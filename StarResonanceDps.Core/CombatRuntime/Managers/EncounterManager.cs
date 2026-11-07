@@ -153,6 +153,10 @@ namespace StarResonanceDps.Core.CombatRuntime
             EncounterStartReason reason = EncounterStartReason.None,
             [System.Runtime.CompilerServices.CallerMemberName] string enterDungeonCaller = "")
         {
+            // A synchronized quest is one aggregate; automatic phase splits would divide damage by the entire quest clock.
+            if (Current?.ExData.UseQuestClock == true && CustomCombatFeatures.QuestStartUtc.HasValue
+                && keepPastEncounterInMeter && (reason is EncounterStartReason.NewObjective or EncounterStartReason.Wipe))
+                return;
             // 計測が始まった後は区切らない(窓の途中で回が割れないように)。終わらせる側(停止・ログアウト・マップ移動)は、
             // 先に印を下ろしてから呼ぶ。待機中は区切ってよい(記録が無く、作り直した回も計測の回になる)。
             if (HasBenchmarkBegun)
@@ -265,6 +269,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             Current = new Encounter(CurrentBattleId) { PastEncounterForMeter = pastEncounterForMeter };
+            CustomCombatFeatures.InitializeEncounter(Current);
 
             // 持つのは1つ前の回まで。前の回が持っていた回を手放す(新しい回を出した後に外す)。
             if (priorEncounter != null)
@@ -1018,6 +1023,12 @@ namespace StarResonanceDps.Core.CombatRuntime
         internal CombatClockReading ReadCombatClock(DateTime utcNow)
         {
             var isClosed = EndTime != DateTime.MinValue;
+            if (ExData.UseQuestClock && ExData.QuestStartUtc is { } questStart)
+            {
+                var questEnd = isClosed ? EndTime.ToUniversalTime() : utcNow;
+                if (questEnd < questStart) questEnd = questStart;
+                return new CombatClockReading(questStart, questEnd, questEnd - questStart, isClosed);
+            }
             if (ExData.FirstDamageTimeStamp is not { } start)
             {
                 return new CombatClockReading(null, null, TimeSpan.Zero, isClosed);
@@ -1101,6 +1112,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         public TimeSpan? ToCombatOffset(DateTime utc)
         {
+            if (ExData.UseQuestClock && ExData.QuestStartUtc is { } questStart) return utc - questStart;
             if (ExData.FirstDamageTimeStamp is not { } start)
             {
                 return null;
@@ -1178,7 +1190,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 止めるのは記録だけ。特化・職業の判定、CD の推定、バフ、予告のバーの控えは止めない。
         /// </para>
         /// </summary>
-        private bool IsRecorded(DateTime arrivalUtc, long? playerUuid)
+        internal bool IsRecorded(DateTime arrivalUtc, long? playerUuid)
         {
             if (IsAggregationStopped)
             {
@@ -3089,6 +3101,13 @@ namespace StarResonanceDps.Core.CombatRuntime
     [ProtoContract]
     public class EncounterExData
     {
+        [ProtoMember(20)] public DateTime? QuestStartUtc { get; set; }
+        [ProtoMember(21)] public bool UseQuestClock { get; set; }
+        [ProtoMember(22)] public int IdleResetSeconds { get; set; }
+        [ProtoMember(23)] public List<FactorActivation> FactorActivations { get; set; } = [];
+        [ProtoMember(24)] public List<long> PartyCharacterIds { get; set; } = [];
+        [ProtoMember(25)] public int IntervalResetSeconds { get; set; }
+        [ProtoMember(26)] public bool QuestStartFromServer { get; set; }
         [ProtoMember(2)]
         public int DungeonDifficulty { get; set; } = 0;
         [ProtoMember(3)]

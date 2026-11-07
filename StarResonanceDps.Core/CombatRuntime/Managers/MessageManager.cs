@@ -113,7 +113,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             netCap.ProxyGate = ShouldDispatchProxy;
 
             // 予告のバーが終わった行を、そのあとに届いたパケットの中身より先にタイムラインへ残す。
-            netCap.BeforeParsePacket = EncounterManager.RecordEndedAnnouncementBars;
+            netCap.BeforeParsePacket = CustomCombatFeatures.BeforePacket;
 
             netCap.AfterParsePacket = ProcessAfterParsePacket;
 
@@ -171,6 +171,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         private static void ProcessAfterParsePacket()
         {
+            CustomCombatFeatures.RecordParty(EncounterManager.Current);
             if (SelfAttributeChangeStore.CommitPacket() && currentUserUuid != 0)
             {
                 PlayerRosterProjection.UpsertSelf(currentUserUuid);
@@ -3213,6 +3214,9 @@ namespace StarResonanceDps.Core.CombatRuntime
                                     creationTime = dto.UtcDateTime;
                                 }
                                 sawBuffAdd = true;
+                                CustomCombatFeatures.RecordFactor(EncounterManager.Current, targetUuid, buffInfo.BaseId,
+                                    buffInfo.FightSourceInfo?.FightSourceType == (int)EFightSource.Buff
+                                        ? buffInfo.FightSourceInfo.SourceConfigId : 0, extraData.ArrivalTime);
                                 addedBuffIds.Add(buffInfo.BaseId);
                                 if (buffInfo.BaseId == PotionHealBuffId)
                                 {
@@ -4057,7 +4061,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             EncounterManager.Current.DungeonState = vData.FlowInfo.State;
-            BattleStateMachine.DungeonStateHistoryAdd(vData.FlowInfo.State);
+            BattleStateMachine.DungeonStateHistoryAdd(vData.FlowInfo.State, extraData.ArrivalTime, vData.TimerInfo?.StartTime);
 
             int dungeonVarDataIdx = 0;
             foreach (var dungeonVarData in vData.DungeonVar.DungeonVarData)
@@ -4115,7 +4119,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 {
                     EDungeonState dungeonState = (EDungeonState)dun.FlowInfo.State;
                     EncounterManager.Current.DungeonState = dungeonState;
-                    BattleStateMachine.DungeonStateHistoryAdd(dungeonState);
+                    BattleStateMachine.DungeonStateHistoryAdd(dungeonState, extraData.ArrivalTime, dun.TimerInfo?.StartTime);
                 }
             }
 

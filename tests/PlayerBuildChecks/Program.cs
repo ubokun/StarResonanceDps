@@ -15,8 +15,39 @@ using static StarResonanceDps.Core.CombatRuntime.DataTypes.Enums.Professions;
 
 internal static class Program
 {
- [STAThread] private static void Main()
+ [STAThread] private static void Main(string[] args)
  {
+  if (args is ["--check-history-db", var historyFile])
+  {
+   SQLitePCL.Batteries_V2.Init();
+   using var connection = new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+    { DataSource = Path.GetFullPath(historyFile), Mode = Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
+   connection.Open();
+   using var command = connection.CreateCommand(); command.CommandText = "SELECT ExDataBlob FROM Encounters WHERE ExDataBlob IS NOT NULL ORDER BY EncounterId DESC LIMIT 10";
+   using var reader = command.ExecuteReader(); using var decompressor = new ZstdSharp.Decompressor(); var count = 0;
+   while (reader.Read())
+   {
+    using var bytes = new MemoryStream(decompressor.Unwrap((byte[])reader[0]).ToArray());
+    _ = ProtoBuf.Serializer.Deserialize<EncounterExData>(bytes); count++;
+   }
+   Console.WriteLine($"Historical metadata compatible ({count} records checked)."); return;
+  }
+  if (args is ["--backup-db", var sourceFile, var destinationFile])
+  {
+   sourceFile = Path.GetFullPath(sourceFile); destinationFile = Path.GetFullPath(destinationFile);
+   if (!File.Exists(sourceFile) || File.Exists(destinationFile) || sourceFile.Equals(destinationFile, StringComparison.OrdinalIgnoreCase))
+    throw new InvalidOperationException("Backup requires an existing source and a new destination.");
+   Directory.CreateDirectory(Path.GetDirectoryName(destinationFile)!);
+   SQLitePCL.Batteries_V2.Init();
+   using var source = new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+    { DataSource = sourceFile, Mode = Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly, Pooling = false }.ToString());
+   using var destination = new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+    { DataSource = destinationFile, Pooling = false }.ToString());
+   source.Open(); destination.Open(); source.BackupDatabase(destination);
+   using var command = destination.CreateCommand(); command.CommandText = "PRAGMA quick_check";
+   if ((string?)command.ExecuteScalar() != "ok") throw new InvalidDataException("Backup validation failed.");
+   Console.WriteLine("Database backup verified."); return;
+  }
   var testDir = Path.Combine(Path.GetTempPath(), "PlayerBuildChecks-" + Guid.NewGuid().ToString("N"));
   var store = new SavedPlayerBuildStore(testDir);
   void Check(bool condition, string name) { if (!condition) throw new Exception(name); Console.WriteLine("PASS " + name); }
@@ -57,8 +88,9 @@ internal static class Program
   // Isolated executable data directory, not the running user's application directory.
   var uiStore = new SavedPlayerBuildStore(); uiStore.Save(Make(90001));
   var app = new Application();
+  ExtensionChecks.Run(Check);
   var window = new UserBuildWindow();
-  ((ListBox)window.FindName("Users")).SelectedIndex = 0;
+  var userList = (ListBox)window.FindName("Users"); userList.SelectedItem = userList.Items.Cast<object>().First(x => x.GetType().GetProperty("Label")!.GetValue(x)!.ToString()!.Contains("検証用ユーザー"));
   Check(((ListBox)window.FindName("Builds")).Items.Count > 0, "user to builds navigation");
   Check(((ListBox)window.FindName("Encounters")).Items.Count > 0 && ((TextBox)window.FindName("Details")).Text.Contains("不明"), "build to encounters and unknown state display");
   Check(((TextBox)window.FindName("Timeline")).Text.Contains("検証スキル"), "encounter-specific timeline display");
@@ -72,4 +104,3 @@ internal static class Program
   window.Close(); app.Shutdown();
  }
 }
-

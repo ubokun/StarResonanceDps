@@ -91,6 +91,12 @@ public partial class ManagerView : UserControl
         ShowManagerDialog(new UserBuildWindow());
     }
 
+    private void CombatTimelineButton_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new CombatTimelineWindow { Owner = Window.GetWindow(this) };
+        window.Show();
+    }
+
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ShowManagerDialog(new SettingsWindow());

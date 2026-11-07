@@ -60,6 +60,7 @@ public partial class UserBuildWindow : Window
             }
             Status.Text = failed > 0 ? $"{failed}件を読み込めませんでした。元のファイルは保持しています。"
                 : _records.Count == 0 ? "集計メーターの名前を右クリックし、「ビルドを確認・保存」から追加できます。" : "ユーザー → ビルド → 集計の順に選択できます。";
+            if (SavedPlayerBuildAutoLink.LastIssue is { } issue) Status.Text += " " + issue;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { Status.Text = $"読み込みに失敗しました：{ex.Message}"; }
