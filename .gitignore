@@ -371,3 +371,4 @@ FodyWeavers.xsd
 
 # Local user build records
 **/Data/UserBuilds/
+**/Data/PlayerBuilds/

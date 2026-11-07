@@ -261,6 +261,13 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
             player);
     }
 
+    [RelayCommand]
+    private async Task RequestBuild(MeterPlayerEntry? player)
+    {
+        if (player is not null)
+            await StarResonanceDps.App.Views.UserBuildWindow.OpenForPlayerAsync(player.CharacterId);
+    }
+
     private void RequestPlayerWindow(WidgetKind widgetKind, MeterPlayerEntry? player)
     {
         if (player is not null)

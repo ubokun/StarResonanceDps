@@ -235,6 +235,9 @@
                                              Placement="MousePoint"
                                              Opened="PlayerSelectionContextMenu_Opened"
                                              Closed="PlayerSelectionContextMenu_Closed">
+                                    <MenuItem Header="ビルドを確認・保存"
+                                              Command="{Binding RequestBuildCommand}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
                                     <MenuItem Header="{Binding SkillDetailMenuText}"
                                               Command="{Binding RequestSkillDetailCommand}"
                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />

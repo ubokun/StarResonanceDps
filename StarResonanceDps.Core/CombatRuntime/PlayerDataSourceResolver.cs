@@ -45,14 +45,15 @@ internal static class PlayerDataSourceResolver
         long characterId,
         Entity? nearbyEntity,
         Entity? metadataEntity,
-        bool isSelf)
+        bool isSelf,
+        bool recordedOnly = false)
     {
         // PT補完は自分にも使う。<b>ただし最後の手段</b>で、空の項目しか埋めない。
         // ロード済みで起動すると自分の HP/最大HP は AttrHp/AttrMaxHp が来ず、
         // マップ移動まで 0 のままになる。PT側は最初から値を持っている。
         var party = PartyStateStore.Instance.Current;
         PartyMemberSupplement? partySupplement = null;
-        if (party.TryGetSupplement(characterId, out var supplement))
+        if (!recordedOnly && party.TryGetSupplement(characterId, out var supplement))
         {
             partySupplement = supplement;
         }
@@ -153,8 +154,10 @@ internal static class PlayerDataSourceResolver
             : partySupplement is { ProfessionId: > 0 }
                 ? partySupplement.ProfessionId
                 : metadataProfessionId;
-        var subProfessionId = ResolveSubProfessionId(characterId, nearbyEntity, metadataEntity, isSelf);
-        var isSpecAbilityUnequipped = ResolveSpecAbilityUnequipped(characterId, nearbyEntity, metadataEntity, isSelf);
+        var subProfessionId = recordedOnly ? metadataEntity?.SubProfessionId ?? 0
+            : ResolveSubProfessionId(characterId, nearbyEntity, metadataEntity, isSelf);
+        var isSpecAbilityUnequipped = recordedOnly ? metadataEntity?.IsSpecAbilityUnequipped == true
+            : ResolveSpecAbilityUnequipped(characterId, nearbyEntity, metadataEntity, isSelf);
 
         return new PlayerDataSourceSnapshot(
             characterId,
@@ -214,8 +217,8 @@ internal static class PlayerDataSourceResolver
             // <b>自分だけは常にライブ。</b> 作り直した直後のエンカウンターには自分の
             // エンティティがまだ無く、導出だと一瞬だけ灰に落ちる。
             isSelf || nearbyEntity is not null || partySupplement is not null,
-            ResolveSeasonTalentBuffId(characterId, nearbyEntity, metadataEntity, isSelf),
-            ResolveSeasonTalentInactive(characterId, nearbyEntity, metadataEntity, isSelf),
+            recordedOnly ? metadataEntity?.SeasonTalentBuffId ?? 0 : ResolveSeasonTalentBuffId(characterId, nearbyEntity, metadataEntity, isSelf),
+            recordedOnly ? metadataEntity?.IsSeasonTalentInactive == true : ResolveSeasonTalentInactive(characterId, nearbyEntity, metadataEntity, isSelf),
             ResolveSeasonRankLevel(nearbyEntity, metadataEntity),
             ResolveRootBuffData(nearbyEntity, metadataEntity),
             ResolveTalentNodeIds(nearbyEntity, metadataEntity, professionId),
