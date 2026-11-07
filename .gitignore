@@ -368,3 +368,6 @@ FodyWeavers.xsd
 /StarResonanceDpsAnalysis.Core/Protobuf/BlueProtobuf.proto
 /AGENTS.md
 /global.json
+
+# Local user build records
+**/Data/UserBuilds/

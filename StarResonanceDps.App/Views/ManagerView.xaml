@@ -32,6 +32,7 @@
                                 Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Navigation_Widgets]}" />
                         </StackPanel>
                     </RadioButton>
+                    <Button Content="ユーザービルド" Click="UserBuildButton_Click" Margin="0,4,0,8" Padding="8" />
                     <RadioButton x:Name="AggregationNavigationButton"
                                  GroupName="ManagerNavigation"
                                  Style="{DynamicResource RadioButton.SidebarNavigation}"

@@ -86,6 +86,11 @@ public partial class ManagerView : UserControl
         QueueUpdateExternalScrollBar();
     }
 
+    private void UserBuildButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowManagerDialog(new UserBuildWindow());
+    }
+
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ShowManagerDialog(new SettingsWindow());
