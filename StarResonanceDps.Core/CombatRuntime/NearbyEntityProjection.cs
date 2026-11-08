@@ -94,7 +94,7 @@ internal static class NearbyEntityProjection
     public static void RemoveEntity(long entityUuid)
     {
         if (EncounterManager.Current.Entities.TryGetValue(entityUuid, out var removed) && IsPlayerUuid(entityUuid))
-            removed.SetAttrKV("AttrTargetUuid", 0L);
+        { removed.Attributes.Remove("AttrTargetUuid"); removed.Attributes.Remove("AttrTargetId"); }
         EntityTargetingPlayers.RemoveEntity(entityUuid);
         NearbyEntityCampState.Remove(entityUuid);
         EntityStore.Remove(entityUuid);

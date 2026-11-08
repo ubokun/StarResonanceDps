@@ -172,6 +172,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         private static void ProcessAfterParsePacket()
         {
             CustomCombatFeatures.RecordParty(EncounterManager.Current);
+            EntityTargetingPlayers.PublishDiagnostics(EncounterManager.Current);
             if (SelfAttributeChangeStore.CommitPacket() && currentUserUuid != 0)
             {
                 PlayerRosterProjection.UpsertSelf(currentUserUuid);

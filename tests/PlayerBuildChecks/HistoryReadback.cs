@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using StarResonanceDps.App.Services;
@@ -7,6 +7,27 @@ using Zproto;
 
 internal static class HistoryReadback
 {
+    public static void Targets(string path)
+    {
+        SQLitePCL.Batteries_V2.Init(); AppState.LoadDataTables();
+        using var connection=new SqliteConnection(new SqliteConnectionStringBuilder { DataSource=System.IO.Path.GetFullPath(path), Mode=SqliteOpenMode.ReadOnly, Pooling=false }.ToString());
+        connection.Open();
+        typeof(DB).GetField("DbConn",BindingFlags.NonPublic|BindingFlags.Static)!.SetValue(null,connection);
+        typeof(DB).GetField("Log",BindingFlags.NonPublic|BindingFlags.Static)!.SetValue(null,Serilog.Log.Logger);
+        foreach(var id in connection.Query<long>("SELECT EncounterId FROM Encounters ORDER BY EncounterId DESC LIMIT 6").ToArray())
+        {
+            var encounter=DB.LoadEncounter((ulong)id)!;
+            var players=encounter.Entities.Values.Where(x=>x.EntityType==EEntityType.EntChar).ToArray();
+            var enemies=encounter.Entities.Values.Where(x=>x.EntityType==EEntityType.EntMonster).ToArray();
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { Id=id, Players=players.Length,
+                PlayerTargetFields=players.Count(x=>x.Attributes.ContainsKey("AttrTargetUuid")),
+                PositivePlayerTargets=players.Count(x=>EntityTargetingPlayers.ObservedTarget(x)!=0),
+                MonsterTargets=players.Count(x=>Utils.UuidToEntityType(EntityTargetingPlayers.ObservedTarget(x))==(long)EEntityType.EntMonster),
+                Enemies=enemies.Length,EnemyTargetFields=enemies.Count(x=>x.Attributes.ContainsKey("AttrTargetUuid")),
+                PositiveEnemyTargets=enemies.Count(x=>EntityTargetingPlayers.ObservedTarget(x)!=0) }));
+        }
+    }
+
     public static void Run(string path, bool analyzeAttribution = false)
     {
         SQLitePCL.Batteries_V2.Init();

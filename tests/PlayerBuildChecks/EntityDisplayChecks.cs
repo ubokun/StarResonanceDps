@@ -76,6 +76,13 @@ internal static class EntityDisplayChecks
             check(EntityTargetingPlayers.Get(enemy).SequenceEqual(new long[]{992}) && EntityTargetingPlayers.Get(otherEnemy).SequenceEqual(new long[]{991}),"target switch removes player from old entity and adds to new entity");
             encounter.SetAttrKV(player,"AttrTargetUuid",0L);
             check(EntityTargetingPlayers.Get(otherEnemy).Count==0,"target release clears reverse targeting relation");
+            encounter.SetAttrKV(player,"AttrTargetId",enemy);
+            check(EntityTargetingPlayers.Get(enemy).Contains(991),"player selection TargetId attribute updates entity targeting names");
+            encounter.SetAttrKV(player,"AttrTargetUuid",otherEnemy);
+            check(EntityTargetingPlayers.Get(enemy).Contains(991) && !EntityTargetingPlayers.Get(otherEnemy).Contains(991),"explicit player selection takes precedence over alternate target UUID");
+            encounter.SetAttrKV(player,"AttrTargetId",0L);
+            check(!EntityTargetingPlayers.Get(enemy).Contains(991),"cleared player selection does not revive stale alternate target");
+            encounter.Entities[player].Attributes.Remove("AttrTargetId");
             EntityTargetingPlayers.Update(enemy,otherEnemy);
             check(EntityTargetingPlayers.Get(otherEnemy).Count==0,"enemy targeting a player is not confused with players targeting the enemy");
             EntityTargetingPlayers.RemoveEntity(second);

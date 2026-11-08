@@ -598,7 +598,8 @@ namespace StarResonanceDps.Core.CombatRuntime
                 // 空の一覧を入れる。キーごと消すと「未観測」と区別が付かなくなる。
                 entity.SetAttrKV("AttrShieldList", new List<ShieldInfo>());
                 // Target references belong to the old map too; wait for a fresh target notification.
-                entity.SetAttrKV("AttrTargetUuid", 0L);
+                entity.Attributes.Remove("AttrTargetUuid");
+                entity.Attributes.Remove("AttrTargetId");
             }
         }
 
@@ -1357,8 +1358,12 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             entity.SetAttrKV(key, value);
-            if (key == "AttrTargetUuid" && entity.EntityType == EEntityType.EntChar)
-                EntityTargetingPlayers.Update(uuid, !entity.IsNpc && value is long target ? target : 0);
+            if (key is "AttrTargetUuid" or "AttrTargetId")
+            {
+                EntityTargetingPlayers.ObserveAttribute(uuid,key,value);
+                if (Utils.UuidToEntityType(uuid)==(long)EEntityType.EntChar)
+                    EntityTargetingPlayers.Update(uuid,!entity.IsNpc ? EntityTargetingPlayers.ObservedTarget(entity) : 0);
+            }
 
             if (key == "AttrId" && entity.EntityType != EEntityType.EntChar)
             {
