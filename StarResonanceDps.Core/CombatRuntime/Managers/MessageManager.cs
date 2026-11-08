@@ -2478,6 +2478,9 @@ namespace StarResonanceDps.Core.CombatRuntime
 
                             break;
                         }
+                    case EAttrType.AttrIsSilence:
+                        EncounterManager.Current.SetAttrKV(uuid, attrIdName, !isNoValue && reader.ReadBool());
+                        break;
                     case EAttrType.AttrCdAcceleratePct:
                         {
                             var accelerationPct = isNoValue ? 0 : reader.ReadInt32();
@@ -3132,7 +3135,14 @@ namespace StarResonanceDps.Core.CombatRuntime
                 }
 
                 var selfStatsBefore = isSelfTarget ? CaptureSelfStats(targetUuid, attrCollection.Attrs) : null;
+                var previousEnemySkill = EncounterManager.Current.GetAttrKV(targetUuid, "AttrSkillId") is int oldSkill ? oldSkill : 0;
+                var previousSilence = EncounterManager.Current.GetAttrKV(targetUuid, "AttrIsSilence") is bool oldSilence ? (bool?)oldSilence : null;
                 ProcessAttrs(targetUuid, attrCollection.Attrs, extraData.ArrivalTime);
+                EnemyControlRecorder.RecordState(EncounterManager.Current, targetUuid, extraData.ArrivalTime,
+                    previousEnemySkill, EncounterManager.Current.GetAttrKV(targetUuid, "AttrSkillId") is int newSkill ? newSkill : 0,
+                    changedAttributes.Contains(EAttrType.AttrSkillId), previousSilence,
+                    EncounterManager.Current.GetAttrKV(targetUuid, "AttrIsSilence") is bool newSilence ? (bool?)newSilence : null,
+                    changedAttributes.Contains(EAttrType.AttrIsSilence));
                 if (selfStatsBefore is not null)
                 {
                     RecordSelfStatChanges(targetUuid, selfStatsBefore, extraData.ArrivalTime);
@@ -3214,6 +3224,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                                     creationTime = dto.UtcDateTime;
                                 }
                                 sawBuffAdd = true;
+                                EnemyControlRecorder.RecordBuff(EncounterManager.Current, targetUuid, buffInfo.BaseId, extraData.ArrivalTime);
                                 CustomCombatFeatures.RecordFactor(EncounterManager.Current, targetUuid, buffInfo.BaseId,
                                     buffInfo.FightSourceInfo?.FightSourceType == (int)EFightSource.Buff
                                         ? buffInfo.FightSourceInfo.SourceConfigId : 0, extraData.ArrivalTime);

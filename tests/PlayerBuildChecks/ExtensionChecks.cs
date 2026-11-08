@@ -85,12 +85,31 @@ internal static class ExtensionChecks
   CustomCombatFeatures.ClearQuest();
   check(CustomCombatFeatures.QuestStartUtc is null, "map or logout clears quest origin");
   CustomCombatFeatures.SyncQuestClock = false;
+  var enemyUuid = Utils.EntityIdToUuid(901, (long)EEntityType.EntMonster, false, false);
+  var controlEncounter = new Encounter();
+  EnemyControlRecorder.RecordState(controlEncounter, enemyUuid, origin, 100, 0, true, false, true, true);
+  check(controlEncounter.ExData.EnemyControlEvents.Any(x => x.Kind == EnemyControlKind.Silence), "packet silence state is recorded");
+  check(controlEncounter.ExData.EnemyControlEvents.Any(x => x.Kind == EnemyControlKind.CastEnded) && controlEncounter.ExData.EnemyControlEvents.Count == 2, "cast clearing is recorded without asserting interruption");
+  EnemyControlRecorder.RecordBuff(controlEncounter, enemyUuid, 55426, origin);
+  check(controlEncounter.ExData.EnemyControlEvents.Count == 2 && controlEncounter.ExData.EnemyControlEvents.Single(x => x.Kind == EnemyControlKind.Silence).BuffId == 55426, "silence buff and attribute notifications are deduplicated");
+  EnemyControlRecorder.RecordState(controlEncounter, enemyUuid, origin.AddSeconds(1), 0, 0, false, true, false, true);
+  check(controlEncounter.ExData.EnemyControlEvents.Any(x => x.Kind == EnemyControlKind.SilenceRemoved), "silence removal is recorded");
+  using (var controlBytes = new MemoryStream())
+  {
+    Serializer.Serialize(controlBytes, controlEncounter.ExData); controlBytes.Position = 0;
+    check(Serializer.Deserialize<EncounterExData>(controlBytes).EnemyControlEvents.Count == 3, "enemy control events persist in history");
+  }
   var window = new CombatTimelineWindow();
+  var skillIcon = Directory.EnumerateFiles(Path.Combine(CombatRuntimePaths.DataDirectory,"Images","Skills"),"*.png").First();
+  var factorIcon = Directory.EnumerateFiles(Path.Combine(CombatRuntimePaths.DataDirectory,"Images","Factors"),"*.png").First();
   var snapshot = new CombatTimelineSnapshot(123, 180, "PT DPS · 検証クエスト · クエスト時間", [new(60,61,100),new(70,71,300),new(100,101,150)],
-   [new(70,"スキル",1,"検証プレイヤー","スキルA"),new(80,"イマジン",1,"検証プレイヤー","イマジンB"),new(90,"因子効果",1,"検証プレイヤー","因子C"),new(100,"敵行動",2,"検証ボス","敵の大技")],
-   [new(1,"検証プレイヤー"),new(2,"検証ボス")]);
+   [new(70,"スキル",1,"検証プレイヤー","スキルA",skillIcon),new(80,"イマジン",1,"検証プレイヤー","イマジンB",skillIcon),new(90,"因子効果",1,"検証プレイヤー","因子C",factorIcon),new(100,"敵行動",2,"検証ボス","敵の大技")],
+   [new(1,"検証プレイヤー"),new(2,"検証ボス",true),new(3,"待機中の敵",true)]);
   var set = typeof(CombatTimelineWindow).GetMethod("SetSnapshot", BindingFlags.NonPublic | BindingFlags.Instance)!;
   set.Invoke(window, [snapshot]);
+  var plot = (Canvas)window.FindName("Plot");
+  check(plot.Children.OfType<Border>().Count(x => x.Child is ContentControl { Content: ExtensionTimelineEvent { IconPath: not null } }) == 3, "skills imagines and factors use icon images");
+  check(plot.Children.OfType<TextBlock>().Any(x => x.Text.Contains("待機中の敵")), "each enemy gets a track even without action records");
   var list = (DataGrid)window.FindName("EventList");
   check(list.Items.Count == 4, "skills imagines factors and enemy events share timeline");
   var actors = (ListBox)window.FindName("Actors"); actors.SelectedItems.Add(actors.Items[0]);

@@ -109,22 +109,29 @@ public partial class CombatTimelineWindow : Window
         var graph = new Polyline { Stroke = (Brush)FindResource("Brush.Success"), StrokeThickness = 2 };
         foreach (var point in visiblePoints) graph.Points.Add(new Point(X(point.EndSeconds), top + height - point.ValuePerSecond / max * height));
         Plot.Children.Add(graph);
-        var tracks = events.GroupBy(x => (x.Track, x.EntityUuid, x.Actor)).ToArray();
+        var tracks = events.GroupBy(x => (x.Track, x.EntityUuid, x.Actor))
+            .Select(g => (Track: g.Key.Track, Uuid: g.Key.EntityUuid, Actor: g.Key.Actor, Events: g.ToArray())).ToList();
+        var enemyActors = _snapshot.Actors.Where(x => x.IsEnemy && (selected.Count == 0 || selected.Contains(x.Uuid))).ToArray();
+        foreach (var enemy in enemyActors)
+            if (!tracks.Any(x => x.Track == "敵行動" && x.Uuid == enemy.Uuid))
+                tracks.Add(("敵行動", enemy.Uuid, enemy.Name, []));
         var row = 0;
-        foreach (var track in tracks)
+        foreach (var track in tracks.OrderBy(x => x.Track == "敵行動" ? 1 : 0))
         {
-            var y = top + height + 30 + row++ * 28;
-            Label($"{track.Key.Track} / {track.Key.Actor}", 8, y);
+            var y = top + height + 30 + row++ * 32;
+            var number = Array.FindIndex(enemyActors, x => x.Uuid == track.Uuid);
+            Label($"{track.Track} / {track.Actor}" + (track.Track == "敵行動" && number >= 0 ? $" ({number + 1})" : ""), 8, y + 5);
             Plot.Children.Add(new Line { X1 = left, X2 = left + width, Y1 = y + 8, Y2 = y + 8, Stroke = (Brush)FindResource("Brush.BorderSoft") });
-            foreach (var item in track)
+            foreach (var item in track.Events)
             {
-                var marker = new Ellipse { Width = 8, Height = 12,
-                    Fill = item.Track switch { "敵行動" => Brushes.Salmon, "因子効果" => Brushes.Gold, "イマジン" => Brushes.MediumPurple, _ => Brushes.LightGreen },
-                    ToolTip = $"{item.Time} {item.Actor}\n{item.Action}" };
-                Canvas.SetLeft(marker, X(item.Seconds) - 4); Canvas.SetTop(marker, y + 2); Plot.Children.Add(marker);
+                var marker = new Border { Width = 26, Height = 26, CornerRadius = new CornerRadius(3),
+                    BorderBrush = (Brush)FindResource("Brush.Border"), BorderThickness = new Thickness(1),
+                    Background = (Brush)FindResource("Brush.ControlBackground"), ToolTip = $"{item.Time} {item.Actor}\n{item.Action}" };
+                marker.Child = new ContentControl { Content = item, ContentTemplate = (DataTemplate)FindResource("Extension.EventIcon") };
+                Canvas.SetLeft(marker, X(item.Seconds) - 13); Canvas.SetTop(marker, y - 4); Plot.Children.Add(marker);
             }
         }
-        Plot.Height = Math.Max(350, top + height + 60 + row * 28);
+        Plot.Height = Math.Max(350, top + height + 60 + row * 32);
         EventList.ItemsSource = events.TakeLast(500).ToArray();
     }
 

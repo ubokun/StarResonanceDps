@@ -711,6 +711,8 @@ public static class CombatDataCatalog
     /// タレントの特化型、心相晶の型の根・上級の型の専用効果・ローグライク専用の型の木のノードは表に無いので、根のバフとして扱わない。
     /// </summary>
     public static bool IsRootBuff(int buffId) => _rootBuffs.ContainsKey(buffId);
+    public static bool IsSilenceBuff(int buffId) => buffId is 55426 or 510541
+        || (_buffs.TryGetValue(buffId, out var buff) && buff.BuffAbilitySubType == (int)Zproto.EBuffAbnormalSubType.EabnormalTypeSilence);
 
     /// <summary>根のバフの種類と、その種類の中の並び(表の順)。根のバフでなければ false。</summary>
     public static bool TryGetRootBuffKind(int buffId, out RootBuffKind kind, out int order)

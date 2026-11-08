@@ -62,7 +62,9 @@
   </Grid>
   <DataGrid Grid.Row="3" x:Name="EventList" Margin="0,12,0,0" IsReadOnly="True" AutoGenerateColumns="False"
    Style="{StaticResource Extension.Grid}" EnableRowVirtualization="True">
-   <DataGrid.Columns><DataGridTextColumn Header="時刻" Binding="{Binding Time}" Width="110"/>
+   <DataGrid.Columns>
+    <DataGridTemplateColumn Header="" Width="38" CellTemplate="{StaticResource Extension.EventIcon}"/>
+    <DataGridTextColumn Header="時刻" Binding="{Binding Time}" Width="110"/>
     <DataGridTextColumn Header="トラック" Binding="{Binding Track}" Width="90"/>
     <DataGridTextColumn Header="対象" Binding="{Binding Actor}" Width="140"/>
     <DataGridTextColumn Header="イベント" Binding="{Binding Action}" Width="*" MinWidth="360"/></DataGrid.Columns>
