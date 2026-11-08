@@ -16,8 +16,14 @@ internal static class ExtensionChecks
 {
  public static void Run(Action<bool,string> check)
  {
-  check(EntityHateSlot.GetRelativeHateRatio(500,1000) == 0.5 && EntityHateSlot.GetRelativeHateRatio(1000,1000) == 1, "hate bars compare each player to first place");
+  check(EntityHateSlot.GetRelativeHateRatio(500,1000) == 0.5 && EntityHateSlot.GetRelativeHateRatio(1000,1000) == 1, "hate bars compare each player to total hate");
   check(EntityHateSlot.GetRelativeHateRatio(1,0) == 0 && EntityHateSlot.GetRelativeHateRatio(-1,100) == 0 && EntityHateSlot.GetRelativeHateRatio(200,100) == 1, "hate ratio zero and clamping boundaries");
+  var sixRanks = StarResonanceDps.Core.Models.NearbyEntityHateRanking.Create(Enumerable.Range(1,6).Select(i=>new StarResonanceDps.Core.Models.NearbyEntityHateRank(i,7-i)));
+  var hateTotal = EntityListEntry.GetTotalHate(sixRanks);
+  check(hateTotal == 21 && EntityHateSlot.GetRelativeHateRatio(6,hateTotal) < 0.29, "hate denominator includes players outside displayed top five");
+  check(Math.Abs(Enumerable.Range(0,6).Sum(i=>EntityHateSlot.GetRelativeHateRatio(sixRanks[i].HateValue,hateTotal))-1) < 1e-12, "all player hate shares sum to one");
+  var hugeRanks = StarResonanceDps.Core.Models.NearbyEntityHateRanking.Create([new(1,long.MaxValue),new(2,long.MaxValue)]);
+  check(EntityHateSlot.GetRelativeHateRatio(long.MaxValue,EntityListEntry.GetTotalHate(hugeRanks)) == 0.5, "total hate avoids integer overflow");
   var origin = DateTime.UtcNow.AddMinutes(-3);
   var data = new EncounterExData { LastCombatEventTimeStamp = origin, IdleResetSeconds = 10 };
   check(!CustomCombatFeatures.ShouldReset(data, origin.AddSeconds(9)) && CustomCombatFeatures.ShouldReset(data, origin.AddSeconds(10)), "idle reset boundary");
@@ -106,14 +112,14 @@ internal static class ExtensionChecks
   var entryCtor = typeof(EntityListEntry).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,null,[typeof(StarResonanceDps.Core.Models.NearbyEntityEntry),typeof(int?)],null)!;
   var hateEntry = (EntityListEntry)entryCtor.Invoke([nearby,6]);
   hateEntry.DisplayName = "Lv.60 ガトグリフ"; hateEntry.HealthRatio = 1; hateEntry.HealthText = "1,000 / 1,000";
-  for (var i=0;i<5;i++) { var slot=hateEntry.HateSlots[i]; slot.IsShown=true; slot.PlayerName=$"プレイヤー{i+1}"; slot.RankLabel=$"{i+1}"; slot.ClassBrush=Brushes.Orange; slot.RelativeHateRatio=(5-i)/5d; slot.RelativeHateText=$"{100-i*20}%"; }
+  for (var i=0;i<5;i++) { var slot=hateEntry.HateSlots[i]; slot.IsShown=true; slot.PlayerName=$"プレイヤー{i+1}"; slot.RankLabel=$"{i+1}"; slot.ClassBrush=Brushes.Orange; slot.RelativeHateRatio=(5-i)/15d; slot.RelativeHateText=$"{Math.Floor((5-i)/15d*1000)/10:0.#}%"; }
   var hateView = new StarResonanceDps.App.Views.Widgets.EntityListWidgetView { DataContext = new { EntityListEntries = new[]{hateEntry} } };
   var hateHost = new Border { Background = new SolidColorBrush(Color.FromRgb(32,32,32)), Padding = new Thickness(12), Child = hateView };
   hateHost.Measure(new Size(470,160)); hateHost.Arrange(new Rect(0,0,470,160)); hateHost.UpdateLayout();
   IEnumerable<DependencyObject> Descendants(DependencyObject root) { for(var i=0;i<VisualTreeHelper.GetChildrenCount(root);i++) { var child=VisualTreeHelper.GetChild(root,i); yield return child; foreach(var nested in Descendants(child)) yield return nested; } }
   var hateBars = Descendants(hateHost).OfType<Grid>().Where(x=>x.Name=="RelativeHateBar").ToArray();
   check(hateBars.Length==5 && hateBars.Select(x=>x.TranslatePoint(new Point(),hateHost).Y).Distinct().Count()==5, "five hate bars stack vertically without clipping");
-  check(hateBars.Select(x=>x.Children.OfType<Border>().Last().ActualWidth).SequenceEqual(new double[]{90,72,54,36,18}), "hate bar widths match relative ratios");
+  check(hateBars.Select(x=>x.Children.OfType<Border>().Last().ActualWidth).SequenceEqual(new double[]{30,24,18,12,6}), "hate bar widths match relative ratios");
   hateEntry.HateSlots[5].IsShown = true; hateEntry.HateSlots[5].IsTarget = true; hateEntry.HateSlots[5].RankLabel = "◎"; hateEntry.HateSlots[5].PlayerName = "現在の対象";
   hateHost.Measure(new Size(470,160)); hateHost.Arrange(new Rect(0,0,470,160)); hateHost.UpdateLayout();
   hateBars = Descendants(hateHost).OfType<Grid>().Where(x=>x.Name=="RelativeHateBar").ToArray();

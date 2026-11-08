@@ -129,14 +129,14 @@
             </Style.Triggers>
         </Style>
 
-        <!-- 1位を100%とした同じ幅の横ゲージを、順位順に縦へ並べる。 -->
+        <!-- 全員のヘイト合計を100%とした同じ幅の横ゲージを、順位順に縦へ並べる。 -->
         <DataTemplate x:Key="EntityList.HateSlotTemplate">
             <Grid Width="202" Height="7" ToolTip="{Binding ToolTipText}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="10"/><ColumnDefinition Width="8"/><ColumnDefinition Width="66"/><ColumnDefinition Width="90"/><ColumnDefinition Width="28"/></Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding RankLabel}" Style="{StaticResource Text.WidgetWindow}" FontSize="6" LineHeight="7" LineStackingStrategy="BlockLineHeight" VerticalAlignment="Center" TextAlignment="Center"/>
                 <Rectangle Grid.Column="1" Width="6" Height="6" Fill="{Binding ClassBrush}" OpacityMask="{Binding ClassIconMask}" Effect="{StaticResource Effect.ProfessionIconShadow}"/>
                 <TextBlock Grid.Column="2" Text="{Binding PlayerName}" Style="{StaticResource Text.WidgetWindow}" FontSize="6" LineHeight="7" LineStackingStrategy="BlockLineHeight" Margin="2,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                <Grid Grid.Column="3" x:Name="RelativeHateBar" Height="4" ToolTip="1位のヘイト値を100%として比較">
+                <Grid Grid.Column="3" x:Name="RelativeHateBar" Height="4" ToolTip="受信した全員のヘイト合計に対する割合（小数第1位まで、端数切り捨て）">
                     <Border Background="{Binding ClassBrush}" Opacity="0.2" CornerRadius="2"/>
                     <Border Background="{Binding ClassBrush}" CornerRadius="2" HorizontalAlignment="Left">
                         <Border.Width><MultiBinding Converter="{StaticResource EntityList.RatioToWidthConverter}"><Binding Path="RelativeHateRatio"/><Binding ElementName="RelativeHateBar" Path="ActualWidth"/></MultiBinding></Border.Width>

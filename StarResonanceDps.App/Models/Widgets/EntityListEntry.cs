@@ -250,6 +250,13 @@ public sealed partial class EntityListEntry : ObservableObject
     /// 狙っている相手がプレイヤーで「狙われるプレイヤー」が表示なら左端をその相手にし、続けてヘイト1位から。
     /// そうでなければ左端からヘイト1位を詰めて並べる。ヘイトは設定の人数まで(枠の数を決めておく行は、その数に収まるまで)。
     /// </summary>
+    public static double GetTotalHate(NearbyEntityHateRanking ranking)
+    {
+        double total = 0;
+        for (var i = 0; i < ranking.Count; i++) total += Math.Max(0, ranking[i].HateValue);
+        return total;
+    }
+
     private void UpdateHateSlots(NearbyEntityEntry entity, EntityRowSettings settings, EntityHatePlayerResolver hatePlayers)
     {
         var ranking = entity.HateRanking;
@@ -263,11 +270,12 @@ public sealed partial class EntityListEntry : ObservableObject
             GetHateSlot(shownCount++).ShowTarget(hatePlayers.Resolve(entity.TargetCharacterId));
         }
 
+        var totalHate = GetTotalHate(ranking);
         var rankCount = Math.Min(ranking.Count, settings.HateRankCount);
         for (var rankIndex = 0; rankIndex < rankCount && shownCount < slotLimit; rankIndex++)
         {
             var rank = ranking[rankIndex];
-            GetHateSlot(shownCount++).ShowRank(hatePlayers.Resolve(rank.CharacterId), rank.HateValue, rankIndex + 1, ranking.Count > 0 ? ranking[0].HateValue : 0);
+            GetHateSlot(shownCount++).ShowRank(hatePlayers.Resolve(rank.CharacterId), rank.HateValue, rankIndex + 1, totalHate);
         }
 
         if (_fixedHateSlotCount is not null)
