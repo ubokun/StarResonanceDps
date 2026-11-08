@@ -114,6 +114,12 @@ internal static class ExtensionChecks
   var hateBars = Descendants(hateHost).OfType<Grid>().Where(x=>x.Name=="RelativeHateBar").ToArray();
   check(hateBars.Length==5 && hateBars.Select(x=>x.TranslatePoint(new Point(),hateHost).Y).Distinct().Count()==5, "five hate bars stack vertically without clipping");
   check(hateBars.Select(x=>x.Children.OfType<Border>().Last().ActualWidth).SequenceEqual(new double[]{90,72,54,36,18}), "hate bar widths match relative ratios");
+  hateEntry.HateSlots[5].IsShown = true; hateEntry.HateSlots[5].IsTarget = true; hateEntry.HateSlots[5].RankLabel = "◎"; hateEntry.HateSlots[5].PlayerName = "現在の対象";
+  hateHost.Measure(new Size(470,160)); hateHost.Arrange(new Rect(0,0,470,160)); hateHost.UpdateLayout();
+  hateBars = Descendants(hateHost).OfType<Grid>().Where(x=>x.Name=="RelativeHateBar").ToArray();
+  var entityRowButton = Descendants(hateHost).OfType<Button>().First(x=>x.DataContext is EntityListEntry);
+  check(entityRowButton.ActualHeight == 44 && hateBars.All(x=>x.TranslatePoint(new Point(),entityRowButton).Y >= 0 && x.TranslatePoint(new Point(),entityRowButton).Y + x.ActualHeight <= 44), "compact hate bars fit original 44 pixel entity row");
+  check(hateBars.All(x=>x.ActualHeight == 4 && x.Children.OfType<Border>().All(b=>b.CornerRadius.TopLeft == 2)), "compact hate bars have rounded ends");
   var hateBitmap = new RenderTargetBitmap(470,160,96,96,PixelFormats.Pbgra32); hateBitmap.Render(hateHost);
   var hateEncoder = new PngBitmapEncoder(); hateEncoder.Frames.Add(BitmapFrame.Create(hateBitmap));
   using(var hateOutput=File.Create(Path.Combine(AppContext.BaseDirectory,"entity-hate-preview.png"))) hateEncoder.Save(hateOutput);
