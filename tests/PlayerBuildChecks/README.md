@@ -39,3 +39,6 @@ WidgetIntegrationChecks: 4種類の共通ウィジェット枠・配置・停止
 `PlayerBuildChecks.exe --inspect-history-db <CombatHistory.db>` は読み取り専用接続で直近6件のヘイト記録数・表示行数・技別合計の一致・受信情報の有無を確認する。起動中アプリのDBも読める。
 
 `PlayerBuildChecks.exe --analyze-hate-db <CombatHistory.db>` は帰属不明の理由ごとの件数と増加量、参加者ごとの割合、技開始からの時間差を読み取り専用で分析する。割合の分母は正のヘイト増加量。
+
+HateAttributionChecks: 実命中・継続効果・回復による帰属改善、別対象・別プレイヤーの除外、時間境界、複数原因と不明発生源の保持、枝番とバフ種別の分離、過剰回復・空振り・無効化除外、ProtoBuf/DB復元、ヘイト合計保存を確認する。
+--inspect-history-db / --analyze-hate-db はゲームと同じ対応表を読み、新旧方式の帰属不明割合を同じ時計・同じヘイト増加量で比較する。古い集計の命中記録は復元しない。

@@ -1062,6 +1062,9 @@ public static class CombatDataCatalog
     /// 押した技を畳む見出し表の行。技の番号を ownerId とする鍵の行で、鍵が2つ以上の行に分かれていれば、
     /// 枝番が 0 でない最小の枝番の鍵の行(枝番 0 しか無ければ枝番 0 の鍵の行)。
     /// </summary>
+    public static long GetSkillActivationSourceKey(int skillId)
+        => TryResolveSkillActivationRow(skillId, out var rowKey) ? rowKey : MakeSourceKey(skillId, 0);
+
     private static bool TryResolveSkillActivationRow(int skillId, out long rowKey)
     {
         rowKey = 0;

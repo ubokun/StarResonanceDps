@@ -42,6 +42,8 @@ public partial class HateMeterWindow : Window
         Players.SelectedItem=snapshot.Players.FirstOrDefault(x=>x.Bar.Uuid==selectedPlayer) ?? snapshot.Players.FirstOrDefault();
         Caption.Text=snapshot.Caption+$" · {snapshot.Duration:0.0}秒";
         Status.Text=$"受信記録 {snapshot.Observations:N0}件・初回値 {snapshot.Baselines}件（増加量へ加算なし）・減少分 {snapshot.Reductions:N0}（除外）。技別割合は推定です。";
+        Status.Text+=$" 命中・効果・回復の照合 {snapshot.EffectMatches:N0}件／開始通知のみ {snapshot.StartMatches:N0}件／帰属不明 {snapshot.UnknownShare:0.0}%。技にカーソルを合わせると根拠を確認できます。";
+        if(snapshot.CauseRecords==0 && snapshot.Observations>0)Status.Text+=" この集計には命中・回復の照合記録がないため、開始通知だけで推定しています。";
         if(snapshot.Observations==0)
             Status.Text+=snapshot.IsHistorical ? " この履歴には対象のヘイト記録がありません。旧版の履歴からは復元できません。" : " 対象のヘイト通知を待っています。PTのみをオフにすると全プレイヤーを確認できます。";
         else if(!snapshot.Players.Any(x=>x.Bar.Amount>0))

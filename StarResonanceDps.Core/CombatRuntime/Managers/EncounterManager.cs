@@ -1816,6 +1816,14 @@ namespace StarResonanceDps.Core.CombatRuntime
             long attackerUuid, long targetUuid, long skillId, int identitySkillId, int skillLevel, long damage, long hpLessen, long shieldBreak,
             EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
             bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData)
+            => AddDamage(attackerUuid,targetUuid,skillId,identitySkillId,skillLevel,damage,hpLessen,shieldBreak,damageElement,damageType,damageMode,
+                isCrit,isLucky,isCauseLucky,isMiss,isDead,extraPacketData,false,false,identitySkillId);
+
+        public void AddDamage(
+            long attackerUuid, long targetUuid, long skillId, int identitySkillId, int skillLevel, long damage, long hpLessen, long shieldBreak,
+            EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
+            bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData,
+            bool isBuffSource, bool isEffectDamage, int originSkillId)
         {
             var attacker = GetOrCreateEntity(attackerUuid);
 
@@ -1856,6 +1864,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (damage > 0 && damageType != EDamageType.Immune)
             {
                 attacker.DamageStats.AddPerSecondValue(combatOffset, extraPacketData.ArrivalTime, damage);
+                if (!isMiss) HateCauseRecorder.Record(this, new() { PlayerUuid = attackerUuid, TargetUuid = targetUuid,
+                    Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
+                    Kind = isEffectDamage ? HateCauseKind.EffectDamage : HateCauseKind.Hit, Value = damage, OriginSkillId = originSkillId });
             }
         }
 
@@ -1870,6 +1881,14 @@ namespace StarResonanceDps.Core.CombatRuntime
             long attackerUuid, long targetUuid, long skillId, int skillLevel, long damage, long nominalHealing, long hpLessen, long shieldBreak,
             EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
             bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData)
+            => AddHealing(attackerUuid,targetUuid,skillId,skillLevel,damage,nominalHealing,hpLessen,shieldBreak,damageElement,damageType,damageMode,
+                isCrit,isLucky,isCauseLucky,isMiss,isDead,extraPacketData,false,0);
+
+        public void AddHealing(
+            long attackerUuid, long targetUuid, long skillId, int skillLevel, long damage, long nominalHealing, long hpLessen, long shieldBreak,
+            EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
+            bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData,
+            bool isBuffSource, int originSkillId)
         {
             // 実際に HP が増えた回復は戦闘の出来事で、MessageManager が記録の前に当てている(最初なら起点を立てる。回復だけの戦闘でも HPS メーターが動く)。
             // 起点より前の回復は、何も記録しない(過剰回復・行動時刻・履歴表示の解除も)。計測の回は窓の中の自分の回復だけ。
@@ -1909,6 +1928,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (damage > 0)
             {
                 entity.HealingStats.AddPerSecondValue(combatOffset, extraPacketData.ArrivalTime, damage);
+                if (!isMiss) HateCauseRecorder.Record(this, new() { PlayerUuid = attackerUuid, TargetUuid = targetUuid,
+                    Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
+                    Kind = HateCauseKind.Healing, Value = damage, OriginSkillId = originSkillId });
             }
         }
 
@@ -3111,6 +3133,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         [ProtoMember(26)] public bool QuestStartFromServer { get; set; }
         [ProtoMember(29)] public List<DefeatedEnemyRecord> DefeatedEnemies { get; set; } = [];
         [ProtoMember(28)] public List<HateObservation> HateObservations { get; set; } = [];
+        [ProtoMember(30)] public List<HateCauseRecord> HateCauses { get; set; } = [];
         [ProtoMember(27)] public List<EnemyControlEvent> EnemyControlEvents { get; set; } = [];
         [ProtoMember(2)]
         public int DungeonDifficulty { get; set; } = 0;

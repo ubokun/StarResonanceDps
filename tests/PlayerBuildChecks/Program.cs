@@ -110,6 +110,7 @@ internal static class Program
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; DemoResources.Load(app);
   ExtensionChecks.Run(Check);
   NewFeatureChecks.Run(Check);
+  HateAttributionChecks.Run(Check);
   WidgetIntegrationChecks.Run(Check);
   var window = new UserBuildWindow();
   var userList = (ListBox)window.FindName("Users"); userList.SelectedItem = userList.Items.Cast<object>().First(x => x.GetType().GetProperty("Label")!.GetValue(x)!.ToString()!.Contains("検証用ユーザー"));

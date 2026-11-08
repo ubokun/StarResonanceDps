@@ -3538,7 +3538,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     // 足すのは実際に増えた HP(ActualValue)。ゲーム内メーターと同じ。名目(damage)との差は過剰回復。
                     if (isAttackerPlayer)
                     {
-                        EncounterManager.Current.AddHealing(attackerUuid, targetUuid, skillId, syncDamageInfo.OwnerLevel, syncDamageInfo.ActualValue, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData);
+                        EncounterManager.Current.AddHealing(attackerUuid, targetUuid, skillId, syncDamageInfo.OwnerLevel, syncDamageInfo.ActualValue, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData, foldedSource.IsBuffSource, identitySkillId);
                     }
                     else if (combatEventLogActors[damageIndex] != 0)
                     {
@@ -3550,7 +3550,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     // 記録するのはプレイヤーから敵への攻撃だけ。敵の攻撃・自傷・フレンドリーファイアは被ダメログ(AddTakenDamage)にだけ残す。
                     if (isAttackerPlayer && !isTargetPlayer)
                     {
-                        EncounterManager.Current.AddDamage(attackerUuid, targetUuid, skillId, identitySkillId, syncDamageInfo.OwnerLevel, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData);
+                        EncounterManager.Current.AddDamage(attackerUuid, targetUuid, skillId, identitySkillId, syncDamageInfo.OwnerLevel, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData, foldedSource.IsBuffSource, damageSource == EDamageSource.Buff, identitySkillId);
                     }
 
                     // 敵の攻撃(プレイヤーへの被弾と敵どうし)は、発生源の技を記録の瞬間に控える。
