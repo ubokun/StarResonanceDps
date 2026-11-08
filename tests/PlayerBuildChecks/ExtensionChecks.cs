@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using ProtoBuf;
 using StarResonanceDps.App.Config;
 using StarResonanceDps.App.Services;
+using StarResonanceDps.App.Models.Widgets;
 using StarResonanceDps.App.Views;
 using StarResonanceDps.Core.CombatRuntime;
 using Zproto;
@@ -15,6 +16,8 @@ internal static class ExtensionChecks
 {
  public static void Run(Action<bool,string> check)
  {
+  check(EntityHateSlot.GetRelativeHateRatio(500,1000) == 0.5 && EntityHateSlot.GetRelativeHateRatio(1000,1000) == 1, "hate bars compare each player to first place");
+  check(EntityHateSlot.GetRelativeHateRatio(1,0) == 0 && EntityHateSlot.GetRelativeHateRatio(-1,100) == 0 && EntityHateSlot.GetRelativeHateRatio(200,100) == 1, "hate ratio zero and clamping boundaries");
   var origin = DateTime.UtcNow.AddMinutes(-3);
   var data = new EncounterExData { LastCombatEventTimeStamp = origin, IdleResetSeconds = 10 };
   check(!CustomCombatFeatures.ShouldReset(data, origin.AddSeconds(9)) && CustomCombatFeatures.ShouldReset(data, origin.AddSeconds(10)), "idle reset boundary");
@@ -99,6 +102,21 @@ internal static class ExtensionChecks
     Serializer.Serialize(controlBytes, controlEncounter.ExData); controlBytes.Position = 0;
     check(Serializer.Deserialize<EncounterExData>(controlBytes).EnemyControlEvents.Count == 3, "enemy control events persist in history");
   }
+  var nearby = new StarResonanceDps.Core.Models.NearbyEntityEntry(enemyUuid,901,"ガトグリフ",EEntityType.EntMonster,default,60,1000,1000,0,0,false,false,StarResonanceDps.Core.Models.EntityCampRelation.Hostile,0,true,0,true,0,StarResonanceDps.Core.Models.NearbyEntityHateRanking.Empty,null);
+  var entryCtor = typeof(EntityListEntry).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic,null,[typeof(StarResonanceDps.Core.Models.NearbyEntityEntry),typeof(int?)],null)!;
+  var hateEntry = (EntityListEntry)entryCtor.Invoke([nearby,6]);
+  hateEntry.DisplayName = "Lv.60 ガトグリフ"; hateEntry.HealthRatio = 1; hateEntry.HealthText = "1,000 / 1,000";
+  for (var i=0;i<5;i++) { var slot=hateEntry.HateSlots[i]; slot.IsShown=true; slot.PlayerName=$"プレイヤー{i+1}"; slot.RankLabel=$"{i+1}"; slot.ClassBrush=Brushes.Orange; slot.RelativeHateRatio=(5-i)/5d; slot.RelativeHateText=$"{100-i*20}%"; }
+  var hateView = new StarResonanceDps.App.Views.Widgets.EntityListWidgetView { DataContext = new { EntityListEntries = new[]{hateEntry} } };
+  var hateHost = new Border { Background = new SolidColorBrush(Color.FromRgb(32,32,32)), Padding = new Thickness(12), Child = hateView };
+  hateHost.Measure(new Size(470,160)); hateHost.Arrange(new Rect(0,0,470,160)); hateHost.UpdateLayout();
+  IEnumerable<DependencyObject> Descendants(DependencyObject root) { for(var i=0;i<VisualTreeHelper.GetChildrenCount(root);i++) { var child=VisualTreeHelper.GetChild(root,i); yield return child; foreach(var nested in Descendants(child)) yield return nested; } }
+  var hateBars = Descendants(hateHost).OfType<Grid>().Where(x=>x.Name=="RelativeHateBar").ToArray();
+  check(hateBars.Length==5 && hateBars.Select(x=>x.TranslatePoint(new Point(),hateHost).Y).Distinct().Count()==5, "five hate bars stack vertically without clipping");
+  check(hateBars.Select(x=>x.Children.OfType<Border>().Last().ActualWidth).SequenceEqual(new double[]{90,72,54,36,18}), "hate bar widths match relative ratios");
+  var hateBitmap = new RenderTargetBitmap(470,160,96,96,PixelFormats.Pbgra32); hateBitmap.Render(hateHost);
+  var hateEncoder = new PngBitmapEncoder(); hateEncoder.Frames.Add(BitmapFrame.Create(hateBitmap));
+  using(var hateOutput=File.Create(Path.Combine(AppContext.BaseDirectory,"entity-hate-preview.png"))) hateEncoder.Save(hateOutput);
   var window = new CombatTimelineWindow();
   var skillIcon = Directory.EnumerateFiles(Path.Combine(CombatRuntimePaths.DataDirectory,"Images","Skills"),"*.png").First();
   var factorIcon = Directory.EnumerateFiles(Path.Combine(CombatRuntimePaths.DataDirectory,"Images","Factors"),"*.png").First();
@@ -115,6 +133,40 @@ internal static class ExtensionChecks
   var actors = (ListBox)window.FindName("Actors"); actors.SelectedItems.Add(actors.Items[0]);
   check(list.Items.Count == 3, "tracked entity selection filters timeline");
   actors.SelectedItems.Clear();
+  var choices = (ListBox)window.FindName("ActionChoices");
+  var filter = (CheckBox)window.FindName("FilterActions");
+  choices.SelectedItems.Clear(); choices.SelectedItems.Add(choices.Items[0]); filter.IsChecked = true;
+  set.Invoke(window, [snapshot]);
+  check(list.Items.Count == 1, "action selection filters event list and timeline");
+  var graphBefore = plot.Children.OfType<System.Windows.Shapes.Polyline>().Single().Points.ToArray();
+  ((TextBox)window.FindName("ActionSearch")).Text = "存在しない技";
+  set.Invoke(window, [snapshot]);
+  check(choices.Items.Count == 0 && list.Items.Count == 1, "candidate search retains selected action filter");
+  ((TextBox)window.FindName("ActionSearch")).Text = "";
+  check(choices.SelectedItems.Count == 1, "selection restored after search");
+  choices.SelectedItems.Clear(); set.Invoke(window, [snapshot]);
+  check(list.Items.Count == 0, "enabled filter with no selected actions hides all events");
+  check(graphBefore.SequenceEqual(plot.Children.OfType<System.Windows.Shapes.Polyline>().Single().Points), "action filter preserves DPS graph");
+  filter.IsChecked = false; set.Invoke(window, [snapshot]);
+  check(list.Items.Count == 4, "disabling action filter restores events");
+  check(CombatTimelineReader.IsFrequentAction(3,30) && !CombatTimelineReader.IsFrequentAction(2,30), "ten second frequency boundary includes equality");
+  var optionsMethod = typeof(CombatTimelineWindow).GetMethod("ReadOptions", BindingFlags.NonPublic | BindingFlags.Instance)!;
+  var savedOptions = (CombatExtensionOptions)optionsMethod.Invoke(window, null)!;
+  var restoredOptions = System.Text.Json.JsonSerializer.Deserialize<CombatExtensionOptions>(System.Text.Json.JsonSerializer.Serialize(savedOptions))!;
+  check(restoredOptions.HiddenActions.Length == 4, "manual action exclusions survive settings serialization");
+  var frequentWindow = new CombatTimelineWindow();
+  var frequentSnapshot = snapshot with { Duration = 30, Events = [new(1,"スキル",1,"test","連打", SourceKey:"skill:1"),new(11,"スキル",1,"test","連打", SourceKey:"skill:1"),new(21,"スキル",1,"test","連打", SourceKey:"skill:1"),new(25,"スキル",1,"test","大技", SourceKey:"skill:2")] };
+  set.Invoke(frequentWindow, [frequentSnapshot]);
+  check(((DataGrid)frequentWindow.FindName("EventList")).Items.Count == 1, "frequent actions are hidden by default");
+  var frequentChoices = (ListBox)frequentWindow.FindName("ActionChoices"); frequentChoices.SelectAll(); set.Invoke(frequentWindow, [frequentSnapshot]);
+  check(((DataGrid)frequentWindow.FindName("EventList")).Items.Count == 4, "manual display overrides frequency default across refresh");
+  frequentWindow.Close();
+  check(!CombatTimelineReader.IsFrequentAction([new(1,"スキル",1,"A","技"),new(1,"スキル",2,"B","技"),new(1,"スキル",3,"C","技")],30), "frequency does not combine different actors");
+  check(!CombatTimelineReader.IsFrequentAction([new(1,"敵行動",1,"敵","攻撃"),new(1,"敵行動",1,"敵","攻撃"),new(1,"敵行動",1,"敵","攻撃")],30), "same timestamp damage targets do not inflate frequency");
+  var stableA = new ExtensionTimelineEvent(1,"敵行動",2,"敵","攻撃 → A：100", SourceKey:"skill:10");
+  var stableB = stableA with { Action = "攻撃 → B：999" };
+  check(stableA.FilterKey == stableB.FilterKey && stableA.FilterKey != (stableB with {SourceKey="buff:10"}).FilterKey, "action identity ignores target and damage and separates source types");
+  check(CombatTimelineReader.EnemyName(new Encounter(), 123) == "未知の敵", "missing enemy identity never leaves blank name");
   var content = (FrameworkElement)window.Content;
   content.Measure(new Size(1140,780)); content.Arrange(new Rect(0,0,1140,780)); content.UpdateLayout();
   var bitmap = new RenderTargetBitmap(1140,780,96,96,PixelFormats.Pbgra32); bitmap.Render(content);
@@ -122,6 +174,12 @@ internal static class ExtensionChecks
   var imagePath = Path.Combine(AppContext.BaseDirectory,"combat-timeline-preview.png");
   using (var output = File.Create(imagePath)) encoder.Save(output);
   Console.WriteLine("PREVIEW " + imagePath);
+  ((ContentControl)window.FindName("ActionFilterPanel")).Visibility = Visibility.Visible;
+  content.Measure(new Size(1140,850)); content.Arrange(new Rect(0,0,1140,850)); content.UpdateLayout();
+  var filterBitmap = new RenderTargetBitmap(1140,850,96,96,PixelFormats.Pbgra32); filterBitmap.Render(content);
+  var filterEncoder = new PngBitmapEncoder(); filterEncoder.Frames.Add(BitmapFrame.Create(filterBitmap));
+  using (var filterOutput = File.Create(Path.Combine(AppContext.BaseDirectory,"combat-filter-preview.png"))) filterEncoder.Save(filterOutput);
+  ((ContentControl)window.FindName("ActionFilterPanel")).Visibility = Visibility.Collapsed;
   ((ContentControl)window.FindName("MeasurementSettings")).Visibility = Visibility.Visible;
   content.Measure(new Size(1140,780)); content.Arrange(new Rect(0,0,1140,780)); content.UpdateLayout();
   var settingsBitmap = new RenderTargetBitmap(1140,780,96,96,PixelFormats.Pbgra32); settingsBitmap.Render(content);

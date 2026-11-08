@@ -267,7 +267,7 @@ public sealed partial class EntityListEntry : ObservableObject
         for (var rankIndex = 0; rankIndex < rankCount && shownCount < slotLimit; rankIndex++)
         {
             var rank = ranking[rankIndex];
-            GetHateSlot(shownCount++).ShowRank(hatePlayers.Resolve(rank.CharacterId), rank.HateValue);
+            GetHateSlot(shownCount++).ShowRank(hatePlayers.Resolve(rank.CharacterId), rank.HateValue, rankIndex + 1, ranking.Count > 0 ? ranking[0].HateValue : 0);
         }
 
         if (_fixedHateSlotCount is not null)

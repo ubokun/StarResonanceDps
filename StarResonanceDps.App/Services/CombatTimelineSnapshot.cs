@@ -1,11 +1,14 @@
-using StarResonanceDps.Core.CombatRuntime;
+﻿using StarResonanceDps.Core.CombatRuntime;
 using Zproto;
 
 namespace StarResonanceDps.App.Services;
 
 public sealed record TimelineActor(long Uuid, string Name, bool IsEnemy = false);
-public sealed record ExtensionTimelineEvent(double Seconds, string Track, long EntityUuid, string Actor, string Action, string? IconPath = null, SkillIconFrame Frame = SkillIconFrame.Standard)
+public sealed record ExtensionTimelineEvent(double Seconds, string Track, long EntityUuid, string Actor, string Action, string? IconPath = null, SkillIconFrame Frame = SkillIconFrame.Standard, string SourceKey = "")
 {
+    public string FilterKey => string.IsNullOrEmpty(SourceKey) ? $"{Track}:{Action}" : $"{Track}:{SourceKey}";
+    public string FilterLabel => $"{Track} / {Action.Split(" → ")[0]}";
+    public string FallbackGlyph => Track == "敵行動" ? "⚔" : Track.StartsWith("予告") ? "!" : "•";
     public string Time => TimeSpan.FromSeconds(Math.Max(0, Seconds)).ToString(@"hh\:mm\:ss\.fff");
 }
 public sealed record CombatTimelineSnapshot(ulong EncounterId, double Duration, string Caption,
@@ -22,6 +25,21 @@ public static class CombatTimelineReader
             catch (Exception ex) { result.SetException(ex); }
         });
         return result.Task;
+    }
+
+    public static bool IsFrequentAction(int count, double duration) => duration > 0 && count * 10d >= duration;
+
+    public static bool IsFrequentAction(IEnumerable<ExtensionTimelineEvent> events, double duration)
+        => events.GroupBy(x => x.EntityUuid).Any(g => IsFrequentAction(g.Select(x => x.Seconds).Distinct().Count(), duration));
+
+    public static string EnemyName(Encounter encounter, long uuid)
+    {
+        if (uuid == 0) return "対象未確定";
+        var entity = encounter.Entities.GetValueOrDefault(uuid);
+        var attr = entity?.GetAttrKV("AttrId");
+        var id = attr is null ? 0 : Convert.ToInt64(attr);
+        var localized = id > 0 ? CombatDataCatalog.GetMonsterName(id) : "";
+        return string.IsNullOrWhiteSpace(localized) ? "未知の敵" : localized;
     }
 
     private static CombatTimelineSnapshot Read(CombatExtensionOptions options)
@@ -52,30 +70,30 @@ public static class CombatTimelineReader
                 var (name, icon, frame, imagine) = CombatDataCatalog.GetSkillActivationDisplay(skill.SkillId);
                 if (imagine ? !options.ShowImagines : !options.ShowSkills) continue;
                 events.Add(new(encounter.ToCombatOffset(skill.Timestamp)?.TotalSeconds ?? 0,
-                    imagine ? "イマジン" : "スキル", player.UUID, player.Name ?? id.ToString(), $"{name} [#{skill.SkillId}]", CombatIconResolver.ResolveSkillIcon(icon), frame));
+                    imagine ? "イマジン" : "スキル", player.UUID, player.Name ?? id.ToString(), $"{name} [#{skill.SkillId}]", CombatIconResolver.ResolveSkillIcon(icon), frame, $"skill:{skill.SkillId}"));
             }
         }
         if (options.ShowEnemies)
         {
             foreach (var line in timeline.Lines)
                 events.Add(new(encounter.ToCombatOffset(line.Timestamp)?.TotalSeconds ?? 0, line.Attacker.Uuid == 0 ? "予告（対象未確定）" : "敵行動",
-                    line.Attacker.Uuid, line.Attacker.Name, $"{line.SourceName} {line.BuffName}"
+                    line.Attacker.Uuid, EnemyName(encounter, line.Attacker.Uuid), $"{line.SourceName} {line.BuffName}"
                         + (line.Target is null ? "" : $" → {line.Target.Name}") + (line.Value == 0 ? "" : $" {line.Value:N0}"),
                     line.IsBuffSource ? CombatIconResolver.ResolveBuffIcon(CombatDataCatalog.GetBuffOwnIconName(line.SourceId))
-                        : CombatIconResolver.ResolveSkillIcon(CombatDataCatalog.GetSkillIconName(line.SourceId))));
+                        : CombatIconResolver.ResolveSkillIcon(CombatDataCatalog.GetSkillActivationDisplay(line.SourceId).IconName), SourceKey: $"{(line.IsBuffSource ? "buff" : "skill")}:{line.SourceId}"));
             foreach (var hit in MeterSnapshotProvider.GetDamageTakenLog(null, 0).Hits)
             {
                 if (hit.IsFall || hit.Attacker.IsPlayer || hit.Attacker.IsSystem
                     || (options.PartyOnly && partyKnown && !partyIds.Contains(hit.CharacterId))) continue;
                 events.Add(new(encounter.ToCombatOffset(hit.Timestamp)?.TotalSeconds ?? 0, "敵行動",
-                    hit.Attacker.Uuid, hit.Attacker.Name, $"{hit.SourceName} → プレイヤー {hit.CharacterId}：{hit.Value:N0}ダメージ",
+                    hit.Attacker.Uuid, EnemyName(encounter, hit.Attacker.Uuid), $"{hit.SourceName} → プレイヤー {hit.CharacterId}：{hit.Value:N0}ダメージ",
                     hit.IsBuffSource ? CombatIconResolver.ResolveBuffIcon(CombatDataCatalog.GetBuffOwnIconName(hit.SourceId))
-                        : CombatIconResolver.ResolveSkillIcon(CombatDataCatalog.GetSkillIconName(hit.SourceId))));
+                        : CombatIconResolver.ResolveSkillIcon(CombatDataCatalog.GetSkillActivationDisplay(hit.SourceId).IconName), SourceKey: $"{(hit.IsBuffSource ? "buff" : "skill")}:{hit.SourceId}"));
             }
             lock (encounter.ExData.EnemyControlEvents)
                 foreach (var control in encounter.ExData.EnemyControlEvents)
                 {
-                    var actor = encounter.Entities.GetValueOrDefault(control.EntityUuid)?.Name ?? "敵";
+                    var actor = EnemyName(encounter, control.EntityUuid);
                     var action = control.Kind switch
                     {
                         EnemyControlKind.Silence => control.BuffId > 0 ? $"沈黙付与：{CombatDataCatalog.GetBuffName(control.BuffId)}" : "沈黙状態を確認",
@@ -84,7 +102,7 @@ public static class CombatTimelineReader
                     };
                     events.Add(new(encounter.ToCombatOffset(control.Timestamp)?.TotalSeconds ?? 0, "敵行動", control.EntityUuid, actor, action,
                         control.BuffId > 0 ? CombatIconResolver.ResolveBuffIcon(CombatDataCatalog.GetBuffOwnIconName(control.BuffId))
-                            : control.SkillId > 0 ? CombatIconResolver.ResolveSkillIcon(CombatDataCatalog.GetSkillIconName(control.SkillId)) : null));
+                            : control.SkillId > 0 ? CombatIconResolver.ResolveSkillIcon(CombatDataCatalog.GetSkillIconName(control.SkillId)) : null, SourceKey: $"control:{control.Kind}:{control.BuffId}:{control.SkillId}"));
                 }
         }
         if (options.ShowFactors)
@@ -98,11 +116,11 @@ public static class CombatTimelineReader
                         ? factor.SourceId : factor.BuffId;
                     events.Add(new(encounter.ToCombatOffset(factor.Timestamp)?.TotalSeconds ?? 0, "因子効果",
                         factor.EntityUuid, actor, $"{CombatDataCatalog.GetRootBuffName(rootId)} [#{factor.BuffId}]（付与元 #{factor.SourceId}）",
-                        CombatIconResolver.ResolveRootBuffIcon(StarResonanceDps.Core.Models.RootBuffKind.Factor, CombatDataCatalog.GetRootBuffIconName(rootId, 0))));
+                        CombatIconResolver.ResolveRootBuffIcon(StarResonanceDps.Core.Models.RootBuffKind.Factor, CombatDataCatalog.GetRootBuffIconName(rootId, 0)), SourceKey: $"factor:{rootId}"));
                 }
         }
         var enemies = options.ShowEnemies ? encounter.Entities.Values.Where(x => x.EntityType == EEntityType.EntMonster)
-            .Select(x => new TimelineActor(x.UUID, string.IsNullOrWhiteSpace(x.Name) ? "敵" : x.Name, true)).ToArray() : [];
+            .Select(x => new TimelineActor(x.UUID, EnemyName(encounter, x.UUID), true)).ToArray() : [];
         var actors = enemies.Concat(events.Select(x => new TimelineActor(x.EntityUuid, x.Actor))).DistinctBy(x => x.Uuid).ToArray();
         var points = buckets.OrderBy(x => x.Key).Select(x => new MetricGraphPoint(x.Key, x.Value.End, x.Value.Value)).ToArray();
         var scope = options.PartyOnly && partyKnown ? "PT DPS" : options.PartyOnly ? "全員DPS（PT情報未記録）" : "全員DPS";

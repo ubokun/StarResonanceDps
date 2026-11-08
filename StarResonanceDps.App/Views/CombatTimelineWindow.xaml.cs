@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,6 +12,10 @@ namespace StarResonanceDps.App.Views;
 public partial class CombatTimelineWindow : Window
 {
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly HashSet<string> _selectedActions = [];
+    private readonly HashSet<string> _forcedOn = [];
+    private readonly HashSet<string> _forcedOff = [];
+    private sealed record ActionChoice(string Key, string Label);
     private bool _reading;
     private bool _updating;
     private CombatTimelineSnapshot? _snapshot;
@@ -22,6 +26,9 @@ public partial class CombatTimelineWindow : Window
         InitializeComponent();
         ExtensionWindowLayout.Attach(this);
         var settings = CombatExtensionSettings.Current;
+        FilterActions.IsChecked = settings.FilterActions;
+        _forcedOn.UnionWith(settings.SelectedActions);
+        _forcedOff.UnionWith(settings.HiddenActions);
         QuestClock.IsChecked = settings.SyncQuestClock; QuestReset.IsChecked = settings.ResetOnQuestTransition;
         AutoLink.IsChecked = settings.AutoLinkSavedPlayers;
         IdleSeconds.Text = settings.IdleResetSeconds.ToString(); WindowSeconds.Text = settings.VisibleSeconds.ToString();
@@ -39,7 +46,7 @@ public partial class CombatTimelineWindow : Window
         if (!int.TryParse(IdleSeconds.Text, out var idle) || !int.TryParse(WindowSeconds.Text, out var width)
             || !int.TryParse(IntervalSeconds.Text, out var interval))
             throw new ArgumentException("秒数は整数で入力してください。");
-        var options = new CombatExtensionOptions { SyncQuestClock = QuestClock.IsChecked == true,
+        var options = new CombatExtensionOptions { FilterActions = FilterActions.IsChecked == true, SelectedActions = _forcedOn.Order().ToArray(), HiddenActions = _forcedOff.Order().ToArray(), SyncQuestClock = QuestClock.IsChecked == true,
             ResetOnQuestTransition = QuestReset.IsChecked == true, IdleResetSeconds = idle, VisibleSeconds = width,
             IntervalResetSeconds = interval,
             AutoLinkSavedPlayers = AutoLink.IsChecked == true,
@@ -76,6 +83,7 @@ public partial class CombatTimelineWindow : Window
         TimeOffset.Maximum = Math.Max(0, snapshot.Duration - ReadOptions().VisibleSeconds);
         if (Follow.IsChecked == true) TimeOffset.Value = TimeOffset.Maximum;
         Caption.Text = snapshot.Caption + $" · 経過 {TimeSpan.FromSeconds(snapshot.Duration):hh\\:mm\\:ss}";
+        UpdateActionChoices();
         _updating = false;
         Draw();
     }
@@ -87,7 +95,8 @@ public partial class CombatTimelineWindow : Window
         var selected = Actors.SelectedItems.Cast<TimelineActor>().Select(x => x.Uuid).ToHashSet();
         var start = TimeOffset.Value; var end = start + options.VisibleSeconds;
         var events = _snapshot.Events.Where(x => x.Seconds >= start && x.Seconds <= end
-            && (selected.Count == 0 || selected.Contains(x.EntityUuid))).ToArray();
+            && (selected.Count == 0 || selected.Contains(x.EntityUuid))
+            && (FilterActions.IsChecked != true || _selectedActions.Contains(x.FilterKey))).ToArray();
         Plot.Children.Clear();
         const double left = 170, width = 920, top = 32, height = 145;
         double X(double seconds) => left + (seconds - start) / options.VisibleSeconds * width;
@@ -112,7 +121,7 @@ public partial class CombatTimelineWindow : Window
         var tracks = events.GroupBy(x => (x.Track, x.EntityUuid, x.Actor))
             .Select(g => (Track: g.Key.Track, Uuid: g.Key.EntityUuid, Actor: g.Key.Actor, Events: g.ToArray())).ToList();
         var enemyActors = _snapshot.Actors.Where(x => x.IsEnemy && (selected.Count == 0 || selected.Contains(x.Uuid))).ToArray();
-        foreach (var enemy in enemyActors)
+        foreach (var enemy in options.ShowEnemies ? enemyActors : [])
             if (!tracks.Any(x => x.Track == "敵行動" && x.Uuid == enemy.Uuid))
                 tracks.Add(("敵行動", enemy.Uuid, enemy.Name, []));
         var row = 0;
@@ -133,6 +142,51 @@ public partial class CombatTimelineWindow : Window
         }
         Plot.Height = Math.Max(350, top + height + 60 + row * 32);
         EventList.ItemsSource = events.TakeLast(500).ToArray();
+    }
+
+    private void UpdateActionChoices()
+    {
+        if (_snapshot is null) return;
+        var groups = _snapshot.Events.GroupBy(x => x.FilterKey).ToArray();
+        _selectedActions.Clear();
+        foreach (var group in groups)
+            if (_forcedOn.Contains(group.Key) || (!_forcedOff.Contains(group.Key) && !CombatTimelineReader.IsFrequentAction(group, _snapshot.Duration)))
+                _selectedActions.Add(group.Key);
+        var choices = groups
+            .Select(g => new ActionChoice(g.Key, g.First().FilterLabel + (CombatTimelineReader.IsFrequentAction(g, _snapshot.Duration) ? "（高頻度）" : "")))
+            .Where(x => string.IsNullOrWhiteSpace(ActionSearch.Text) || x.Label.Contains(ActionSearch.Text, StringComparison.CurrentCultureIgnoreCase))
+            .OrderBy(x => x.Label).ToArray();
+        if (ActionChoices.Items.Cast<ActionChoice>().SequenceEqual(choices)
+            && ActionChoices.SelectedItems.Cast<ActionChoice>().Select(x => x.Key).ToHashSet().SetEquals(choices.Where(x => _selectedActions.Contains(x.Key)).Select(x => x.Key))) return;
+        var updating = _updating; _updating = true;
+        ActionChoices.ItemsSource = choices;
+        foreach (var choice in choices.Where(x => _selectedActions.Contains(x.Key))) ActionChoices.SelectedItems.Add(choice);
+        _updating = updating;
+    }
+    private void ToggleActionFilter_Click(object sender, RoutedEventArgs e)
+        => ActionFilterPanel.Visibility = ActionFilterPanel.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+    private void ActionSearchChanged(object sender, TextChangedEventArgs e) { if (ActionChoices is not null) UpdateActionChoices(); }
+    private void ActionFilterChanged(object sender, RoutedEventArgs e) => Draw();
+    private void ActionChoices_Selected(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updating) return;
+        foreach (ActionChoice choice in e.RemovedItems) { _selectedActions.Remove(choice.Key); _forcedOn.Remove(choice.Key); _forcedOff.Add(choice.Key); }
+        foreach (ActionChoice choice in e.AddedItems) { _selectedActions.Add(choice.Key); _forcedOn.Add(choice.Key); _forcedOff.Remove(choice.Key); }
+        Draw();
+    }
+    private void SelectAllActions_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (ActionChoice choice in ActionChoices.Items) { _forcedOn.Add(choice.Key); _forcedOff.Remove(choice.Key); }
+        UpdateActionChoices(); Draw();
+    }
+    private void DefaultActions_Click(object sender, RoutedEventArgs e)
+    {
+        _forcedOn.Clear(); _forcedOff.Clear(); UpdateActionChoices(); Draw();
+    }
+    private void ClearActions_Click(object sender, RoutedEventArgs e)
+    {
+        foreach (var key in _snapshot?.Events.Select(x => x.FilterKey).Distinct() ?? []) { _forcedOn.Remove(key); _forcedOff.Add(key); }
+        UpdateActionChoices(); Draw();
     }
 
     private void ToggleMeasurementSettings_Click(object sender, RoutedEventArgs e)

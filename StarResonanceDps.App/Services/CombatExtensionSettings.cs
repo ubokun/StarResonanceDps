@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using StarResonanceDps.Core.CombatRuntime;
 
@@ -6,6 +6,9 @@ namespace StarResonanceDps.App.Services;
 
 public sealed record CombatExtensionOptions
 {
+    public bool FilterActions { get; init; } = true;
+    public string[] HiddenActions { get; init; } = [];
+    public string[] SelectedActions { get; init; } = [];
     public bool SyncQuestClock { get; init; }
     public bool ResetOnQuestTransition { get; init; } = true;
     public int IdleResetSeconds { get; init; }

@@ -1,4 +1,4 @@
-<Window x:Class="StarResonanceDps.App.Views.CombatTimelineWindow"
+﻿<Window x:Class="StarResonanceDps.App.Views.CombatTimelineWindow"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:StarResonanceDps.App.Controls" xmlns:behaviors="clr-namespace:StarResonanceDps.App.Behaviors"
  Title="拡張タイムライン・クエスト同期" Width="1180" Height="850" MinWidth="900" MinHeight="650"
  WindowStartupLocation="CenterOwner" Background="Transparent" Foreground="{DynamicResource Brush.TextPrimary}" FontFamily="{DynamicResource Font.ProjectDefault}" WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResizeWithGrip" behaviors:WindowWorkingAreaBehavior.ConstrainMaximizeToWorkingArea="True">
@@ -33,11 +33,25 @@
    <TextBlock Text="同期は次のクエスト開始から適用。同期中は1クエストを1集計とし、時間リセットと自動フェーズ分割を停止します。同期なしの場合は既存の「進行で自動リセット」設定にも従います。" Opacity="0.7" TextWrapping="Wrap" Margin="0,6,0,6"/>
    </StackPanel></ContentControl>
    <WrapPanel>
+    <Button Content="技フィルター" Click="ToggleActionFilter_Click"/>
     <Button Content="計測設定" Click="ToggleMeasurementSettings_Click"/>
     <Button Content="履歴を更新" Click="RefreshHistory_Click"/>
     <ComboBox x:Name="History" Style="{StaticResource Input.SelectBox}" Width="430" DisplayMemberPath="Label" SelectionChanged="History_Selected"/>
     <Button Content="ライブに戻る" Click="Live_Click" Margin="12,0,0,0"/>
    </WrapPanel>
+   <ContentControl x:Name="ActionFilterPanel" Visibility="Collapsed" Style="{StaticResource Panel.SettingSection}" Margin="0,8,0,0">
+    <StackPanel Margin="10">
+     <WrapPanel><CheckBox x:Name="FilterActions" Content="技フィルターを有効にする" Click="ActionFilterChanged"/>
+      <TextBlock Text="技名で検索" VerticalAlignment="Center"/><TextBox x:Name="ActionSearch" Width="200" Margin="8,0" TextChanged="ActionSearchChanged"/>
+      <Button Content="すべて選択" Click="SelectAllActions_Click"/><Button Content="選択を解除" Click="ClearActions_Click"/>
+      <Button Content="既定に戻す" Click="DefaultActions_Click"/><Button Content="フィルターを保存" Click="SaveSettings_Click"/>
+     </WrapPanel>
+     <TextBlock Text="平均10秒に1回以上の技は既定で非表示。手動選択を優先します。検索は候補だけを絞り込み、DPSグラフと保存データには影響しません。" Margin="0,4" TextWrapping="Wrap"/>
+     <ListBox x:Name="ActionChoices" Height="110" SelectionMode="Multiple" SelectionChanged="ActionChoices_Selected">
+      <ListBox.ItemTemplate><DataTemplate><CheckBox Content="{Binding Label}" Style="{StaticResource Extension.Switch}" Margin="0" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}, Mode=TwoWay}"/></DataTemplate></ListBox.ItemTemplate>
+     </ListBox>
+    </StackPanel>
+   </ContentControl>
    <WrapPanel Margin="0,8,0,0">
     <CheckBox x:Name="PartyOnly" Content="PTのみ"/>
     <CheckBox x:Name="Skills" Content="スキル"/><CheckBox x:Name="Imagines" Content="イマジン"/>
