@@ -22,7 +22,6 @@
    <WrapPanel>
     <CheckBox x:Name="QuestClock" Content="クエスト時間と同期"/>
     <CheckBox x:Name="QuestReset" Content="クエスト開始でリセット"/>
-    <CheckBox x:Name="AutoLink" Content="保存済みユーザーのビルドを自動紐づけ"/>
     <TextBlock Text="無操作リセット(秒、0=無効)" VerticalAlignment="Center"/>
     <TextBox x:Name="IdleSeconds" Style="{StaticResource Input.PathBox}" Width="60" Margin="6,0,12,0"/>
     <TextBlock Text="定期リセット(秒、0=無効)" VerticalAlignment="Center"/>

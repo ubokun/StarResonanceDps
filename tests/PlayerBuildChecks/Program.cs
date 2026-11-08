@@ -115,7 +115,8 @@ internal static class Program
   var window = new UserBuildWindow();
   var userList = (ListBox)window.FindName("Users"); userList.SelectedItem = userList.Items.Cast<object>().First(x => x.GetType().GetProperty("Label")!.GetValue(x)!.ToString()!.Contains("検証用ユーザー"));
   Check(((ListBox)window.FindName("Builds")).Items.Count > 0, "user to builds navigation");
-  Check(((ListBox)window.FindName("Encounters")).Items.Count > 0 && ((TextBox)window.FindName("Details")).Text.Contains("不明"), "build to encounters and unknown state display");
+  Check(((TextBox)window.FindName("Details")).Text.Contains("不明"), "build details preserve unknown state");
+  Check(window.FindName("Encounters") is null, "user build widget removes aggregate association list");
   Check(((TextBox)window.FindName("Timeline")).Text.Contains("検証スキル"), "encounter-specific timeline display");
   var content = (FrameworkElement)window.Content;
   content.Measure(new Size(980, 650)); content.Arrange(new Rect(0,0,980,650)); content.UpdateLayout();

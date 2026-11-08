@@ -1,4 +1,4 @@
-namespace StarResonanceDps.App.Models;
+﻿namespace StarResonanceDps.App.Models;
 
 public sealed class SavedPlayerBuild
 {
@@ -10,9 +10,10 @@ public sealed class SavedPlayerBuild
     public DateTime CapturedUtc { get; set; }
     public string Fingerprint { get; set; } = "";
     public string Details { get; set; } = "";
+    public string ObservedTimeline { get; set; } = "";
     public string SourceData { get; set; } = "";
     public List<SavedBuildEncounter> Encounters { get; set; } = [];
-    public string Label => $"{CapturedUtc.ToLocalTime():yyyy/MM/dd HH:mm:ss} · {Encounters.Count}集計";
+    public string Label => $"{CapturedUtc.ToLocalTime():yyyy/MM/dd HH:mm:ss}";
     public string UserLabel => $"{PlayerName} ({Server} / {CharacterId})";
 }
 

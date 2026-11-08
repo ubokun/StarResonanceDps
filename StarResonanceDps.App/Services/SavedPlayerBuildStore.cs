@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using StarResonanceDps.App.Models;
@@ -46,8 +46,8 @@ public sealed class SavedPlayerBuildStore
     {
         lock (Gate)
         {
-            if (item.CharacterId <= 0 || item.Encounters.Count == 0 || item.Encounters.Any(x => x.EncounterId == 0))
-                throw new InvalidDataException("集計に記録されたプレイヤーを選んでください。");
+            if (item.CharacterId <= 0 || item.Encounters.Any(x => x.EncounterId == 0))
+                throw new InvalidDataException("プレイヤー情報または紐づける集計が不正です。");
             var existing = Load(out _).FirstOrDefault(x => x.CharacterId == item.CharacterId
                 && x.Server == item.Server && x.Fingerprint == item.Fingerprint);
             if (existing is not null)
@@ -58,6 +58,8 @@ public sealed class SavedPlayerBuildStore
                     if (!existing.Encounters.Any(x => x.EncounterId == link.EncounterId && x.Timeline == link.Timeline))
                         existing.Encounters.Add(link);
                 }
+                existing.ObservedTimeline = item.ObservedTimeline;
+                existing.CapturedUtc = item.CapturedUtc;
                 item = existing;
             }
             Directory.CreateDirectory(_directory);

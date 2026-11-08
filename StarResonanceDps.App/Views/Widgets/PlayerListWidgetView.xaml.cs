@@ -145,6 +145,20 @@ public partial class PlayerListWidgetView : UserControl, IWidgetVerticalScrollCo
         }
     }
 
+    private void PlayerInfoButton_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button { DataContext: PlayerListEntry entry, Tag: string kind }
+            || DataContext is not WidgetListItemViewModel widget) return;
+        var target = new PlayerMenuTarget(entry.CharacterId, entry.IsSelf);
+        switch (kind)
+        {
+            case "PlayerTalent": widget.RequestPlayerTalentCommand.Execute(target); break;
+            case "PlayerSeasonTalent": widget.RequestPlayerSeasonTalentCommand.Execute(target); break;
+            case "PlayerModule": widget.RequestPlayerModuleCommand.Execute(target); break;
+        }
+    }
+
     private void PlayerListItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is Button button)

@@ -86,11 +86,6 @@ public partial class ManagerView : UserControl
         QueueUpdateExternalScrollBar();
     }
 
-    private void UserBuildButton_Click(object sender, RoutedEventArgs e)
-    {
-        ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.UserBuildLibrary);
-    }
-
     private void CombatTimelineButton_Click(object sender, RoutedEventArgs e)
     {
         ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.CombatExtensionTimeline);

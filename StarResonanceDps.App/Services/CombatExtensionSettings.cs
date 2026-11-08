@@ -20,7 +20,6 @@ public sealed record CombatExtensionOptions
     public bool ShowImagines { get; init; } = true;
     public bool ShowFactors { get; init; } = true;
     public bool ShowEnemies { get; init; } = true;
-    public bool AutoLinkSavedPlayers { get; init; } = true;
 }
 
 public static class CombatExtensionSettings

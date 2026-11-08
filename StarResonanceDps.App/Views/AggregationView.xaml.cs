@@ -21,6 +21,8 @@ public partial class AggregationView : UserControl
 
     internal ScrollViewer ContentScrollViewer => HistoryScrollViewer;
 
+    internal void FilterUser(string server, long characterId, string name) => _viewModel.FilterUser(server, characterId, name);
+
     public AggregationView()
     {
         InitializeComponent();

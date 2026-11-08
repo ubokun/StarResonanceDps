@@ -124,13 +124,13 @@ public sealed partial class MainViewModel : ViewModelBase
         AddWidget(WidgetKind.HpsGraph, "Widget_HpsGraph");
         AddWidget(WidgetKind.DamageTakenSummary, "Widget_DamageTakenSummary");
         AddWidget(WidgetKind.Chat, "Widget_Chat");
-        AddWidget(WidgetKind.UserBuildLibrary, "ユーザービルド");
         AddWidget(WidgetKind.CombatExtensionTimeline, "拡張タイムライン");
         AddWidget(WidgetKind.HatePs, "ヘイトPSメーター");
         AddWidget(WidgetKind.PartyDps, "PT DPS推移");
         ExtensionWidgetHost.OpenRequested = (kind, target) =>
         {
-            var widget = _widgetItems.First(x => x.Kind == kind);
+            var widget = _widgetItems.FirstOrDefault(x => x.Kind == kind);
+            if (widget is null) return;
             ExtensionWidgetHost.Targets[kind] = target;
             WidgetWindowManager.Instance.OpenExtension(widget);
         };

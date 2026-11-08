@@ -28,6 +28,65 @@ public sealed partial class AggregationViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<EncounterHistoryItem> _entries = [];
 
+    private List<EncounterHistoryItem> _allEntries = [];
+    private readonly Dictionary<ulong, IReadOnlyList<EncounterParticipant>> _participants = [];
+    private string? _exactServer;
+    private long? _exactUser;
+    private int _filterRequest;
+    [ObservableProperty] private string _userFilter = "";
+    [ObservableProperty] private string _questFilter = "";
+    [ObservableProperty] private string _filterStatus = "";
+    partial void OnUserFilterChanged(string value) { _exactUser = null; _exactServer = null; ApplyFilters(); }
+    partial void OnQuestFilterChanged(string value) => ApplyFilters();
+
+    public void FilterUser(string server, long characterId, string name)
+    {
+        UserFilter = name;
+        _exactServer = server; _exactUser = characterId;
+        ApplyFilters();
+    }
+
+    [RelayCommand]
+    private void ClearFilters() { _exactUser = null; _exactServer = null; UserFilter = ""; QuestFilter = ""; ApplyFilters(); }
+
+    internal static bool MatchesUser(IEnumerable<EncounterParticipant> participants, string text, string? server = null, long? id = null)
+        => participants.Any(p => id is not null ? p.CharacterId == id && p.Server == server
+            : p.Name.Contains(text, StringComparison.OrdinalIgnoreCase) || p.CharacterId.ToString(CultureInfo.InvariantCulture).Contains(text, StringComparison.OrdinalIgnoreCase));
+
+    private async void ApplyFilters()
+    {
+        var request = ++_filterRequest;
+        var text = UserFilter.Trim(); var quest = QuestFilter.Trim();
+        var server = _exactServer; var id = _exactUser;
+        var candidates = _allEntries.Where(x => x.SceneText.Contains(quest, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (text.Length == 0 && id is null)
+        {
+            Entries = new(candidates); SyncSelection(); FilterStatus = $"{Entries.Count}件"; OnPropertyChanged(nameof(HasEntries)); return;
+        }
+        Entries = []; OnPropertyChanged(nameof(HasEntries)); FilterStatus = "ユーザーの戦闘記録を確認中…";
+        var matches = new List<EncounterHistoryItem>(); var failed = 0;
+        foreach (var item in candidates)
+        {
+            if(request != _filterRequest) return;
+            if (!_participants.TryGetValue(item.EncounterId, out var participants))
+            {
+                try
+                {
+                    participants = await Task.Run(() => {
+                        var encounter = DB.LoadEncounter(item.EncounterId);
+                        return encounter is null ? Array.Empty<EncounterParticipant>() : EncounterParticipants.Read(encounter);
+                    });
+                    _participants[item.EncounterId] = participants;
+                }
+                catch { failed++; continue; }
+            }
+            if (MatchesUser(participants, text, server, id)) matches.Add(item);
+        }
+        if(request != _filterRequest) return;
+        Entries = new(matches); SyncSelection(); OnPropertyChanged(nameof(HasEntries));
+        FilterStatus = $"{Entries.Count}件" + (failed > 0 ? $"（{failed}件を確認できませんでした。再読込で再試行します）" : "");
+    }
+
     /// <summary>ライブ(現在の戦闘)を見ているか。履歴を開いていない状態。</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
@@ -84,7 +143,8 @@ public sealed partial class AggregationViewModel : ObservableObject
             });
         }
 
-        Entries = items;
+        _allEntries = items.ToList();
+        ApplyFilters();
         IsLiveSelected = selected is null;
         OnPropertyChanged(nameof(HasEntries));
     }
@@ -248,6 +308,8 @@ public sealed partial class EncounterHistoryItem : ObservableObject
     }
 
     public ulong EncounterId => _entry.EncounterId;
+
+    public string Label => $"{TimeText} · {SceneText}";
 
     public string TimeText => _entry.StartTime.ToString("yyyy/MM/dd HH:mm", CultureInfo.InvariantCulture);
 

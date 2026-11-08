@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -259,13 +259,6 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
                 ? WidgetKind.DpsGraph
                 : WidgetKind.HpsGraph,
             player);
-    }
-
-    [RelayCommand]
-    private async Task RequestBuild(MeterPlayerEntry? player)
-    {
-        if (player is not null)
-            await StarResonanceDps.App.Views.UserBuildWindow.OpenForPlayerAsync(player.CharacterId);
     }
 
     private void RequestPlayerWindow(WidgetKind widgetKind, MeterPlayerEntry? player)

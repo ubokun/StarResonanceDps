@@ -30,7 +30,6 @@ public partial class CombatTimelineWindow : Window
         _forcedOn.UnionWith(settings.SelectedActions);
         _forcedOff.UnionWith(settings.HiddenActions);
         QuestClock.IsChecked = settings.SyncQuestClock; QuestReset.IsChecked = settings.ResetOnQuestTransition;
-        AutoLink.IsChecked = settings.AutoLinkSavedPlayers;
         IdleSeconds.Text = settings.IdleResetSeconds.ToString(); WindowSeconds.Text = settings.VisibleSeconds.ToString();
         IntervalSeconds.Text = settings.IntervalResetSeconds.ToString();
         PartyOnly.IsChecked = settings.PartyOnly; Skills.IsChecked = settings.ShowSkills;
@@ -49,7 +48,6 @@ public partial class CombatTimelineWindow : Window
         var options = new CombatExtensionOptions { UseEnemyCatalog = CombatExtensionSettings.Current.UseEnemyCatalog, FilterActions = FilterActions.IsChecked == true, SelectedActions = _forcedOn.Order().ToArray(), HiddenActions = _forcedOff.Order().ToArray(), SyncQuestClock = QuestClock.IsChecked == true,
             ResetOnQuestTransition = QuestReset.IsChecked == true, IdleResetSeconds = idle, VisibleSeconds = width,
             IntervalResetSeconds = interval,
-            AutoLinkSavedPlayers = AutoLink.IsChecked == true,
             PartyOnly = PartyOnly.IsChecked == true, ShowSkills = Skills.IsChecked == true,
             ShowImagines = Imagines.IsChecked == true, ShowFactors = Factors.IsChecked == true, ShowEnemies = Enemies.IsChecked == true };
         CombatExtensionSettings.Validate(options); return options;

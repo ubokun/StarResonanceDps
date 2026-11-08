@@ -27,9 +27,13 @@ public static class PlayerBuildCapture
 
     private static SavedPlayerBuild CaptureObserved(long characterId, Encounter? specifiedEncounter, bool allowObserved)
     {
-        var source = MeterSnapshotProvider.GetBuildPlayer(characterId, specifiedEncounter ?? (allowObserved && AppState.OpenedHistoricalEncounter is null ? EncounterManager.Current : null))
+        var isLivePreview = allowObserved && specifiedEncounter is null && AppState.OpenedHistoricalEncounter is null;
+        var source = MeterSnapshotProvider.GetBuildPlayer(characterId, specifiedEncounter ?? (isLivePreview ? EncounterManager.Current : null))
             ?? throw new InvalidOperationException("表示中の集計にプレイヤー情報がありません。");
         var (encounter, player, entity) = source;
+        // An explicit current encounter avoids the DPS hold-last behavior, but its saved metadata is not stamped until closing.
+        // Only live previews may use the live server. Historical captures must retain their recorded identity.
+        if (isLivePreview) player = player with { GameServer = GameServerStore.Current };
         // Only players with actual combat records can be linked, never nearby roster entries alone.
         var hasCombat = !(entity.TotalDamage == 0 && entity.TotalHealing == 0 && !entity.TakenStats.HasSkillSnapshots()
             && !entity.IsNamedInCombatEventLog);
@@ -110,8 +114,7 @@ public static class PlayerBuildCapture
             CharacterId = characterId, PlayerName = player.Name, Server = player.GameServer.ToString()!,
             CapturedUtc = DateTime.UtcNow, Fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))),
             Details = details.ToString(), SourceData = raw,
-            Encounters = !hasCombat ? [] : [new SavedBuildEncounter { EncounterId = encounter.EncounterId,
-                StartTime = encounter.StartTime, SceneName = encounter.SceneName ?? "", Timeline = timeline, CapturedUtc = DateTime.UtcNow }]
+            ObservedTimeline = timeline
         };
     }
 }

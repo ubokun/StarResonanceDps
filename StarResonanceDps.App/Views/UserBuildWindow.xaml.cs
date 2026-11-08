@@ -33,7 +33,11 @@ public partial class UserBuildWindow : Window
             .Concat(StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.Current.Entries.Where(x=>!x.IsNpc)
                 .Select(x=>new UserRow(x.GameServer.ToString()!,x.CharacterId,x.Name+"（観測中）")))
             .DistinctBy(x=>(x.Server,x.CharacterId)).ToList();
-        if(Users.Items.Cast<UserRow>().SequenceEqual(rows))return;
+        if(Users.Items.Cast<UserRow>().SequenceEqual(rows))
+        {
+            if(Users.SelectedItem is null && rows.Count>0) Users.SelectedIndex=0;
+            return;
+        }
         _refreshing=true; Users.ItemsSource=rows;
         Users.SelectedItem=rows.FirstOrDefault(x=>x.Server==previous?.Server && x.CharacterId==previous.CharacterId);
         _refreshing=false;
@@ -83,7 +87,6 @@ public partial class UserBuildWindow : Window
                     .Where(x=>!x.IsNpc).Select(x=>new UserRow(x.GameServer.ToString()!,x.CharacterId,x.Name+"（観測中）")))
                 .DistinctBy(x=>(x.Server,x.CharacterId)).ToList();
             Builds.ItemsSource = null;
-            Encounters.ItemsSource = null;
             Details.Clear();
             Timeline.Clear();
             _refreshing = false;
@@ -94,8 +97,7 @@ public partial class UserBuildWindow : Window
                 Builds.SelectedItem = selected;
             }
             Status.Text = failed > 0 ? $"{failed}件を読み込めませんでした。元のファイルは保持しています。"
-                : _records.Count == 0 ? "観測中のユーザーを選択してビルドを確認・保存できます。未表示の場合は再読込してください。" : "ユーザー → ビルド → 集計の順に選択できます。";
-            if (SavedPlayerBuildAutoLink.LastIssue is { } issue) Status.Text += " " + issue;
+                : _records.Count == 0 ? "観測中のユーザーを選択してビルドを確認・保存できます。未表示の場合は再読込してください。" : "ユーザーを選択して情報ウィジェットや保存ビルドを確認できます。";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { Status.Text = $"読み込みに失敗しました：{ex.Message}"; }
@@ -107,7 +109,7 @@ public partial class UserBuildWindow : Window
         if (_refreshing || Users.SelectedItem is not UserRow user) return;
         ++_previewRequest;
         Builds.ItemsSource = _records.Where(x => x.Server == user.Server && x.CharacterId == user.CharacterId).ToList();
-        Details.Clear(); Timeline.Clear(); Encounters.ItemsSource = null;
+        Details.Clear(); Timeline.Clear();
         _preview = null; SaveButton.IsEnabled = false;
         if (Builds.Items.Count > 0) Builds.SelectedIndex = 0;
         else await PreviewPlayerAsync(user.CharacterId);
@@ -128,15 +130,8 @@ public partial class UserBuildWindow : Window
     private void ShowBuild(SavedPlayerBuild build)
     {
         Details.Text = build.Details;
-        Encounters.ItemsSource = build.Encounters;
-        Timeline.Clear();
-        if (Encounters.Items.Count > 0) Encounters.SelectedIndex = 0;
-    }
-
-    private void Encounter_Selected(object sender, SelectionChangedEventArgs e)
-    {
-        if (Encounters.SelectedItem is SavedBuildEncounter encounter)
-            Timeline.Text = string.IsNullOrWhiteSpace(encounter.Timeline) ? "スキル使用の記録はありません。" : encounter.Timeline;
+        Timeline.Text = !string.IsNullOrWhiteSpace(build.ObservedTimeline) ? build.ObservedTimeline
+            : build.Encounters.OrderByDescending(x => x.CapturedUtc).FirstOrDefault()?.Timeline ?? "スキル使用の記録はありません。";
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -147,7 +142,7 @@ public partial class UserBuildWindow : Window
             var saved = _store.Save(_preview);
             _preview = null; SaveButton.IsEnabled = false;
             Reload(saved.Id);
-            Status.Text = "ビルドと集計の紐づけを保存しました。";
+            Status.Text = "ビルドを保存しました。";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         { Status.Text = $"保存に失敗しました：{ex.Message}"; }
@@ -161,20 +156,17 @@ public partial class UserBuildWindow : Window
         RefreshUsers();
     }
 
-    private async void OpenEncounter_Click(object sender, RoutedEventArgs e)
+    private void OpenUserWidget_Click(object sender, RoutedEventArgs e)
     {
-        if (Encounters.SelectedItem is not SavedBuildEncounter encounter) return;
-        try
+        if (sender is not Button { DataContext: UserRow user, Tag: string kind }
+            || !Enum.TryParse<Models.Widgets.WidgetKind>(kind, out var widgetKind)) return;
+        var roster = StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.Current.Entries;
+        if (!roster.Any(p => p.CharacterId == user.CharacterId && p.GameServer.ToString() == user.Server))
         {
-            var result = await EncounterHistoryProvider.SelectAsync(encounter.EncounterId);
-            Status.Text = result switch
-            {
-                HistorySelectResult.Opened => "集計を選択しました。メーターと集計画面で確認できます。",
-                HistorySelectResult.NotFound => "集計が見つかりません。未保存、または履歴の保存上限などで削除されています。ビルドは保持しています。",
-                HistorySelectResult.Superseded => "ほかの集計が選択されたため切り替えを中止しました。",
-                _ => "集計の読み込みに失敗しました。"
-            };
+            Status.Text = "現在の受信情報にこのユーザーがいません。保存ビルドの詳細を確認してください。";
+            return;
         }
-        catch (Exception ex) { Status.Text = $"集計を開けませんでした：{ex.Message}"; }
+        WidgetWindowManager.Instance.OpenPlayerWindow(widgetKind, user.CharacterId);
     }
+
 }

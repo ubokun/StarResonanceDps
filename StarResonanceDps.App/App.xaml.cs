@@ -72,7 +72,7 @@ public partial class App : Application
             CombatExtensionSettings.Initialize();
             CombatRuntimeHost.Instance.Initialize();
             EntityHistoryProjection.Initialize();
-            SavedPlayerBuildAutoLink.Initialize();
+
             SkillCooldownTracker.Instance.Initialize();
         }
         catch (Exception exception)
