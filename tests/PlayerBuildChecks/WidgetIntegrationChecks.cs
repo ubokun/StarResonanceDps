@@ -25,6 +25,21 @@ internal static class WidgetIntegrationChecks
             window.Show(); window.UpdateLayout();
             var controller = (Window)typeof(ExtensionWidgetHost).GetField("_controller", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(body)!;
             check(body.IsLoaded && body.Content is FrameworkElement element && element.ActualWidth > 300, $"{kind} uses shared widget window and fills body");
+            var actualControl=kind switch
+            {
+                WidgetKind.UserBuildLibrary => controller.FindName("Users") as FrameworkElement,
+                WidgetKind.CombatExtensionTimeline => controller.FindName("Actors") as FrameworkElement,
+                WidgetKind.HatePs => controller.FindName("Players") as FrameworkElement,
+                _ => controller.GetType().GetField("_plot",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(controller) as FrameworkElement
+            };
+            check(actualControl is not null && body.IsAncestorOf(actualControl) && actualControl.IsVisible && actualControl.ActualHeight>50,
+                $"{kind} displays the actual interactive body instead of extracting AppHeader");
+            if(kind==WidgetKind.HatePs)
+            {
+                var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);
+                bitmap.Render(window); var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using var file=System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"hate-widget-integrated-preview.png")); encoder.Save(file);
+            }
             check(window.Top >= SystemParameters.WorkArea.Top && window.Top + window.Height <= SystemParameters.WorkArea.Bottom + 1,
                 $"{kind} first launch stays inside monitor working area");
             check(body.Resources["Brush.TextPrimary"] is System.Windows.Media.SolidColorBrush,

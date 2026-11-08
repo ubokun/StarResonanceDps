@@ -37,7 +37,8 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
             _ => throw new ArgumentOutOfRangeException(nameof(kind)) };
         var frame=(ContentControl)_controller.Content;
         var grid=(Grid)frame.Content;
-        var panel=grid.Children.OfType<ContentControl>().First();
+        // AppHeader is itself a UserControl/ContentControl. Extract the body panel, never its header content.
+        var panel=grid.Children.OfType<ContentControl>().First(x=>x is not UserControl);
         var body=(FrameworkElement)panel.Content;
         panel.Content=null;
         Resources.MergedDictionaries.Add(_controller.Resources);
