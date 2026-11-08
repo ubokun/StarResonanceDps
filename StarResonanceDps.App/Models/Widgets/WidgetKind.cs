@@ -50,5 +50,9 @@ public enum WidgetKind
     /// <summary>
     /// プラグインが足したウィジェット(1枚だけ開く)。どのウィジェットかは <see cref="WidgetKey"/> で見分け、種別ごとの設定の節は持たない。
     /// </summary>
-    Plugin = 29
+    Plugin = 29,
+    UserBuildLibrary = 30,
+    CombatExtensionTimeline = 31,
+    HatePs = 32,
+    PartyDps = 33
 }

@@ -1,4 +1,4 @@
-using Serilog;
+﻿using Serilog;
 using StarResonanceDps.Core.CombatRuntime.Database;
 
 namespace StarResonanceDps.Core.CombatRuntime;
@@ -35,7 +35,7 @@ public sealed record EncounterHistoryEntry(
 /// <summary>履歴の1件を選んだ結果(<see cref="EncounterHistoryProvider.SelectAsync"/>)。</summary>
 public enum HistorySelectResult
 {
-    /// <summary>読めた。選択の反映はパケットのスレッドへ積んだ(反映されると <see cref="EncounterHistoryProvider.SelectionChanged"/> が上がる)。</summary>
+    /// <summary>読めて、選択の反映まで完了した(反映されると <see cref="EncounterHistoryProvider.SelectionChanged"/> が上がる)。</summary>
     Opened,
 
     /// <summary>DB にその回が無い(保存数の上限で消えたなど)。選択は変えない。</summary>
@@ -76,6 +76,7 @@ public static class EncounterHistoryProvider
 
     /// <summary>走っている読み込み。閉じるときに終わりを待つ(閉じた接続に当てない)。</summary>
     private static readonly List<Task> PendingLoads = [];
+    private static readonly CancellationTokenSource ShutdownToken = new();
 
     /// <summary>最新の要求の回を読めなかった(<see cref="HasLoadFailed"/>)。</summary>
     private static bool _hasLoadFailed;
@@ -169,12 +170,12 @@ public static class EncounterHistoryProvider
 
     /// <summary>
     /// 履歴の1件を開く。**開いている間、全ウィジェットが新しいデータを表示しなくなる。**
-    /// DB は裏のスレッドで読み(画面を止めない)、読めたら反映をパケットのスレッドへ積む。
-    /// 読めなければ選択を変えない(結果で分かる)。返す Task は読み込みと反映の予約まで。
+    /// DB は裏で読み、選択の反映完了まで待つ。30秒で応答がなければ失敗として要求を無効化する。
     /// </summary>
     public static Task<HistorySelectResult> SelectAsync(ulong encounterId)
     {
         Task<HistorySelectResult> load;
+        long request;
         lock (RequestGate)
         {
             if (_isShutDown)
@@ -182,7 +183,7 @@ public static class EncounterHistoryProvider
                 return Task.FromResult(HistorySelectResult.Superseded);
             }
 
-            var request = ++_latestRequest;
+            request = ++_latestRequest;
             load = Task.Run(() => LoadAndApply(encounterId, request));
             PendingLoads.Add(load);
         }
@@ -196,10 +197,28 @@ public static class EncounterHistoryProvider
                 }
             },
             TaskScheduler.Default);
-        return load;
+        return WaitForLoadAsync(load, request);
     }
 
-    private static HistorySelectResult LoadAndApply(ulong encounterId, long request)
+    private static async Task<HistorySelectResult> WaitForLoadAsync(Task<HistorySelectResult> load, long request)
+    {
+        try { return await load.WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false); }
+        catch (TimeoutException)
+        {
+            Log.Warning("History selection timed out (request {Request})", request);
+            SetLoadFailedIfLatest(request);
+            lock (RequestGate) if (_latestRequest == request) _latestRequest++;
+            return HistorySelectResult.Failed;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex,"History selection failed (request {Request})",request);
+            SetLoadFailedIfLatest(request);
+            return HistorySelectResult.Failed;
+        }
+    }
+
+    private static async Task<HistorySelectResult> LoadAndApply(ulong encounterId, long request)
     {
         Encounter? encounter;
         try
@@ -225,20 +244,30 @@ public static class EncounterHistoryProvider
             return HistorySelectResult.Superseded;
         }
 
+        var applied = new TaskCompletionSource<HistorySelectResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         MessageManager.RunOnPacketThread(() =>
         {
-            // 待ち行列に並んでいる間に別の回かライブが選ばれていたら反映しない。
-            if (!IsLatestRequest(request))
+            if (!IsLatestRequest(request)) { applied.TrySetResult(HistorySelectResult.Superseded); return; }
+            var previous = AppState.OpenedHistoricalEncounter;
+            try
             {
-                return;
+                AppState.OpenedHistoricalEncounter = encounter;
+                PlayerRosterProjection.RebuildRoster();
+                ClearLoadFailed();
+                SelectionChanged?.Invoke();
+                applied.TrySetResult(HistorySelectResult.Opened);
             }
-
-            AppState.OpenedHistoricalEncounter = encounter;
-            ClearLoadFailed();
-            PlayerRosterProjection.RebuildRoster();
-            SelectionChanged?.Invoke();
+            catch (Exception ex)
+            {
+                AppState.OpenedHistoricalEncounter = previous;
+                Log.Error(ex, "History {EncounterId} could not be applied", encounterId);
+                applied.TrySetResult(HistorySelectResult.Failed);
+                try { PlayerRosterProjection.RebuildRoster(); SetLoadFailedIfLatest(request); }
+                catch(Exception rollbackError) { Log.Error(rollbackError,"History rollback notification failed"); }
+            }
         });
-        return HistorySelectResult.Opened;
+        try { return await applied.Task.WaitAsync(ShutdownToken.Token).ConfigureAwait(false); }
+        catch (OperationCanceledException) { return HistorySelectResult.Superseded; }
     }
 
     /// <summary>読めなかった。古い要求(後から別の回かライブが選ばれた)の失敗は印にしない。</summary>
@@ -326,6 +355,7 @@ public static class EncounterHistoryProvider
             pending = PendingLoads.ToArray();
         }
 
+        ShutdownToken.Cancel();
         Task.WaitAll(pending);
     }
 }

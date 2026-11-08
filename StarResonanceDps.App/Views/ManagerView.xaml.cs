@@ -88,14 +88,16 @@ public partial class ManagerView : UserControl
 
     private void UserBuildButton_Click(object sender, RoutedEventArgs e)
     {
-        ShowManagerDialog(new UserBuildWindow());
+        ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.UserBuildLibrary);
     }
 
     private void CombatTimelineButton_Click(object sender, RoutedEventArgs e)
     {
-        var window = new CombatTimelineWindow { Owner = Window.GetWindow(this) };
-        window.Show();
+        ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.CombatExtensionTimeline);
     }
+
+    private void HateMeterButton_Click(object sender, RoutedEventArgs e) => ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.HatePs);
+    private void EnemyCatalogButton_Click(object sender, RoutedEventArgs e) => new EnemyCatalogWindow { Owner = Window.GetWindow(this) }.Show();
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {

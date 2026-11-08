@@ -69,6 +69,7 @@ internal static class NearbyEntityProjection
             return;
         }
 
+        DefeatedEnemyRecorder.Observe(EncounterManager.Current,entity,arrivalUtc);
         var campRelation = changedAttributes.Contains(EAttrType.AttrCamp)
             ? NearbyEntityCampState.GetRelation(entityUuid)
             : (EntityCampRelation?)null;
@@ -114,7 +115,7 @@ internal static class NearbyEntityProjection
         return entity;
     }
 
-    private static NearbyEntityEntry CreateEntry(long entityUuid, Entity entity, NearbyEntityCast? cast)
+    internal static NearbyEntityEntry CreateEntry(long entityUuid, Entity entity, NearbyEntityCast? cast)
     {
         var entityId = ResolveEntityId(entityUuid, entity);
         var entityType = ResolveEntityType(entityUuid, entity);

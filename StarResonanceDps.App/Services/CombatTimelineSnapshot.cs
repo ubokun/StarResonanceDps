@@ -3,7 +3,7 @@ using Zproto;
 
 namespace StarResonanceDps.App.Services;
 
-public sealed record TimelineActor(long Uuid, string Name, bool IsEnemy = false);
+public sealed record TimelineActor(long Uuid, string Name, bool IsEnemy = false) { public override string ToString() => Name; }
 public sealed record ExtensionTimelineEvent(double Seconds, string Track, long EntityUuid, string Actor, string Action, string? IconPath = null, SkillIconFrame Frame = SkillIconFrame.Standard, string SourceKey = "")
 {
     public string FilterKey => string.IsNullOrEmpty(SourceKey) ? $"{Track}:{Action}" : $"{Track}:{SourceKey}";
@@ -30,7 +30,11 @@ public static class CombatTimelineReader
     public static bool IsFrequentAction(int count, double duration) => duration > 0 && count * 10d >= duration;
 
     public static bool IsFrequentAction(IEnumerable<ExtensionTimelineEvent> events, double duration)
-        => events.GroupBy(x => x.EntityUuid).Any(g => IsFrequentAction(g.Select(x => x.Seconds).Distinct().Count(), duration));
+        => events.GroupBy(x => x.EntityUuid).Any(g =>
+        {
+            var times=g.Select(x=>x.Seconds).Distinct().Order().ToArray();
+            return times.Length>=2 && (times[^1]-times[0])/(times.Length-1)<=10;
+        });
 
     public static string EnemyName(Encounter encounter, long uuid)
     {
@@ -93,9 +97,11 @@ public static class CombatTimelineReader
             lock (encounter.ExData.EnemyControlEvents)
                 foreach (var control in encounter.ExData.EnemyControlEvents)
                 {
+                    if (control.Kind == EnemyControlKind.SkillStarted && timeline.Lines.Any(x=>x.Kind==CombatEventLogRecordKind.Cast && x.Attacker.Uuid==control.EntityUuid && x.SourceId==control.SkillId && x.Timestamp==control.Timestamp)) continue;
                     var actor = EnemyName(encounter, control.EntityUuid);
                     var action = control.Kind switch
                     {
+                        EnemyControlKind.SkillStarted => (CombatDataCatalog.HasSingOrGuideTime(control.SkillId) ? "詠唱開始：" : "技開始（属性通知）：") + CombatDataCatalog.GetSkillDisplayName(control.SkillId),
                         EnemyControlKind.Silence => control.BuffId > 0 ? $"沈黙付与：{CombatDataCatalog.GetBuffName(control.BuffId)}" : "沈黙状態を確認",
                         EnemyControlKind.SilenceRemoved => "沈黙解除を確認",
                         _ => $"詠唱終了（理由不明）：{CombatDataCatalog.GetSkillDisplayName(control.SkillId)}"
@@ -119,11 +125,13 @@ public static class CombatTimelineReader
                         CombatIconResolver.ResolveRootBuffIcon(StarResonanceDps.Core.Models.RootBuffKind.Factor, CombatDataCatalog.GetRootBuffIconName(rootId, 0)), SourceKey: $"factor:{rootId}"));
                 }
         }
-        var enemies = options.ShowEnemies ? encounter.Entities.Values.Where(x => x.EntityType == EEntityType.EntMonster)
+        if (options.UseEnemyCatalog)
+            events.RemoveAll(x => (x.Track == "敵行動" || x.Track.StartsWith("予告")) && !EnemyCatalogStore.Current.IsEnabled(encounter,x.EntityUuid));
+        var enemies = options.ShowEnemies ? encounter.Entities.Values.Where(x => x.EntityType == EEntityType.EntMonster && (!options.UseEnemyCatalog || EnemyCatalogStore.Current.IsEnabled(encounter,x.UUID)))
             .Select(x => new TimelineActor(x.UUID, EnemyName(encounter, x.UUID), true)).ToArray() : [];
         var actors = enemies.Concat(events.Select(x => new TimelineActor(x.EntityUuid, x.Actor))).DistinctBy(x => x.Uuid).ToArray();
         var points = buckets.OrderBy(x => x.Key).Select(x => new MetricGraphPoint(x.Key, x.Value.End, x.Value.Value)).ToArray();
-        var scope = options.PartyOnly && partyKnown ? "PT DPS" : options.PartyOnly ? "全員DPS（PT情報未記録）" : "全員DPS";
+        var scope = options.PartyOnly && partyKnown ? "PT" : options.PartyOnly ? "全員（PT情報未記録）" : "全員";
         var clock = encounter.ReadCombatClock();
         return new(encounter.EncounterId, clock.Elapsed.TotalSeconds,
             $"{scope} · {encounter.SceneName} · #{encounter.EncounterId} · {(encounter.ExData.UseQuestClock

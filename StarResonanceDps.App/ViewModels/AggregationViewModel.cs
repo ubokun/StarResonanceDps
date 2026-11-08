@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -144,7 +144,10 @@ public sealed partial class AggregationViewModel : ObservableObject
         switch (result)
         {
             case HistorySelectResult.Opened:
-                // 反映の合図(SyncSelection)で表示中になるまで、読み込み中のまま。
+                // The provider now completes only after selection has actually been applied.
+                // Reconcile here too, so a missed/unsubscribed UI notification cannot strand the spinner.
+                _loadingEncounterId = null;
+                SyncSelection();
                 return;
             case HistorySelectResult.Failed:
                 // 開けなかったら選択を動かさない。読めないものを「表示中」にしない。

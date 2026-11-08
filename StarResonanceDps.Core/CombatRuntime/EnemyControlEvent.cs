@@ -1,9 +1,9 @@
-using ProtoBuf;
+﻿using ProtoBuf;
 using Zproto;
 
 namespace StarResonanceDps.Core.CombatRuntime;
 
-public enum EnemyControlKind { Silence = 1, SilenceRemoved = 2, CastEnded = 3 }
+public enum EnemyControlKind { Silence = 1, SilenceRemoved = 2, CastEnded = 3, SkillStarted = 4 }
 
 [ProtoContract]
 public sealed class EnemyControlEvent
@@ -25,6 +25,8 @@ public static class EnemyControlRecorder
             Add(encounter, new() { Timestamp = utc, EntityUuid = uuid, Kind = EnemyControlKind.Silence });
         if (silenceChanged && previousSilence == true && currentSilence == false)
             Add(encounter, new() { Timestamp = utc, EntityUuid = uuid, Kind = EnemyControlKind.SilenceRemoved });
+        if (skillChanged && currentSkill > 0 && currentSkill != previousSkill)
+            Add(encounter, new() { Timestamp = utc, EntityUuid = uuid, Kind = EnemyControlKind.SkillStarted, SkillId = currentSkill });
         // A cleared skill ID proves only that the cast ended, not why it ended.
         if (skillChanged && previousSkill > 0 && currentSkill == 0)
             Add(encounter, new() { Timestamp = utc, EntityUuid = uuid, Kind = EnemyControlKind.CastEnded, SkillId = previousSkill });

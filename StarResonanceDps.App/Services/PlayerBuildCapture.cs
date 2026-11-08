@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
@@ -12,25 +12,28 @@ namespace StarResonanceDps.App.Services;
 
 public static class PlayerBuildCapture
 {
-    public static Task<SavedPlayerBuild> CaptureAsync(long characterId)
+    public static Task<SavedPlayerBuild> CaptureAsync(long characterId, bool allowObserved = false)
     {
         var completion = new TaskCompletionSource<SavedPlayerBuild>(TaskCreationOptions.RunContinuationsAsynchronously);
         MessageManager.RunOnPacketThread(() =>
         {
-            try { completion.SetResult(Capture(characterId)); }
+            try { completion.SetResult(CaptureObserved(characterId, null, allowObserved)); }
             catch (Exception ex) { completion.SetException(ex); }
         });
         return completion.Task;
     }
 
-    internal static SavedPlayerBuild Capture(long characterId, Encounter? specifiedEncounter = null)
+    internal static SavedPlayerBuild Capture(long characterId, Encounter? specifiedEncounter = null) => CaptureObserved(characterId, specifiedEncounter, false);
+
+    private static SavedPlayerBuild CaptureObserved(long characterId, Encounter? specifiedEncounter, bool allowObserved)
     {
-        var source = MeterSnapshotProvider.GetBuildPlayer(characterId, specifiedEncounter)
+        var source = MeterSnapshotProvider.GetBuildPlayer(characterId, specifiedEncounter ?? (allowObserved && AppState.OpenedHistoricalEncounter is null ? EncounterManager.Current : null))
             ?? throw new InvalidOperationException("表示中の集計にプレイヤー情報がありません。");
         var (encounter, player, entity) = source;
         // Only players with actual combat records can be linked, never nearby roster entries alone.
-        if (player.IsNpc || (entity.TotalDamage == 0 && entity.TotalHealing == 0 && !entity.TakenStats.HasSkillSnapshots()
-            && !entity.IsNamedInCombatEventLog))
+        var hasCombat = !(entity.TotalDamage == 0 && entity.TotalHealing == 0 && !entity.TakenStats.HasSkillSnapshots()
+            && !entity.IsNamedInCombatEventLog);
+        if (player.IsNpc || (!allowObserved && !hasCombat))
             throw new InvalidOperationException("このプレイヤーには集計の戦闘記録がありません。");
         var tree = PlayerTalentTreeWidgetViewModel.ResolveTree(player);
         var skillLevels = entity.GetAttrKV("AttrSkillLevelIdList") switch
@@ -107,7 +110,7 @@ public static class PlayerBuildCapture
             CharacterId = characterId, PlayerName = player.Name, Server = player.GameServer.ToString()!,
             CapturedUtc = DateTime.UtcNow, Fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(raw))),
             Details = details.ToString(), SourceData = raw,
-            Encounters = [new SavedBuildEncounter { EncounterId = encounter.EncounterId,
+            Encounters = !hasCombat ? [] : [new SavedBuildEncounter { EncounterId = encounter.EncounterId,
                 StartTime = encounter.StartTime, SceneName = encounter.SceneName ?? "", Timeline = timeline, CapturedUtc = DateTime.UtcNow }]
         };
     }

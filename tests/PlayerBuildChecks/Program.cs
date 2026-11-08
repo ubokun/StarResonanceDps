@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -105,8 +105,10 @@ internal static class Program
   Check((int)recorded.GetType().GetProperty("SeasonTalentBuffId")!.GetValue(recorded)! == 0, "history never inherits live mindscape cache");
   // Isolated executable data directory, not the running user's application directory.
   var uiStore = new SavedPlayerBuildStore(); uiStore.Save(Make(90001));
-  var app = new Application(); DemoResources.Load(app);
+  var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; DemoResources.Load(app);
   ExtensionChecks.Run(Check);
+  NewFeatureChecks.Run(Check);
+  WidgetIntegrationChecks.Run(Check);
   var window = new UserBuildWindow();
   var userList = (ListBox)window.FindName("Users"); userList.SelectedItem = userList.Items.Cast<object>().First(x => x.GetType().GetProperty("Label")!.GetValue(x)!.ToString()!.Contains("検証用ユーザー"));
   Check(((ListBox)window.FindName("Builds")).Items.Count > 0, "user to builds navigation");

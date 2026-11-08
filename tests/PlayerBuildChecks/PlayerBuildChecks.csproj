@@ -1,4 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0-windows10.0.19041.0</TargetFramework><UseWPF>true</UseWPF><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
 <ItemGroup><ProjectReference Include="../../StarResonanceDps.App/StarResonanceDps.App.csproj"/></ItemGroup>
+<ItemGroup><Resource Include="../../StarResonanceDps.App/Assets/Images/ApplicationIcon.ico" Link="Assets/Images/ApplicationIcon.ico"/></ItemGroup>
 </Project>

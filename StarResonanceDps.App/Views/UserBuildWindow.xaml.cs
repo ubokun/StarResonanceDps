@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using StarResonanceDps.App.Models;
@@ -20,25 +20,56 @@ public partial class UserBuildWindow : Window
         InitializeComponent();
         ExtensionWindowLayout.Attach(this);
         Reload();
+        Loaded += (_,_) => StartWidget();
+        Closed += (_,_) => { ++_previewRequest; StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.RosterChanged -= RosterChanged; };
+    }
+    internal void StartWidget() { StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.RosterChanged += RosterChanged; RefreshUsers(); }
+    internal void StopWidget() { ++_previewRequest; StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.RosterChanged -= RosterChanged; }
+    private void RosterChanged(object? sender, StarResonanceDps.Core.Services.PlayerRosterChangedEventArgs e) => Dispatcher.BeginInvoke(RefreshUsers);
+    private void RefreshUsers()
+    {
+        var previous=Users.SelectedItem as UserRow;
+        var rows=_records.GroupBy(x=>(x.Server,x.CharacterId)).Select(g=>new UserRow(g.Key.Server,g.Key.CharacterId,g.First().UserLabel))
+            .Concat(StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.Current.Entries.Where(x=>!x.IsNpc)
+                .Select(x=>new UserRow(x.GameServer.ToString()!,x.CharacterId,x.Name+"（観測中）")))
+            .DistinctBy(x=>(x.Server,x.CharacterId)).ToList();
+        if(Users.Items.Cast<UserRow>().SequenceEqual(rows))return;
+        _refreshing=true; Users.ItemsSource=rows;
+        Users.SelectedItem=rows.FirstOrDefault(x=>x.Server==previous?.Server && x.CharacterId==previous.CharacterId);
+        _refreshing=false;
+        if(Users.SelectedItem is null && rows.Count>0) Users.SelectedIndex=0;
     }
 
-    public static async Task OpenForPlayerAsync(long characterId)
+    public static Task OpenForPlayerAsync(long characterId)
     {
+        ExtensionWidgetHost.Open(Models.Widgets.WidgetKind.UserBuildLibrary, characterId);
+        return Task.CompletedTask;
+    }
+
+    internal async Task PreviewPlayerAsync(long characterId)
+    {
+        var request=++_previewRequest;
         try
         {
-            var preview = await PlayerBuildCapture.CaptureAsync(characterId).WaitAsync(TimeSpan.FromSeconds(10));
-            var window = new UserBuildWindow { Owner = Application.Current.MainWindow };
-            window._preview = preview;
-            window.ShowBuild(preview);
-            window.SaveButton.IsEnabled = true;
-            window.Status.Text = "集計から取得したビルドのプレビューです。「このビルドを保存」で記録します。";
-            window.Show();
+            var preview=await PlayerBuildCapture.CaptureAsync(characterId, allowObserved: true).WaitAsync(TimeSpan.FromSeconds(10));
+            if(request!=_previewRequest)return;
+            _refreshing=true;
+            var users=Users.Items.Cast<UserRow>().ToList();
+            var user=users.FirstOrDefault(x=>x.CharacterId==characterId && x.Server==preview.Server);
+            if(user is null)
+            {
+                user=new UserRow(preview.Server,characterId,preview.PlayerName+"（観測中）");
+                users.Add(user); Users.ItemsSource=users;
+            }
+            Users.SelectedItem=user;
+            Builds.ItemsSource=_records.Where(x=>x.CharacterId==characterId && x.Server==preview.Server).ToList();
+            _refreshing=false;
+            _preview=preview; ShowBuild(preview); SaveButton.IsEnabled=true;
+            Status.Text="観測したビルドです。「このビルドを保存」で記録します。未受信の構成は未取得と表示します。";
         }
-        catch (Exception ex)
-        {
-            MessageBox.Show(Application.Current.MainWindow, ex.Message, "ビルドを確認できませんでした", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+        catch(Exception ex) { _refreshing=false; if(request==_previewRequest) Status.Text=ex.Message; }
     }
+    private int _previewRequest;
 
     private void Reload(Guid? selectedId = null)
     {
@@ -47,7 +78,10 @@ public partial class UserBuildWindow : Window
             _records = _store.Load(out var failed);
             _refreshing = true;
             Users.ItemsSource = _records.GroupBy(x => (x.Server, x.CharacterId))
-                .Select(g => new UserRow(g.Key.Server, g.Key.CharacterId, g.First().UserLabel)).ToList();
+                .Select(g => new UserRow(g.Key.Server, g.Key.CharacterId, g.First().UserLabel))
+                .Concat(StarResonanceDps.Core.Services.PlayerRosterPresentationStore.Instance.Current.Entries
+                    .Where(x=>!x.IsNpc).Select(x=>new UserRow(x.GameServer.ToString()!,x.CharacterId,x.Name+"（観測中）")))
+                .DistinctBy(x=>(x.Server,x.CharacterId)).ToList();
             Builds.ItemsSource = null;
             Encounters.ItemsSource = null;
             Details.Clear();
@@ -60,7 +94,7 @@ public partial class UserBuildWindow : Window
                 Builds.SelectedItem = selected;
             }
             Status.Text = failed > 0 ? $"{failed}件を読み込めませんでした。元のファイルは保持しています。"
-                : _records.Count == 0 ? "集計メーターの名前を右クリックし、「ビルドを確認・保存」から追加できます。" : "ユーザー → ビルド → 集計の順に選択できます。";
+                : _records.Count == 0 ? "観測中のユーザーを選択してビルドを確認・保存できます。未表示の場合は再読込してください。" : "ユーザー → ビルド → 集計の順に選択できます。";
             if (SavedPlayerBuildAutoLink.LastIssue is { } issue) Status.Text += " " + issue;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -68,19 +102,26 @@ public partial class UserBuildWindow : Window
         finally { _refreshing = false; }
     }
 
-    private void User_Selected(object sender, SelectionChangedEventArgs e)
+    private async void User_Selected(object sender, SelectionChangedEventArgs e)
     {
         if (_refreshing || Users.SelectedItem is not UserRow user) return;
+        ++_previewRequest;
         Builds.ItemsSource = _records.Where(x => x.Server == user.Server && x.CharacterId == user.CharacterId).ToList();
         Details.Clear(); Timeline.Clear(); Encounters.ItemsSource = null;
         _preview = null; SaveButton.IsEnabled = false;
         if (Builds.Items.Count > 0) Builds.SelectedIndex = 0;
+        else await PreviewPlayerAsync(user.CharacterId);
+    }
+
+    private async void Preview_Click(object sender, RoutedEventArgs e)
+    {
+        if (Users.SelectedItem is UserRow user) await PreviewPlayerAsync(user.CharacterId);
     }
 
     private void Build_Selected(object sender, SelectionChangedEventArgs e)
     {
         if (_refreshing || Builds.SelectedItem is not SavedPlayerBuild build) return;
-        _preview = null; SaveButton.IsEnabled = false;
+        ++_previewRequest; _preview = null; SaveButton.IsEnabled = false;
         ShowBuild(build);
     }
 
@@ -114,8 +155,10 @@ public partial class UserBuildWindow : Window
 
     private void Reload_Click(object sender, RoutedEventArgs e)
     {
+        ++_previewRequest;
         _preview = null; SaveButton.IsEnabled = false;
         Reload();
+        RefreshUsers();
     }
 
     private async void OpenEncounter_Click(object sender, RoutedEventArgs e)

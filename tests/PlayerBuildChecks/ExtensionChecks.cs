@@ -150,7 +150,7 @@ internal static class ExtensionChecks
   choices.SelectedItems.Clear(); choices.SelectedItems.Add(choices.Items[0]); filter.IsChecked = true;
   set.Invoke(window, [snapshot]);
   check(list.Items.Count == 1, "action selection filters event list and timeline");
-  var graphBefore = plot.Children.OfType<System.Windows.Shapes.Polyline>().Single().Points.ToArray();
+  var graphBefore = plot.Children.OfType<System.Windows.Shapes.Polyline>().Count();
   ((TextBox)window.FindName("ActionSearch")).Text = "存在しない技";
   set.Invoke(window, [snapshot]);
   check(choices.Items.Count == 0 && list.Items.Count == 1, "candidate search retains selected action filter");
@@ -158,7 +158,7 @@ internal static class ExtensionChecks
   check(choices.SelectedItems.Count == 1, "selection restored after search");
   choices.SelectedItems.Clear(); set.Invoke(window, [snapshot]);
   check(list.Items.Count == 0, "enabled filter with no selected actions hides all events");
-  check(graphBefore.SequenceEqual(plot.Children.OfType<System.Windows.Shapes.Polyline>().Single().Points), "action filter preserves DPS graph");
+  check(graphBefore == 0 && !plot.Children.OfType<System.Windows.Shapes.Polyline>().Any(), "timeline excludes independent DPS graph");
   filter.IsChecked = false; set.Invoke(window, [snapshot]);
   check(list.Items.Count == 4, "disabling action filter restores events");
   check(CombatTimelineReader.IsFrequentAction(3,30) && !CombatTimelineReader.IsFrequentAction(2,30), "ten second frequency boundary includes equality");

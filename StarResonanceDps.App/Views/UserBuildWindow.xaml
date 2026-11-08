@@ -20,6 +20,7 @@
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
    <Button x:Name="SaveButton" Content="このビルドを保存" Click="Save_Click" IsEnabled="False"/>
+   <Button Content="観測中のビルドを確認" Click="Preview_Click"/>
    <Button Content="保存一覧を再読込" Click="Reload_Click"/>
   </StackPanel>
   <Grid Grid.Row="1">

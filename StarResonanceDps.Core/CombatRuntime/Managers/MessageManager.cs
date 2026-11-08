@@ -2652,6 +2652,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     case EAttrType.AttrHateList:
                         if (isNoValue)
                         {
+                            HateObservationRecorder.Record(EncounterManager.Current, uuid, [], arrivalUtc);
                             EncounterManager.Current.SetAttrKV(uuid, attrIdName, new List<HateInfo>());
                             break;
                         }
@@ -2666,6 +2667,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                             reader.ReadMessage(hate);
                             hateList.Add(hate);
                         }
+                        HateObservationRecorder.Record(EncounterManager.Current, uuid, hateList, arrivalUtc);
                         EncounterManager.Current.SetAttrKV(uuid, "AttrHateList", hateList);
                         break;
                     case EAttrType.AttrSlot:
@@ -2778,6 +2780,9 @@ namespace StarResonanceDps.Core.CombatRuntime
                         break;
                 }
             }
+            EnemyCatalogStore.Current.Observe(EncounterManager.Current, uuid, arrivalUtc);
+            if (EncounterManager.Current.Entities.TryGetValue(uuid,out var observedEnemy))
+                DefeatedEnemyRecorder.Observe(EncounterManager.Current,observedEnemy,arrivalUtc);
         }
 
         /// <param name="isFullList">

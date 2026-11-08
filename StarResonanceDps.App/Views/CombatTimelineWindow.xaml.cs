@@ -19,7 +19,7 @@ public partial class CombatTimelineWindow : Window
     private bool _reading;
     private bool _updating;
     private CombatTimelineSnapshot? _snapshot;
-    private sealed record HistoryRow(ulong Id, string Label);
+    private sealed record HistoryRow(ulong Id, string Label) { public override string ToString() => Label; }
 
     public CombatTimelineWindow()
     {
@@ -37,7 +37,7 @@ public partial class CombatTimelineWindow : Window
         Imagines.IsChecked = settings.ShowImagines; Factors.IsChecked = settings.ShowFactors; Enemies.IsChecked = settings.ShowEnemies;
         if (CombatExtensionSettings.LoadIssue is { } issue) Status.Text = issue;
         _timer.Tick += async (_, _) => await RefreshAsync();
-        Loaded += async (_, _) => { LoadHistory(); _timer.Start(); await RefreshAsync(); };
+        Loaded += (_, _) => StartWidget();
         Closed += (_, _) => _timer.Stop();
     }
 
@@ -46,7 +46,7 @@ public partial class CombatTimelineWindow : Window
         if (!int.TryParse(IdleSeconds.Text, out var idle) || !int.TryParse(WindowSeconds.Text, out var width)
             || !int.TryParse(IntervalSeconds.Text, out var interval))
             throw new ArgumentException("秒数は整数で入力してください。");
-        var options = new CombatExtensionOptions { FilterActions = FilterActions.IsChecked == true, SelectedActions = _forcedOn.Order().ToArray(), HiddenActions = _forcedOff.Order().ToArray(), SyncQuestClock = QuestClock.IsChecked == true,
+        var options = new CombatExtensionOptions { UseEnemyCatalog = CombatExtensionSettings.Current.UseEnemyCatalog, FilterActions = FilterActions.IsChecked == true, SelectedActions = _forcedOn.Order().ToArray(), HiddenActions = _forcedOff.Order().ToArray(), SyncQuestClock = QuestClock.IsChecked == true,
             ResetOnQuestTransition = QuestReset.IsChecked == true, IdleResetSeconds = idle, VisibleSeconds = width,
             IntervalResetSeconds = interval,
             AutoLinkSavedPlayers = AutoLink.IsChecked == true,
@@ -55,6 +55,8 @@ public partial class CombatTimelineWindow : Window
         CombatExtensionSettings.Validate(options); return options;
     }
 
+    internal async void StartWidget() { LoadHistory(); _timer.Start(); await RefreshAsync(); }
+    internal void StopWidget() => _timer.Stop();
     private async Task RefreshAsync()
     {
         if (_reading) return;
@@ -88,6 +90,8 @@ public partial class CombatTimelineWindow : Window
         Draw();
     }
 
+    private void PartyDps_Click(object sender, RoutedEventArgs e) => ExtensionWidgetHost.Open(Models.Widgets.WidgetKind.PartyDps);
+
     private void Draw()
     {
         if (_snapshot is null || _updating) return;
@@ -98,7 +102,7 @@ public partial class CombatTimelineWindow : Window
             && (selected.Count == 0 || selected.Contains(x.EntityUuid))
             && (FilterActions.IsChecked != true || _selectedActions.Contains(x.FilterKey))).ToArray();
         Plot.Children.Clear();
-        const double left = 170, width = 920, top = 32, height = 145;
+        const double left = 170, width = 920, top = 12, height = 0;
         double X(double seconds) => left + (seconds - start) / options.VisibleSeconds * width;
         void Label(string value, double x, double y, Brush? color = null)
         {
@@ -106,18 +110,12 @@ public partial class CombatTimelineWindow : Window
                 TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = value };
             Canvas.SetLeft(text, x); Canvas.SetTop(text, y); Plot.Children.Add(text);
         }
-        var visiblePoints = _snapshot.Points.Where(p => p.EndSeconds >= start && p.EndSeconds <= end).ToArray();
-        var max = Math.Max(1, visiblePoints.Select(p => p.ValuePerSecond).DefaultIfEmpty(0).Max());
-        Label("PT / 全員 DPS", 8, top); Label($"最大 {max:N0}", 8, top + 22);
         for (var index = 0; index <= 4; index++)
         {
             var seconds = start + index * options.VisibleSeconds / 4d;
             var line = new Line { X1 = X(seconds), X2 = X(seconds), Y1 = top, Y2 = top + height, Stroke = (Brush)FindResource("Brush.BorderSoft") };
             Plot.Children.Add(line); Label(TimeSpan.FromSeconds(seconds).ToString(@"hh\:mm\:ss"), X(seconds) - 20, 8);
         }
-        var graph = new Polyline { Stroke = (Brush)FindResource("Brush.Success"), StrokeThickness = 2 };
-        foreach (var point in visiblePoints) graph.Points.Add(new Point(X(point.EndSeconds), top + height - point.ValuePerSecond / max * height));
-        Plot.Children.Add(graph);
         var tracks = events.GroupBy(x => (x.Track, x.EntityUuid, x.Actor))
             .Select(g => (Track: g.Key.Track, Uuid: g.Key.EntityUuid, Actor: g.Key.Actor, Events: g.ToArray())).ToList();
         var enemyActors = _snapshot.Actors.Where(x => x.IsEnemy && (selected.Count == 0 || selected.Contains(x.Uuid))).ToArray();
@@ -163,6 +161,7 @@ public partial class CombatTimelineWindow : Window
         foreach (var choice in choices.Where(x => _selectedActions.Contains(x.Key))) ActionChoices.SelectedItems.Add(choice);
         _updating = updating;
     }
+    private void EnemyCatalog_Click(object sender, RoutedEventArgs e) => new EnemyCatalogWindow { Owner = this }.Show();
     private void ToggleActionFilter_Click(object sender, RoutedEventArgs e)
         => ActionFilterPanel.Visibility = ActionFilterPanel.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
     private void ActionSearchChanged(object sender, TextChangedEventArgs e) { if (ActionChoices is not null) UpdateActionChoices(); }

@@ -181,6 +181,8 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="討伐済み（この集計）" Style="{StaticResource Text.WidgetWindow}" FontSize="11" Margin="10,8,0,4" Visibility="{Binding IsFirstDefeated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         <Button Height="44"
                                 Margin="5,0,0,0"
                                 Padding="0"
@@ -207,6 +209,8 @@
                                     <MenuItem Header="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Widget_DebuffList]}"
                                               Command="{Binding RequestEntityDebuffListCommand}"
                                               CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
+                                    <MenuItem Header="ヘイトPSを開く" Tag="HateMeter" Click="OpenHateMeter_Click"
+                                              CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
                                 </ContextMenu>
                             </Button.ContextMenu>
                             <Button.Style>
@@ -774,6 +778,7 @@
                                 </Canvas>
                             </Grid>
                         </Button>
+                      </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

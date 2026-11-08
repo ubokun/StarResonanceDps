@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -159,10 +159,18 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
         // 項目の引数は Tag を読み、コマンドは押した行の部品に頼らない(開いている間に行が替わっても開いた時の相手を開く)。
         menu.DataContext = widget;
         menu.Tag = entry.Target;
+        foreach (var item in menu.Items.OfType<MenuItem>().Where(x=>Equals(x.Tag,"HateMeter")))
+            item.Visibility=entry.EntityType==Zproto.EEntityType.EntMonster ? Visibility.Visible : Visibility.Collapsed;
         ApplyEntitySelectionMenuStyles(menu);
         menu.PlacementTarget = button;
         widget.SetEntityMenuTarget(entry);
         menu.IsOpen = true;
+    }
+
+    private void OpenHateMeter_Click(object sender, RoutedEventArgs e)
+    {
+        if(sender is MenuItem { CommandParameter: EntityTargetInfo target } && target.EntityType==Zproto.EEntityType.EntMonster)
+            StarResonanceDps.App.Services.ExtensionWidgetHost.Open(WidgetKind.HatePs, target.EntityUuid);
     }
 
     private void EntitySelectionContextMenu_Closed(object sender, RoutedEventArgs e)
@@ -217,7 +225,7 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
             menu.Style = contextMenuStyle;
         }
 
-        var menuItems = menu.Items.OfType<MenuItem>().ToArray();
+        var menuItems = menu.Items.OfType<MenuItem>().Where(x=>x.Visibility==Visibility.Visible).ToArray();
         for (var index = 0; index < menuItems.Length; index++)
         {
             var styleKey = index switch

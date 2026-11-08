@@ -18,6 +18,7 @@ namespace StarResonanceDps.App.Models.Widgets;
 /// </summary>
 public sealed partial class EntityListEntry : ObservableObject
 {
+    [ObservableProperty] private bool _isFirstDefeated;
     private const string UnknownScoreText = "??";
 
     private readonly ObservableCollection<EntityHateSlot> _hateSlots = [];
@@ -230,6 +231,7 @@ public sealed partial class EntityListEntry : ObservableObject
             ClassBrush = CreateBrush(classColor);
         }
 
+        if(entity.EntityType==EEntityType.EntMonster && entity.CurrentHp==0) DisplayName="討伐済み · "+DisplayName;
         UpdateHateSlots(entity, settings, hatePlayers);
     }
 

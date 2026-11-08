@@ -33,6 +33,8 @@
    <TextBlock Text="同期は次のクエスト開始から適用。同期中は1クエストを1集計とし、時間リセットと自動フェーズ分割を停止します。同期なしの場合は既存の「進行で自動リセット」設定にも従います。" Opacity="0.7" TextWrapping="Wrap" Margin="0,6,0,6"/>
    </StackPanel></ContentControl>
    <WrapPanel>
+    <Button Content="PT DPS推移" Click="PartyDps_Click"/>
+    <Button Content="遭遇した敵" Click="EnemyCatalog_Click"/>
     <Button Content="技フィルター" Click="ToggleActionFilter_Click"/>
     <Button Content="計測設定" Click="ToggleMeasurementSettings_Click"/>
     <Button Content="履歴を更新" Click="RefreshHistory_Click"/>

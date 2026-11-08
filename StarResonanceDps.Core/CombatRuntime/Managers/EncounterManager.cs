@@ -1639,7 +1639,8 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         public bool HasStatsBeenRecorded()
         {
-            return TotalDamage > 0 || TotalHealing > 0 || HasCombatEventLogRecords;
+            return TotalDamage > 0 || TotalHealing > 0 || HasCombatEventLogRecords
+                || ExData.DefeatedEnemies.Count > 0 || ExData.HateObservations.Any(x=>x.Change>0);
         }
 
         /// <summary>
@@ -3108,6 +3109,8 @@ namespace StarResonanceDps.Core.CombatRuntime
         [ProtoMember(24)] public List<long> PartyCharacterIds { get; set; } = [];
         [ProtoMember(25)] public int IntervalResetSeconds { get; set; }
         [ProtoMember(26)] public bool QuestStartFromServer { get; set; }
+        [ProtoMember(29)] public List<DefeatedEnemyRecord> DefeatedEnemies { get; set; } = [];
+        [ProtoMember(28)] public List<HateObservation> HateObservations { get; set; } = [];
         [ProtoMember(27)] public List<EnemyControlEvent> EnemyControlEvents { get; set; } = [];
         [ProtoMember(2)]
         public int DungeonDifficulty { get; set; } = 0;

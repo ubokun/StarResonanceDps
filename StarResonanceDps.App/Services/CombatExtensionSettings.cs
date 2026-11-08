@@ -6,6 +6,7 @@ namespace StarResonanceDps.App.Services;
 
 public sealed record CombatExtensionOptions
 {
+    public bool UseEnemyCatalog { get; init; }
     public bool FilterActions { get; init; } = true;
     public string[] HiddenActions { get; init; } = [];
     public string[] SelectedActions { get; init; } = [];
@@ -42,6 +43,12 @@ public static class CombatExtensionSettings
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentOutOfRangeException)
         { LoadIssue = "拡張設定を読み込めませんでした。既定値で動作します：" + ex.Message; }
+        DB.EncounterSaved += encounter =>
+        {
+            foreach (var enemy in encounter.Entities.Values.Where(x => x.EntityType == Zproto.EEntityType.EntMonster))
+                EnemyCatalogStore.Current.Observe(encounter, enemy.UUID, encounter.EndTime == DateTime.MinValue ? DateTime.UtcNow : encounter.EndTime.ToUniversalTime(), saved: true);
+            _ = Task.Run(EnemyCatalogStore.Current.Save);
+        };
         Apply(Current);
         _resetTimer ??= new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _resetTimer.Tick -= ResetTimer_Tick;
@@ -78,8 +85,10 @@ public static class CombatExtensionSettings
         CustomCombatFeatures.IntervalResetSeconds = options.IntervalResetSeconds;
     });
 
+    private static int _catalogTicks;
     private static void ResetTimer_Tick(object? sender, EventArgs e)
     {
+        if (++_catalogTicks % 10 == 0) _ = Task.Run(EnemyCatalogStore.Current.Save);
         if (Current.IdleResetSeconds > 0 || Current.IntervalResetSeconds > 0)
             MessageManager.RunOnPacketThread(() => CustomCombatFeatures.CheckReset(DateTime.UtcNow));
     }

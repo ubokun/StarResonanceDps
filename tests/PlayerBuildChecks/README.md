@@ -1,4 +1,4 @@
-# Player build checks
+﻿# Player build checks
 
 Run from the repository root with a .NET 10 SDK on Windows:
 
@@ -26,3 +26,12 @@ dotnet run --project tests/PlayerBuildChecks/PlayerBuildChecks.csproj -c Release
 `--check-history-db PATH` opens a database read-only and validates compatibility of
 up to ten most recent compressed encounter metadata records. These two helper modes
 return before running the synthetic tests.
+
+NewFeatureChecks covers hate baseline/delta recording, ambiguous skill attribution,
+conservation of player/skill proportions, enemy catalog persistence, defeated enemy
+retention/despawn/revival, selected enemy targeting, metadata/database round trips,
+and history loading indicator recovery when selection notifications are absent or
+an application callback fails. New windows are rendered with synthetic data. The
+checks keep the test Application alive explicitly while pumping asynchronous UI work.
+
+WidgetIntegrationChecks: 4種類の共通ウィジェット枠・配置・停止時の更新解除、待機時間に依存しない頻度判定、戦闘記録なしビルドの誤紐づけ防止を検証。
