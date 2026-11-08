@@ -36,6 +36,7 @@ internal static class Program
    demoApp.Run(dashboard); return;
   }
   if (args is ["--inspect-history-db", var inspectedFile]) { HistoryReadback.Run(inspectedFile); return; }
+  if (args is ["--analyze-hate-db", var analyzedFile]) { HistoryReadback.Run(analyzedFile, true); return; }
   if (args is ["--check-history-db", var historyFile])
   {
    SQLitePCL.Batteries_V2.Init();

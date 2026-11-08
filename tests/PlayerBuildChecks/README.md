@@ -37,3 +37,5 @@ checks keep the test Application alive explicitly while pumping asynchronous UI 
 WidgetIntegrationChecks: 4種類の共通ウィジェット枠・配置・停止時の更新解除、待機時間に依存しない頻度判定、戦闘記録なしビルドの誤紐づけ防止を検証。
 
 `PlayerBuildChecks.exe --inspect-history-db <CombatHistory.db>` は読み取り専用接続で直近6件のヘイト記録数・表示行数・技別合計の一致・受信情報の有無を確認する。起動中アプリのDBも読める。
+
+`PlayerBuildChecks.exe --analyze-hate-db <CombatHistory.db>` は帰属不明の理由ごとの件数と増加量、参加者ごとの割合、技開始からの時間差を読み取り専用で分析する。割合の分母は正のヘイト増加量。
