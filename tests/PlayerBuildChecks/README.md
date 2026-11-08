@@ -35,3 +35,5 @@ an application callback fails. New windows are rendered with synthetic data. The
 checks keep the test Application alive explicitly while pumping asynchronous UI work.
 
 WidgetIntegrationChecks: 4種類の共通ウィジェット枠・配置・停止時の更新解除、待機時間に依存しない頻度判定、戦闘記録なしビルドの誤紐づけ防止を検証。
+
+`PlayerBuildChecks.exe --inspect-history-db <CombatHistory.db>` は読み取り専用接続で直近6件のヘイト記録数・表示行数・技別合計の一致・受信情報の有無を確認する。起動中アプリのDBも読める。

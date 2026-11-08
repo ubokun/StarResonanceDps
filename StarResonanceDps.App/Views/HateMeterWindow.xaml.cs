@@ -13,6 +13,7 @@ public partial class HateMeterWindow : Window
     public HateMeterWindow(long enemyUuid = 0)
     {
         _targetUuid=enemyUuid; InitializeComponent(); ExtensionWindowLayout.Attach(this);
+        Status.Text="ヘイトの記録を確認しています…";
         _timer.Tick += async (_,_)=> await RefreshAsync();
         Loaded += (_,_)=>StartWidget();
         Closed += (_,_)=>_timer.Stop();
@@ -35,11 +36,16 @@ public partial class HateMeterWindow : Window
         _updating=true;
         var enemies = new[]{new TimelineActor(0,"すべての敵",true)}.Concat(snapshot.Enemies).ToList();
         if(selectedEnemy!=0 && !enemies.Any(x=>x.Uuid==selectedEnemy)) enemies.Add(new(selectedEnemy,$"指定した敵（この集計には未記録） [{selectedEnemy}]",true));
-        if (!Enemy.Items.Cast<TimelineActor>().SequenceEqual(enemies)) { Enemy.ItemsSource=enemies; Enemy.SelectedItem=enemies.FirstOrDefault(x=>x.Uuid==selectedEnemy) ?? enemies[0]; }
+        if (!Enemy.Items.Cast<TimelineActor>().SequenceEqual(enemies)) Enemy.ItemsSource=enemies;
+        Enemy.SelectedItem=enemies.FirstOrDefault(x=>x.Uuid==selectedEnemy) ?? enemies[0];
         Players.ItemsSource=snapshot.Players;
         Players.SelectedItem=snapshot.Players.FirstOrDefault(x=>x.Bar.Uuid==selectedPlayer) ?? snapshot.Players.FirstOrDefault();
         Caption.Text=snapshot.Caption+$" · {snapshot.Duration:0.0}秒";
-        Status.Text=$"初回観測 {snapshot.Baselines}件（増加量へ加算なし）・減少分 {snapshot.Reductions:N0}（除外）。技が複数重なる／通知間隔が2秒を超える区間は帰属不明。単一候補でも継続効果などが混ざるため確定値ではありません。" + (snapshot.Players.Count==0 ? " ヘイト増加記録なし。旧履歴にはこの記録がありません。" : "");
+        Status.Text=$"受信記録 {snapshot.Observations:N0}件・初回値 {snapshot.Baselines}件（増加量へ加算なし）・減少分 {snapshot.Reductions:N0}（除外）。技別割合は推定です。";
+        if(snapshot.Observations==0)
+            Status.Text+=snapshot.IsHistorical ? " この履歴には対象のヘイト記録がありません。旧版の履歴からは復元できません。" : " 対象のヘイト通知を待っています。PTのみをオフにすると全プレイヤーを確認できます。";
+        else if(!snapshot.Players.Any(x=>x.Bar.Amount>0))
+            Status.Text+=" 初回値は受信済みです。次のヘイト増加を待っています。";
         _updating=false; ShowSkills();
     }
     private void ShowSkills() { var player=Players.SelectedItem as HatePlayerMeter; Skills.ItemsSource=player?.Skills; SkillCaption.Text=player is null ? "技別割合（推定）" : player.Bar.Name+"：技別割合（推定）"; }

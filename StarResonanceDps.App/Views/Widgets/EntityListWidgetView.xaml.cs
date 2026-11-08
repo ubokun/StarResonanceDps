@@ -119,13 +119,16 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
         NotifyVerticalScrollMetricsChanged();
     }
 
-    /// <summary>行の左クリックはエンティティ情報を開く(右クリックのメニューの1行目と同じ)。</summary>
+    /// <summary>敵の左クリックは、その個体のヘイトPSを開く。ほかの実体は従来の情報画面を開く。</summary>
     private void EntityListItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: EntityListEntry entry }
             && DataContext is WidgetListItemViewModel viewModel)
         {
-            viewModel.RequestEntityInfoCommand.Execute(entry.Target);
+            if (entry.EntityType == Zproto.EEntityType.EntMonster)
+                Services.ExtensionWidgetHost.Open(WidgetKind.HatePs, entry.EntityUuid);
+            else
+                viewModel.RequestEntityInfoCommand.Execute(entry.Target);
         }
     }
 

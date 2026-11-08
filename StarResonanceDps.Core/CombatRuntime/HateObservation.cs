@@ -17,7 +17,11 @@ public sealed class HateObservation
 
 public static class HateObservationRecorder
 {
-    private sealed class State { public Dictionary<long, (DateTime Time, Dictionary<long, uint> Values)> Enemies = []; }
+    private sealed class State
+    {
+        public Dictionary<long, (DateTime Time, Dictionary<long, uint> Values)> Enemies = [];
+        public bool LoggedBaseline, LoggedIncrease;
+    }
     private static readonly ConditionalWeakTable<Encounter, State> States = new();
 
     // Packet thread only. A new encounter, a missing entry, or a cleared list starts a new baseline.
@@ -38,6 +42,17 @@ public static class HateObservationRecorder
             lock (encounter.ExData.HateObservations)
                 encounter.ExData.HateObservations.Add(new() { EnemyUuid = enemyUuid, PlayerUuid = item.Key,
                     Timestamp = utc, FromUtc = hasPrevious ? previous.Time : utc, Change = change, IsBaseline = baseline });
+            // Log only the first observation and increase per encounter, without player identities or packet payloads.
+            if (baseline && !state.LoggedBaseline)
+            {
+                state.LoggedBaseline = true;
+                Serilog.Log.Information("Hate baseline received (encounter {EncounterId})", encounter.EncounterId);
+            }
+            if (change > 0 && !state.LoggedIncrease)
+            {
+                state.LoggedIncrease = true;
+                Serilog.Log.Information("Hate increase recorded (encounter {EncounterId})", encounter.EncounterId);
+            }
         }
     }
 }

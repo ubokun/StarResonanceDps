@@ -34,6 +34,11 @@ internal static class NewFeatureChecks
         check(encounter.ExData.HateObservations.Where(x=>x.Change>0).Sum(x=>x.Change)==320,"missing hate list and reappearance require fresh baseline");
         HateObservationRecorder.Record(encounter,enemy,Values(99999,99999),utc.AddSeconds(1));
         check(encounter.ExData.HateObservations.Where(x=>x.Change>0).Sum(x=>x.Change)==320,"out of order hate updates do not manufacture gains");
+        var baselineEncounter=new Encounter(); HateObservationRecorder.Record(baselineEncounter,enemy,Values(1000,2000),utc);
+        var baselineMeter=HateMeterReader.Build(baselineEncounter);
+        check(baselineMeter.Players.Count==2 && baselineMeter.Players.All(x=>x.Bar.Amount==0) && baselineMeter.Observations==2,"baseline reception displays zero PS players while waiting for increases");
+        baselineEncounter.ExData.UseQuestClock=true; baselineEncounter.ExData.QuestStartUtc=utc.AddSeconds(1);
+        check(HateMeterReader.Build(baselineEncounter).Players.Count==2 && HateMeterReader.Build(baselineEncounter).Players.All(x=>x.Bar.Amount==0),"precombat baselines remain visible without becoming combat hate gains");
         var newEncounter=new Encounter();HateObservationRecorder.Record(newEncounter,enemy,Values(9999,9999),utc);
         check(newEncounter.ExData.HateObservations.All(x=>x.IsBaseline),"new encounter does not inherit previous hate baseline");
         using(var stream=new MemoryStream()){Serializer.Serialize(stream,encounter.ExData);stream.Position=0;check(Serializer.Deserialize<EncounterExData>(stream).HateObservations.Count==encounter.ExData.HateObservations.Count,"hate observations persist through protobuf");}
@@ -64,6 +69,10 @@ internal static class NewFeatureChecks
         check(encounter.ExData.EnemyControlEvents.Any(x=>x.Kind==EnemyControlKind.SkillStarted),"enemy skill attribute start is recorded without inferring damage");
         var meter=new HateMeterWindow(); typeof(HateMeterWindow).GetMethod("SetSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(meter,[snapshot]);
         check(((ListBox)meter.FindName("Players")).Items.Count==2 && ((ListBox)meter.FindName("Skills")).Items.Count>0,"hate meter selects a player and shows skill proportions");
+        var enemyCombo=(ComboBox)meter.FindName("Enemy");
+        typeof(HateMeterWindow).GetField("_targetUuid",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.SetValue(meter,enemy);
+        typeof(HateMeterWindow).GetMethod("SetSnapshot",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.Invoke(meter,[snapshot]);
+        check((enemyCombo.SelectedItem as TimelineActor)?.Uuid==enemy,"changing enemy target refreshes combo selection even when enemy choices are unchanged");
         ((ListBox)meter.FindName("Players")).SelectedIndex=1;
         Render(meter,"hate-meter-preview.png");meter.Close();
         EnemyCatalogStore.Current.Observe(encounter,enemy,utc);var catalog=new EnemyCatalogWindow();Render(catalog,"enemy-catalog-preview.png");catalog.Close();
@@ -75,6 +84,16 @@ internal static class NewFeatureChecks
         var listVm=new WidgetListItemViewModel {Kind=StarResonanceDps.App.Models.Widgets.WidgetKind.EntityList};
         listVm.ApplyMeterSettingsPreview(StarResonanceDps.App.Config.WidgetConfigDefaults.CreateMeterSettings(StarResonanceDps.App.Models.Widgets.WidgetKind.EntityList));
         listVm.UpdateEntityHistory(deadSnapshot);
+        var previousOpen=ExtensionWidgetHost.OpenRequested;
+        long clickedEnemy=0; StarResonanceDps.App.Models.Widgets.WidgetKind? clickedKind=null;
+        ExtensionWidgetHost.OpenRequested=(kind,target)=>{clickedKind=kind;clickedEnemy=target;};
+        var clickView=new StarResonanceDps.App.Views.Widgets.EntityListWidgetView {DataContext=listVm};
+        var clickedRow=listVm.EntityListEntries.Last();
+        typeof(StarResonanceDps.App.Views.Widgets.EntityListWidgetView).GetMethod("EntityListItem_Click",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!
+            .Invoke(clickView,[new Button {DataContext=clickedRow},new RoutedEventArgs()]);
+        check(clickedKind==StarResonanceDps.App.Models.Widgets.WidgetKind.HatePs && clickedEnemy==enemy,"mob row left click opens the selected enemy hate PS widget");
+        ExtensionWidgetHost.OpenRequested=previousOpen;
+
         check(listVm.EntityListEntries.Last().EntityUuid==enemy && listVm.EntityListEntries.Any(x=>x.IsFirstDefeated),"entity list places defeated history below alive enemies");
         var deadView=new StarResonanceDps.App.Views.Widgets.EntityListWidgetView {DataContext=listVm};
         var deadHost=new Border {Background=new SolidColorBrush(Color.FromRgb(32,32,32)),Padding=new Thickness(12),Child=deadView};
