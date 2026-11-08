@@ -63,11 +63,11 @@ public sealed class PartyDpsWindow : Window
         for (var i = 0; i <= 4; i++)
         {
             var x = 25 + width * i / 4;
-            _plot.Children.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = height, Stroke = (Brush)FindResource("Brush.BorderSoft") });
+            _plot.Children.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = height, Stroke = (Brush)_plot.FindResource("Brush.BorderSoft") });
             var label = new TextBlock { Text = TimeSpan.FromSeconds(start + span * i / 4d).ToString(@"hh\:mm\:ss"), FontSize = 10 };
             Canvas.SetLeft(label, x - 22); Canvas.SetTop(label, height + 8); _plot.Children.Add(label);
         }
-        var graph = new Polyline { Stroke = (Brush)FindResource("Brush.Success"), StrokeThickness = 2 };
+        var graph = new Polyline { Stroke = (Brush)_plot.FindResource("Brush.Success"), StrokeThickness = 2 };
         foreach (var point in points)
             graph.Points.Add(new Point(25 + (point.EndSeconds - start) / span * width, height - point.ValuePerSecond / max * height));
         _plot.Children.Add(graph);

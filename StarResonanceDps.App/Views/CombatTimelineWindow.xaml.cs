@@ -106,14 +106,14 @@ public partial class CombatTimelineWindow : Window
         double X(double seconds) => left + (seconds - start) / options.VisibleSeconds * width;
         void Label(string value, double x, double y, Brush? color = null)
         {
-            var text = new TextBlock { Text = value, Foreground = color ?? (Brush)FindResource("Brush.TextSecondary"), FontSize = 11, MaxWidth = 164,
+            var text = new TextBlock { Text = value, Foreground = color ?? (Brush)Plot.FindResource("Brush.TextSecondary"), FontSize = 11, MaxWidth = 164,
                 TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = value };
             Canvas.SetLeft(text, x); Canvas.SetTop(text, y); Plot.Children.Add(text);
         }
         for (var index = 0; index <= 4; index++)
         {
             var seconds = start + index * options.VisibleSeconds / 4d;
-            var line = new Line { X1 = X(seconds), X2 = X(seconds), Y1 = top, Y2 = top + height, Stroke = (Brush)FindResource("Brush.BorderSoft") };
+            var line = new Line { X1 = X(seconds), X2 = X(seconds), Y1 = top, Y2 = top + height, Stroke = (Brush)Plot.FindResource("Brush.BorderSoft") };
             Plot.Children.Add(line); Label(TimeSpan.FromSeconds(seconds).ToString(@"hh\:mm\:ss"), X(seconds) - 20, 8);
         }
         var tracks = events.GroupBy(x => (x.Track, x.EntityUuid, x.Actor))
@@ -128,13 +128,13 @@ public partial class CombatTimelineWindow : Window
             var y = top + height + 30 + row++ * 32;
             var number = Array.FindIndex(enemyActors, x => x.Uuid == track.Uuid);
             Label($"{track.Track} / {track.Actor}" + (track.Track == "敵行動" && number >= 0 ? $" ({number + 1})" : ""), 8, y + 5);
-            Plot.Children.Add(new Line { X1 = left, X2 = left + width, Y1 = y + 8, Y2 = y + 8, Stroke = (Brush)FindResource("Brush.BorderSoft") });
+            Plot.Children.Add(new Line { X1 = left, X2 = left + width, Y1 = y + 8, Y2 = y + 8, Stroke = (Brush)Plot.FindResource("Brush.BorderSoft") });
             foreach (var item in track.Events)
             {
                 var marker = new Border { Width = 26, Height = 26, CornerRadius = new CornerRadius(3),
-                    BorderBrush = (Brush)FindResource("Brush.Border"), BorderThickness = new Thickness(1),
-                    Background = (Brush)FindResource("Brush.ControlBackground"), ToolTip = $"{item.Time} {item.Actor}\n{item.Action}" };
-                marker.Child = new ContentControl { Content = item, ContentTemplate = (DataTemplate)FindResource("Extension.EventIcon") };
+                    BorderBrush = (Brush)Plot.FindResource("Brush.Border"), BorderThickness = new Thickness(1),
+                    Background = (Brush)Plot.FindResource("Brush.ControlBackground"), ToolTip = $"{item.Time} {item.Actor}\n{item.Action}" };
+                marker.Child = new ContentControl { Content = item, ContentTemplate = (DataTemplate)Plot.FindResource("Extension.EventIcon") };
                 Canvas.SetLeft(marker, X(item.Seconds) - 13); Canvas.SetTop(marker, y - 4); Plot.Children.Add(marker);
             }
         }

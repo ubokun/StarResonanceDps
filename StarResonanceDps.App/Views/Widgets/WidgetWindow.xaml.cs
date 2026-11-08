@@ -1236,6 +1236,16 @@ public partial class WidgetWindow : Window
             return;
         }
 
+        if (_widget.Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps)
+        {
+            var area = WindowWorkingAreaBehavior.GetWorkingAreaForWindow(owner);
+            Width = Math.Min(Width, Math.Max(MinWidth, area.Width - 24));
+            Height = Math.Min(Height, Math.Max(MinHeight, area.Height - 24));
+            Left = area.Left + Math.Max(0, (area.Width - Width) / 2);
+            Top = area.Top + Math.Max(0, (area.Height - Height) / 2);
+            return;
+        }
+
         const double initialOffset = 44;
         const double cascadeOffset = 20;
         Left = owner.Left + initialOffset + (cascadeOffset * originalIndex);

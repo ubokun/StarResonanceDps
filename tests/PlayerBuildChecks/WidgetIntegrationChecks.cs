@@ -20,11 +20,16 @@ internal static class WidgetIntegrationChecks
             var vm = new WidgetListItemViewModel { Kind = kind, DisplayNameResourceKey = kind.ToString() };
             vm.RefreshLocalizedText();
             var body = new ExtensionWidgetHost(kind);
-            var window = new WidgetWindow(vm, body, body, new WidgetWindowConfig { Width = 1100, Height = 720 }, null);
+            var owner = new Window { Left = SystemParameters.WorkArea.Left, Top = SystemParameters.WorkArea.Top, Width = 800, Height = 500 };
+            var window = new WidgetWindow(vm, body, body, new WidgetWindowConfig { Width = 1100, Height = 720 }, owner);
             window.Show(); window.UpdateLayout();
             var controller = (Window)typeof(ExtensionWidgetHost).GetField("_controller", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(body)!;
             check(body.IsLoaded && body.Content is FrameworkElement element && element.ActualWidth > 300, $"{kind} uses shared widget window and fills body");
-            window.Close();
+            check(window.Top >= SystemParameters.WorkArea.Top && window.Top + window.Height <= SystemParameters.WorkArea.Bottom + 1,
+                $"{kind} first launch stays inside monitor working area");
+            check(body.Resources["Brush.TextPrimary"] is System.Windows.Media.SolidColorBrush,
+                $"{kind} uses its own widget theme palette");
+            window.Close(); owner.Close();
             var timer = controller.GetType().GetField("_timer", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(controller) as DispatcherTimer;
             check(timer is null || !timer.IsEnabled, $"{kind} stops updates when widget closes");
         }

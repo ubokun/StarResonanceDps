@@ -41,6 +41,9 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
         var body=(FrameworkElement)panel.Content;
         panel.Content=null;
         Resources.MergedDictionaries.Add(_controller.Resources);
+        System.Windows.Data.BindingOperations.SetBinding(this, Behaviors.ThemePaletteScope.PaletteProperty,
+            new System.Windows.Data.Binding(nameof(ViewModels.WidgetListItemViewModel.ThemePalette)));
+        SetResourceReference(ForegroundProperty,"Brush.TextPrimary");
         Content=body;
         Loaded += (_,_) =>
         {
