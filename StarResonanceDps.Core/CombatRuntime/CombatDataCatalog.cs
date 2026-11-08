@@ -1644,6 +1644,11 @@ public static class CombatDataCatalog
         return result.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>Available source-table description, kept as original text rather than guessed game effects.</summary>
+    public static string GetActionDescription(int id, bool isBuffSource)
+        => isBuffSource ? _buffs.GetValueOrDefault(id)?.Desc ?? string.Empty
+            : _skills.GetValueOrDefault(id)?.Desc ?? string.Empty;
+
     public static string GetSkillName(int skillId)
     {
         return AppendInternalId(

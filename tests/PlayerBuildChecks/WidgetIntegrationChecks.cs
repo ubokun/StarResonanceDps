@@ -101,6 +101,18 @@ internal static class WidgetIntegrationChecks
         var playerImage = new System.Windows.Media.Imaging.RenderTargetBitmap(650, 110, 96, 96, System.Windows.Media.PixelFormats.Pbgra32); playerImage.Render(playerView);
         var playerPng = new System.Windows.Media.Imaging.PngBitmapEncoder(); playerPng.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(playerImage));
         using(var file=System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"player-list-info-buttons-preview.png"))) playerPng.Save(file);
+        var hoverSkill=new ExtensionTimelineEvent(12.5,"スキル",1,"検証プレイヤー","検証スキル",SourceKey:"skill:12345");
+        check(hoverSkill.ToolTipText.Contains("検証スキル") && hoverSkill.ToolTipText.Contains("検証プレイヤー") && hoverSkill.ToolTipText.Contains("00:00:12.500") && hoverSkill.ToolTipText.Contains("技ID：12345"),"timeline hover includes action actor time and source identity");
+        var hoverFactor=hoverSkill with { Track="因子効果",SourceKey="factor:12345" };
+        check(hoverFactor.ToolTipText.Contains("バフID：12345") && !hoverFactor.ToolTipText.Contains("技ID："),"factor hover keeps buff and skill ID namespaces distinct");
+        check(!(hoverSkill with {SourceKey="unknown:12345"}).ToolTipText.Contains("技ID："),"unknown hover sources do not invent skill identity");
+        var hoverController=new CombatTimelineWindow();
+        typeof(CombatTimelineWindow).GetMethod("SetSnapshot",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(hoverController,[new CombatTimelineSnapshot(990,30,"検証",[],[hoverSkill],[new(1,"検証プレイヤー")])]);
+        var hoverPlot=(System.Windows.Controls.Canvas)hoverController.FindName("Plot");
+        var hoverMarker=hoverPlot.Children.OfType<Border>().Single();
+        check(hoverMarker.ToolTip is ToolTip {Content:TextBlock text} && text.Text==hoverSkill.ToolTipText && StarResonanceDps.App.Behaviors.ToolTipBehavior.GetIsEnabled(hoverMarker),"timeline icon uses existing tooltip behavior and detailed text");
+        check(hoverMarker.Child is UIElement {IsHitTestVisible:false},"nested event icon cannot shadow parent skill tooltip");
+        hoverController.Close();
         var events = new[] { new ExtensionTimelineEvent(1,"スキル",1,"A","技"), new ExtensionTimelineEvent(11,"スキル",1,"A","技") };
         check(CombatTimelineReader.IsFrequentAction(events, 600), "idle quest time does not dilute frequent action detection");
         check(!CombatTimelineReader.IsFrequentAction(events.Select(x => x with { Seconds = x.Seconds * 2 }), 600), "slow actions remain enabled by default");

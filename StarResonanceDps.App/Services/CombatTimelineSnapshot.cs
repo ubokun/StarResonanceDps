@@ -6,6 +6,29 @@ namespace StarResonanceDps.App.Services;
 public sealed record TimelineActor(long Uuid, string Name, bool IsEnemy = false) { public override string ToString() => Name; }
 public sealed record ExtensionTimelineEvent(double Seconds, string Track, long EntityUuid, string Actor, string Action, string? IconPath = null, SkillIconFrame Frame = SkillIconFrame.Standard, string SourceKey = "")
 {
+    public string ToolTipText
+    {
+        get
+        {
+            var text = $"{Action}\n{Track} / {Actor}\n時刻 {Time}";
+            var parts = SourceKey.Split(':');
+            var buff = parts[0] is "buff" or "factor";
+            var id = parts.Length == 2 && parts[0] is "skill" or "buff" or "factor" && int.TryParse(parts[1], out var value) ? value : 0;
+            if (parts.Length == 4 && parts[0] == "control")
+            {
+                buff = int.TryParse(parts[2], out var buffId) && buffId > 0;
+                id = buff ? buffId : int.TryParse(parts[3], out var skillId) ? skillId : 0;
+            }
+            if (id > 0) text += $"\n{(buff ? "バフID" : "技ID")}：{id}";
+            var description = id > 0 ? CombatDataCatalog.GetActionDescription(id, buff) : "";
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                description = System.Text.RegularExpressions.Regex.Replace(description, "<[^>]+>", "").Trim();
+                text += "\n\n説明（データ原文）\n" + (description.Length > 2000 ? description[..2000] + "…" : description);
+            }
+            return text;
+        }
+    }
     public string FilterKey => string.IsNullOrEmpty(SourceKey) ? $"{Track}:{Action}" : $"{Track}:{SourceKey}";
     public string FilterLabel => $"{Track} / {Action.Split(" → ")[0]}";
     public string FallbackGlyph => Track == "敵行動" ? "⚔" : Track.StartsWith("予告") ? "!" : "•";

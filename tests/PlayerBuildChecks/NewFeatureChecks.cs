@@ -123,6 +123,36 @@ internal static class NewFeatureChecks
         check(failed.Result==HistorySelectResult.Failed,"history apply failure settles selection result instead of stranding loading");
         check(EncounterHistoryProvider.SelectedEncounterId is null,"failed history application restores previous selection");
         var opened=EncounterHistoryProvider.SelectAsync(savedId);Wait(opened);check(opened.Result==HistorySelectResult.Opened && EncounterHistoryProvider.SelectedEncounterId==savedId,"history can be retried successfully after apply failure");
+        var autoClearField=typeof(CombatRuntimeSettings).GetField("<ClearHistorySelectionOnNextEvent>k__BackingField",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static)!;
+        var previousAutoClear=autoClearField.GetValue(null);
+        try
+        {
+            autoClearField.SetValue(null,true);
+            Wait(EncounterHistoryProvider.SelectAsync(savedId,true));
+            EncounterHistoryProvider.NotifyLiveEncounterEvent(); EncounterHistoryProvider.NotifyLiveEncounterEvent();
+            check(EncounterHistoryProvider.SelectedEncounterId==savedId,"timeline-retained history survives incoming combat and encounter events");
+            var missing=EncounterHistoryProvider.SelectAsync(ulong.MaxValue,true); Wait(missing);
+            check(missing.Result==HistorySelectResult.NotFound && EncounterHistoryProvider.SelectedEncounterId==savedId,"failed history request preserves displayed retained history");
+            Action pinFailure=()=>throw new InvalidOperationException("retained selection rollback");
+            EncounterHistoryProvider.SelectionChanged+=pinFailure;
+            var rollback=EncounterHistoryProvider.SelectAsync(savedId,false); Wait(rollback);
+            EncounterHistoryProvider.SelectionChanged-=pinFailure;
+            EncounterHistoryProvider.NotifyLiveEncounterEvent();
+            check(rollback.Result==HistorySelectResult.Failed && EncounterHistoryProvider.SelectedEncounterId==savedId,"failed application restores retained mode as well as previous history");
+            EncounterHistoryProvider.SelectLive();
+            check(EncounterHistoryProvider.SelectedEncounterId is null,"explicit live action releases retained timeline history");
+            Wait(EncounterHistoryProvider.SelectAsync(savedId)); EncounterHistoryProvider.NotifyLiveEncounterEvent();
+            check(EncounterHistoryProvider.SelectedEncounterId is null,"ordinary history still follows existing auto-return setting after retained mode ends");
+            using (EncounterHistoryProvider.RetainWhileTimelineOpen())
+            {
+                Wait(EncounterHistoryProvider.SelectAsync(savedId)); EncounterHistoryProvider.NotifyLiveEncounterEvent();
+                check(EncounterHistoryProvider.SelectedEncounterId==savedId,"timeline opened before aggregation selection also prevents automatic live return");
+            }
+            EncounterHistoryProvider.SelectLive();
+            Wait(EncounterHistoryProvider.SelectAsync(savedId)); EncounterHistoryProvider.RetainCurrentSelection(); EncounterHistoryProvider.NotifyLiveEncounterEvent();
+            check(EncounterHistoryProvider.SelectedEncounterId==savedId,"opening timeline can retain history originally selected in aggregation");
+        }
+        finally { autoClearField.SetValue(null,previousAutoClear); EncounterHistoryProvider.SelectLive(); }
         EncounterHistoryProvider.SelectLive();DB.DeleteEncounter(savedId);
     }
     private static void Render(Window window,string name)

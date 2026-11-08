@@ -70,6 +70,8 @@ public static class EncounterHistoryProvider
 
     /// <summary>最新の選択の要求の番号。集計タブの操作(回を選ぶ・ライブへ戻す)とログアウトで進める。</summary>
     private static long _latestRequest;
+    private static bool _retainUntilManualReturn;
+    private static int _timelineInspectors;
 
     /// <summary>アプリを閉じている(<see cref="ShutdownLoads"/> の後)。新しい読み込みを受けず、反映もしない。</summary>
     private static bool _isShutDown;
@@ -111,7 +113,7 @@ public static class EncounterHistoryProvider
 
     /// <summary>
     /// ライブ側でイベントが起きたので履歴表示を解除する。
-    /// **設定が OFF か、履歴を開いていなければ何もしない。**
+    /// 設定OFF、履歴なし、またはタイムラインの履歴確認中は解除しない。
     ///
     /// <para>
     /// 呼ぶのは <c>Encounter.AddDamage</c> / <c>AddHealing</c>(戦闘)と
@@ -128,7 +130,7 @@ public static class EncounterHistoryProvider
     /// </summary>
     public static void NotifyLiveEncounterEvent()
     {
-        if (!CombatRuntimeSettings.ClearHistorySelectionOnNextEvent
+        if (_retainUntilManualReturn || Volatile.Read(ref _timelineInspectors) > 0 || !CombatRuntimeSettings.ClearHistorySelectionOnNextEvent
             || AppState.OpenedHistoricalEncounter is null)
         {
             return;
@@ -172,7 +174,9 @@ public static class EncounterHistoryProvider
     /// 履歴の1件を開く。**開いている間、全ウィジェットが新しいデータを表示しなくなる。**
     /// DB は裏で読み、選択の反映完了まで待つ。30秒で応答がなければ失敗として要求を無効化する。
     /// </summary>
-    public static Task<HistorySelectResult> SelectAsync(ulong encounterId)
+    public static Task<HistorySelectResult> SelectAsync(ulong encounterId) => SelectAsync(encounterId, false);
+
+    public static Task<HistorySelectResult> SelectAsync(ulong encounterId, bool retainUntilManualReturn)
     {
         Task<HistorySelectResult> load;
         long request;
@@ -184,7 +188,7 @@ public static class EncounterHistoryProvider
             }
 
             request = ++_latestRequest;
-            load = Task.Run(() => LoadAndApply(encounterId, request));
+            load = Task.Run(() => LoadAndApply(encounterId, request, retainUntilManualReturn));
             PendingLoads.Add(load);
         }
 
@@ -218,7 +222,7 @@ public static class EncounterHistoryProvider
         }
     }
 
-    private static async Task<HistorySelectResult> LoadAndApply(ulong encounterId, long request)
+    private static async Task<HistorySelectResult> LoadAndApply(ulong encounterId, long request, bool retainUntilManualReturn)
     {
         Encounter? encounter;
         try
@@ -249,9 +253,11 @@ public static class EncounterHistoryProvider
         {
             if (!IsLatestRequest(request)) { applied.TrySetResult(HistorySelectResult.Superseded); return; }
             var previous = AppState.OpenedHistoricalEncounter;
+            var previouslyRetained = _retainUntilManualReturn;
             try
             {
                 AppState.OpenedHistoricalEncounter = encounter;
+                _retainUntilManualReturn = retainUntilManualReturn || Volatile.Read(ref _timelineInspectors) > 0;
                 PlayerRosterProjection.RebuildRoster();
                 ClearLoadFailed();
                 SelectionChanged?.Invoke();
@@ -260,6 +266,7 @@ public static class EncounterHistoryProvider
             catch (Exception ex)
             {
                 AppState.OpenedHistoricalEncounter = previous;
+                _retainUntilManualReturn = previouslyRetained;
                 Log.Error(ex, "History {EncounterId} could not be applied", encounterId);
                 applied.TrySetResult(HistorySelectResult.Failed);
                 try { PlayerRosterProjection.RebuildRoster(); SetLoadFailedIfLatest(request); }
@@ -334,8 +341,37 @@ public static class EncounterHistoryProvider
         }
     }
 
+    /// <summary>Prevent live packet events from clearing a history selection while a timeline is displayed.</summary>
+    public static IDisposable RetainWhileTimelineOpen()
+    {
+        Interlocked.Increment(ref _timelineInspectors);
+        RetainCurrentSelection();
+        return new TimelineInspection();
+    }
+
+    private sealed class TimelineInspection : IDisposable
+    {
+        private int _disposed;
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0) Interlocked.Decrement(ref _timelineInspectors);
+        }
+    }
+
+    /// <summary>Hold the displayed history while a timeline is open; never pin a later unrelated selection.</summary>
+    public static void RetainCurrentSelection()
+    {
+        var selectedId = SelectedEncounterId;
+        if (selectedId is null) return;
+        MessageManager.RunOnPacketThread(() =>
+        {
+            if (SelectedEncounterId == selectedId) _retainUntilManualReturn = true;
+        });
+    }
+
     private static void ApplyLive()
     {
+        _retainUntilManualReturn = false;
         AppState.OpenedHistoricalEncounter = null;
         ClearLoadFailed();
         PlayerRosterProjection.RebuildRoster();

@@ -17,6 +17,8 @@ public partial class CombatTimelineWindow : Window
     private readonly HashSet<string> _forcedOff = [];
     private sealed record ActionChoice(string Key, string Label);
     private bool _reading;
+    private ToolTip? _activeToolTip;
+    private bool _drawPending;
     private bool _updating;
     private CombatTimelineSnapshot? _snapshot;
     private sealed record HistoryRow(ulong Id, string Label) { public override string ToString() => Label; }
@@ -37,7 +39,7 @@ public partial class CombatTimelineWindow : Window
         if (CombatExtensionSettings.LoadIssue is { } issue) Status.Text = issue;
         _timer.Tick += async (_, _) => await RefreshAsync();
         Loaded += (_, _) => StartWidget();
-        Closed += (_, _) => _timer.Stop();
+        Closed += (_, _) => StopWidget();
     }
 
     private CombatExtensionOptions ReadOptions()
@@ -68,8 +70,22 @@ public partial class CombatTimelineWindow : Window
         return body;
     }
 
-    internal async void StartWidget() { LoadHistory(); _timer.Start(); await RefreshAsync(); }
-    internal void StopWidget() => _timer.Stop();
+    private bool _started;
+    private IDisposable? _historyRetention;
+    internal async void StartWidget()
+    {
+        if (_started) return; _started = true;
+        _historyRetention = EncounterHistoryProvider.RetainWhileTimelineOpen();
+        LoadHistory(); _timer.Start(); await RefreshAsync();
+    }
+    internal void StopWidget()
+    {
+        _timer.Stop();
+        _drawPending = false;
+        if (_activeToolTip is { } tip) tip.IsOpen = false;
+        if (!_started) return; _started = false;
+        _historyRetention?.Dispose(); _historyRetention = null;
+    }
     private async Task RefreshAsync()
     {
         if (_reading) return;
@@ -108,6 +124,7 @@ public partial class CombatTimelineWindow : Window
     private void Draw()
     {
         if (_snapshot is null || _updating) return;
+        if (_activeToolTip?.IsOpen == true) { _drawPending = true; return; }
         var options = ReadOptions();
         var selected = Actors.SelectedItems.Cast<TimelineActor>().Select(x => x.Uuid).ToHashSet();
         var start = TimeOffset.Value; var end = start + options.VisibleSeconds;
@@ -146,8 +163,25 @@ public partial class CombatTimelineWindow : Window
             {
                 var marker = new Border { Width = 26, Height = 26, CornerRadius = new CornerRadius(3),
                     BorderBrush = (Brush)Plot.FindResource("Brush.Border"), BorderThickness = new Thickness(1),
-                    Background = (Brush)Plot.FindResource("Brush.ControlBackground"), ToolTip = $"{item.Time} {item.Actor}\n{item.Action}" };
-                marker.Child = new ContentControl { Content = item, ContentTemplate = (DataTemplate)Plot.FindResource("Extension.EventIcon") };
+                    Background = (Brush)Plot.FindResource("Brush.ControlBackground") };
+                marker.Tag = Plot.DataContext is StarResonanceDps.App.ViewModels.TimelineWidgetViewModel timeline
+                    ? timeline.Widget : Plot.DataContext as StarResonanceDps.App.ViewModels.WidgetListItemViewModel;
+                var tooltip = new ToolTip
+                {
+                    Style = (Style)Plot.FindResource("ToolTip.WidgetWindowInfo"),
+                    Content = new TextBlock { Text = item.ToolTipText, TextWrapping = TextWrapping.Wrap, MaxWidth = 420,
+                        FontSize = 12, Style = (Style)Plot.FindResource("Text.WidgetWindow") }
+                };
+                tooltip.Opened += (_, _) => _activeToolTip = tooltip;
+                tooltip.Closed += (_, _) =>
+                {
+                    if (ReferenceEquals(_activeToolTip, tooltip)) _activeToolTip = null;
+                    if (_drawPending) { _drawPending = false; Draw(); }
+                };
+                marker.ToolTip = tooltip;
+                StarResonanceDps.App.Behaviors.ToolTipBehavior.SetIsEnabled(marker, true);
+                StarResonanceDps.App.Behaviors.ToolTipBehavior.SetKeepsOnClick(marker, true);
+                marker.Child = new ContentControl { IsHitTestVisible = false, Content = item, ContentTemplate = (DataTemplate)Plot.FindResource("Extension.EventIcon") };
                 Canvas.SetLeft(marker, X(item.Seconds) - 13); Canvas.SetTop(marker, y - 4); Plot.Children.Add(marker);
             }
         }
@@ -226,8 +260,8 @@ public partial class CombatTimelineWindow : Window
     private async void History_Selected(object sender, SelectionChangedEventArgs e)
     {
         if (History.SelectedItem is not HistoryRow row) return;
-        var result = await EncounterHistoryProvider.SelectAsync(row.Id);
-        Status.Text = result == HistorySelectResult.Opened ? "履歴を選択しました。" : $"履歴を開けませんでした：{result}";
+        var result = await EncounterHistoryProvider.SelectAsync(row.Id, retainUntilManualReturn: true);
+        Status.Text = result == HistorySelectResult.Opened ? "履歴を表示中です。「ライブに戻る」を押すまで保持します。" : $"履歴を開けませんでした：{result}";
         await RefreshAsync();
     }
     private async void Live_Click(object sender, RoutedEventArgs e)
