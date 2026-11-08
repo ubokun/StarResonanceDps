@@ -10,6 +10,7 @@ internal static class NearbyEntityProjection
 
     public static void BeginMap()
     {
+        EntityTargetingPlayers.Clear();
         NearbyEntityCampState.BeginMap();
         EntityStore.BeginMap();
     }
@@ -20,6 +21,7 @@ internal static class NearbyEntityProjection
     /// </summary>
     public static void ResetToStartup()
     {
+        EntityTargetingPlayers.Clear();
         NearbyEntityCampState.ResetToStartup();
         EntityStore.Clear();
         UpdateMapName();
@@ -48,6 +50,8 @@ internal static class NearbyEntityProjection
 
     public static void AddOrUpdateAppearedEntity(long entityUuid)
     {
+        if (IsPlayerUuid(entityUuid) && EncounterManager.Current.Entities.TryGetValue(entityUuid, out var player))
+            EntityTargetingPlayers.Update(entityUuid, !player.IsNpc ? EntityTargetingPlayers.ObservedTarget(player) : 0);
         var entity = GetListedEntity(entityUuid);
         if (entity is null)
         {
@@ -89,6 +93,9 @@ internal static class NearbyEntityProjection
 
     public static void RemoveEntity(long entityUuid)
     {
+        if (EncounterManager.Current.Entities.TryGetValue(entityUuid, out var removed) && IsPlayerUuid(entityUuid))
+            removed.SetAttrKV("AttrTargetUuid", 0L);
+        EntityTargetingPlayers.RemoveEntity(entityUuid);
         NearbyEntityCampState.Remove(entityUuid);
         EntityStore.Remove(entityUuid);
     }
@@ -139,7 +146,7 @@ internal static class NearbyEntityProjection
             GetInt(entity, "AttrCombatState") > 0,
             ResolveTargetCharacterId(entity),
             ResolveHateRanking(entity),
-            cast);
+            cast, EntityTargetingPlayers.Get(entityUuid));
     }
 
     private static NearbyEntityEntry MergeChangedFields(

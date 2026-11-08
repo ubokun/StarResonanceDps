@@ -133,6 +133,8 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
     private static readonly HashSet<string> NonPlayerEntityMembers =
     [
         nameof(Entity.UUID),
+        nameof(Entity.Hp),
+        nameof(Entity.MaxHp),
         nameof(Entity.Attributes),
         nameof(Entity.SkillCasts),
     ];
@@ -148,6 +150,7 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
         "AttrMaxHp",
         "AttrRankLevel",
         "AttrSkillLevelIdList",
+        "AttrTargetUuid",
     ];
 
     protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)

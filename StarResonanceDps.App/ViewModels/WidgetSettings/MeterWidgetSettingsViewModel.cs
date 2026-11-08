@@ -37,6 +37,10 @@ public sealed partial class MeterWidgetSettingsViewModel : ObservableObject, IDi
     [ObservableProperty]
     private int _healthValueDisplayModeIndex = WidgetConfigDefaults.DefaultHealthValueDisplayModeIndex;
 
+    [ObservableProperty] private bool _entityHpAsPercentage = true;
+    public bool ShowsEntityHpPercentageSettings => _kind == WidgetKind.EntityList;
+    partial void OnEntityHpAsPercentageChanged(bool value) => NotifyChanged();
+
     /// <summary>「潜在心相晶を表示」のスイッチ。</summary>
     [ObservableProperty]
     private bool _showSeasonTalent = true;
@@ -229,6 +233,7 @@ public sealed partial class MeterWidgetSettingsViewModel : ObservableObject, IDi
         {
             PlayerInfoFormatString = PlayerInfoFormatString ?? string.Empty,
             HealthValueDisplayModeIndex = HealthValueDisplayModeIndex,
+            EntityHpAsPercentage = EntityHpAsPercentage,
             ShowSeasonTalent = ShowSeasonTalent,
             CombatStateDisplayModeIndex = CombatStateDisplayModeIndex,
             TargetedPlayerDisplayModeIndex = TargetedPlayerDisplayModeIndex,
@@ -317,6 +322,7 @@ public sealed partial class MeterWidgetSettingsViewModel : ObservableObject, IDi
 
             PlayerInfoFormatString = normalized.PlayerInfoFormatString ?? string.Empty;
             HealthValueDisplayModeIndex = normalized.HealthValueDisplayModeIndex;
+            EntityHpAsPercentage = normalized.EntityHpAsPercentage;
             ShowSeasonTalent = normalized.ShowSeasonTalent;
             CombatStateDisplayModeIndex = normalized.CombatStateDisplayModeIndex;
             TargetedPlayerDisplayModeIndex = normalized.TargetedPlayerDisplayModeIndex;
@@ -345,6 +351,7 @@ public sealed partial class MeterWidgetSettingsViewModel : ObservableObject, IDi
     private bool SettingsEqual(MeterWidgetSettingsConfig left, MeterWidgetSettingsConfig right)
     {
         if (!string.Equals(left.PlayerInfoFormatString, right.PlayerInfoFormatString, StringComparison.Ordinal)
+            || left.EntityHpAsPercentage != right.EntityHpAsPercentage
             || left.HealthValueDisplayModeIndex != right.HealthValueDisplayModeIndex
             || left.ShowSeasonTalent != right.ShowSeasonTalent
             || left.CombatStateDisplayModeIndex != right.CombatStateDisplayModeIndex

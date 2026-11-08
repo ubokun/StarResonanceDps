@@ -620,6 +620,8 @@ public sealed class MeterWidgetSettingsConfig
 {
     public string? PlayerInfoFormatString { get; set; }
 
+    public bool EntityHpAsPercentage { get; set; } = true;
+
     public int HealthValueDisplayModeIndex { get; set; } = WidgetConfigDefaults.DefaultHealthValueDisplayModeIndex;
 
     /// <summary>プレイヤーリストに潜在心相晶の型の絵を出すか。使うのはプレイヤーリストだけ。</summary>
@@ -678,6 +680,7 @@ public sealed class MeterWidgetSettingsConfig
         {
             PlayerInfoFormatString = PlayerInfoFormatString,
             HealthValueDisplayModeIndex = HealthValueDisplayModeIndex,
+            EntityHpAsPercentage = EntityHpAsPercentage,
             ShowSeasonTalent = ShowSeasonTalent,
             CombatStateDisplayModeIndex = CombatStateDisplayModeIndex,
             TargetedPlayerDisplayModeIndex = TargetedPlayerDisplayModeIndex,

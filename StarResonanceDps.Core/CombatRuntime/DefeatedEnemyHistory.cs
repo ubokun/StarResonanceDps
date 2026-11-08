@@ -61,6 +61,14 @@ public static class EntityHistoryProjection
             if(!dead.Any(x=>x.EntityUuid==entity.UUID)) dead.Add(NearbyEntityProjection.CreateEntry(entity.UUID,entity,null) with {CurrentHp=0,IsInCombat=false,Cast=null,CampRelation=EntityCampRelation.Hostile});
         var alive=historical ? encounter.Entities.Values.Where(x=>x.EntityType==EEntityType.EntMonster && x.Hp!=0 && !dead.Any(d=>d.EntityUuid==x.UUID))
             .Select(x=>NearbyEntityProjection.CreateEntry(x.UUID,x,null) with {IsInCombat=false,Cast=null,CampRelation=EntityCampRelation.Hostile}).ToArray() : [];
+        if (historical)
+        {
+            var targets = encounter.Entities.Values.Where(x=>x.EntityType==EEntityType.EntChar && !x.IsNpc)
+                .Select(x=>(Player: x.UID != 0 ? x.UID : Utils.UuidToEntityId(x.UUID), Target: EntityTargetingPlayers.ObservedTarget(x)))
+                .Where(x=>x.Target!=0).ToLookup(x=>x.Target,x=>x.Player);
+            alive=alive.Select(x=>x with {TargetingCharacterIds=targets[x.EntityUuid].Distinct().Order().ToArray()}).ToArray();
+            dead=dead.Select(x=>x with {TargetingCharacterIds=targets[x.EntityUuid].Distinct().Order().ToArray()}).ToList();
+        }
         return new(encounter.EncounterId,historical,encounter.SceneName??"",alive,dead);
     }
     public static void Publish()

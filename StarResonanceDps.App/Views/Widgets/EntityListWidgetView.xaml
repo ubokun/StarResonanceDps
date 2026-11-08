@@ -265,6 +265,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="33" />
                                     <ColumnDefinition Width="128" />
+                                    <ColumnDefinition Width="70" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
@@ -703,7 +704,10 @@
                                 </Grid>
 
                                 <!-- ヘイトの枠。枠は行の部品を使い回しても作り直さないよう、並べる数を決めて1つずつ置く。 -->
-                                <StackPanel Grid.Column="2"
+                                <TextBlock Grid.Column="2" Width="66" MaxHeight="40" Margin="4,0,0,0" VerticalAlignment="Center"
+                                           Style="{StaticResource Text.WidgetWindow}" FontSize="8" LineHeight="10" LineStackingStrategy="BlockLineHeight"
+                                           Text="{Binding TargetingPlayerNames}" TextTrimming="CharacterEllipsis" ToolTip="{Binding AllTargetingPlayerNames}"/>
+                                <StackPanel Grid.Column="3"
                                             Margin="10,0,0,0"
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Center"
