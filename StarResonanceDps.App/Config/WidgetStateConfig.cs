@@ -12,6 +12,7 @@ public sealed class WidgetStateDocument
 
 public sealed class WidgetConfig
 {
+    public bool PlayerListInfoActionsWidthApplied { get; set; }
     public bool IsFavorite { get; set; }
     public bool IsPinned { get; set; }
 
@@ -75,6 +76,7 @@ public sealed class WidgetConfig
     {
         return new WidgetConfig
         {
+            PlayerListInfoActionsWidthApplied = PlayerListInfoActionsWidthApplied,
             IsFavorite = IsFavorite,
             IsPinned = IsPinned,
             IsClickThrough = IsClickThrough,
@@ -1101,6 +1103,7 @@ public static class WidgetConfigDefaults
     public const int BuffCardScaleStep = 25;
 
     private const double PlayerListInitialWindowWidth = 457d;
+    public const double PlayerListInfoActionsWidth = 180d;
     private const double PlayerListInitialWindowHeight = 460d;
     private const double MeterInitialWindowWidth = 440d;
     private const double MeterInitialWindowHeight = 460d;
@@ -1915,6 +1918,7 @@ public static class WidgetConfigDefaults
             State = WidgetState.Stopped,
             Theme = CreateTheme(),
             Window = CreateDefaultWindowConfig(kind),
+            PlayerListInfoActionsWidthApplied = kind == WidgetKind.PlayerList,
             Meter = SupportsMeterSettings(kind) ? CreateMeterSettings(kind) : null,
             MetricGraph = SupportsMetricGraphSettings(kind) ? CreateMetricGraphSettings(kind) : null,
             Timeline = SupportsTimelineSettings(kind) ? CreateTimelineSettings() : null,
@@ -2492,7 +2496,12 @@ public static class WidgetConfigDefaults
     {
         return kind switch
         {
-            WidgetKind.PlayerList or WidgetKind.EntityList => new WidgetWindowConfig
+            WidgetKind.PlayerList => new WidgetWindowConfig
+            {
+                Width = PlayerListInitialWindowWidth + PlayerListInfoActionsWidth,
+                Height = PlayerListInitialWindowHeight
+            },
+            WidgetKind.EntityList => new WidgetWindowConfig
             {
                 Width = PlayerListInitialWindowWidth,
                 Height = PlayerListInitialWindowHeight
@@ -3269,6 +3278,12 @@ public static class WidgetConfigDefaults
     public static void Normalize(WidgetKind kind, WidgetConfig config)
     {
         Normalize(config);
+        // Preserve the user's former skill area, and migrate a saved width only once.
+        if (kind == WidgetKind.PlayerList && !config.PlayerListInfoActionsWidthApplied)
+        {
+            config.Window.Width = (config.Window.Width ?? PlayerListInitialWindowWidth) + PlayerListInfoActionsWidth;
+            config.PlayerListInfoActionsWidthApplied = true;
+        }
         config.Meter = SupportsMeterSettings(kind)
             ? CloneNormalizedMeter(kind, config.Meter)
             : null;

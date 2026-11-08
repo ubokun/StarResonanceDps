@@ -48,6 +48,14 @@ internal static class WidgetIntegrationChecks
             var timer = controller.GetType().GetField("_timer", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(controller) as DispatcherTimer;
             check(timer is null || !timer.IsEnabled, $"{kind} stops updates when widget closes");
         }
+        var formerWidth = new WidgetConfig { Window = new() { Width = 510, Height = 460, X = 120, Y = 90 } };
+        WidgetConfigDefaults.Normalize(WidgetKind.PlayerList, formerWidth);
+        check(formerWidth.Window.Width == 690 && formerWidth.Window.Height == 460 && formerWidth.Window.X == 120, "player list adds exactly button width while preserving size and position settings");
+        var migrated = formerWidth.Clone(); WidgetConfigDefaults.Normalize(WidgetKind.PlayerList, migrated);
+        check(migrated.Window.Width == 690, "saved player list width is not enlarged repeatedly after clone or normalization");
+        var entityWidth = new WidgetConfig { Window = new() { Width = 457 } };
+        WidgetConfigDefaults.Normalize(WidgetKind.EntityList, entityWidth);
+        check(entityWidth.Window.Width == 457, "entity list width remains unchanged");
         var playerWidget = new WidgetListItemViewModel { Kind = WidgetKind.PlayerList };
         var row = PlayerListEntry.Create(new(91234, "検証プレイヤー", 1), new(), StarResonanceDps.Core.Models.PlayerNameDisplayMode.Show, id => new PlayerSkillDisplayState(id));
         var playerRows = (System.Collections.ObjectModel.ObservableCollection<PlayerListEntry>)typeof(WidgetListItemViewModel).GetField("_playerListEntries", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(playerWidget)!;

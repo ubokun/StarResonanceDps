@@ -4,6 +4,7 @@
              xmlns:behaviors="clr-namespace:StarResonanceDps.App.Behaviors"
              xmlns:converters="clr-namespace:StarResonanceDps.App.Converters"
              xmlns:local="clr-namespace:StarResonanceDps.App.Views.Widgets"
+             xmlns:config="clr-namespace:StarResonanceDps.App.Config"
              xmlns:localization="clr-namespace:StarResonanceDps.App.Localization"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
@@ -474,7 +475,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,4,0">
+                                <StackPanel Grid.Column="4" Width="{x:Static config:WidgetConfigDefaults.PlayerListInfoActionsWidth}" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Button Style="{StaticResource PlayerList.InfoButton}" Tag="PlayerTalent" Click="PlayerInfoButton_Click" ToolTip="アビリティ情報を開く"><TextBlock Style="{StaticResource Text.WidgetWindow}" FontSize="11" Text="アビリティ"/></Button>
                                     <Button Style="{StaticResource PlayerList.InfoButton}" Tag="PlayerSeasonTalent" Click="PlayerInfoButton_Click" ToolTip="潜在心相晶情報を開く"><TextBlock Style="{StaticResource Text.WidgetWindow}" FontSize="11" Text="潜在心相"/></Button>
                                     <Button Style="{StaticResource PlayerList.InfoButton}" Tag="PlayerModule" Click="PlayerInfoButton_Click" ToolTip="モジュール情報を開く"><TextBlock Style="{StaticResource Text.WidgetWindow}" FontSize="11" Text="モジュール"/></Button>
