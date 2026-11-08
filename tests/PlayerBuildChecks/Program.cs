@@ -17,6 +17,24 @@ internal static class Program
 {
  [STAThread] private static void Main(string[] args)
  {
+  if (args is ["--ui-demo"])
+  {
+   DB.Init();
+   var demoApp = new Application(); DemoResources.Load(demoApp);
+   var dashboard = new StarResonanceDps.App.Views.CombatTimelineWindow { Title = "検証用：拡張タイムライン" };
+   demoApp.MainWindow = dashboard;
+   dashboard.Loaded += (_, _) =>
+   {
+    ((System.Windows.Threading.DispatcherTimer)typeof(StarResonanceDps.App.Views.CombatTimelineWindow).GetField("_timer", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(dashboard)!).Stop();
+    var demo = new CombatTimelineSnapshot(123, 180, "検証データ · PT DPS · クエスト時間", [new(60,61,100),new(70,71,300),new(100,101,150)],
+      [new(70,"スキル",1,"検証プレイヤー","スキルA"),new(80,"イマジン",1,"検証プレイヤー","イマジンB"),new(90,"因子効果",1,"検証プレイヤー","因子C"),new(100,"敵行動",2,"検証ボス","敵の大技")],
+      [new(1,"検証プレイヤー"),new(2,"検証ボス")]);
+    typeof(StarResonanceDps.App.Views.CombatTimelineWindow).GetMethod("SetSnapshot", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(dashboard, [demo]);
+    var library = new UserBuildWindow { Title = "検証用：ユーザービルド", Owner = dashboard };
+    library.Show();
+   };
+   demoApp.Run(dashboard); return;
+  }
   if (args is ["--check-history-db", var historyFile])
   {
    SQLitePCL.Batteries_V2.Init();
@@ -87,7 +105,7 @@ internal static class Program
   Check((int)recorded.GetType().GetProperty("SeasonTalentBuffId")!.GetValue(recorded)! == 0, "history never inherits live mindscape cache");
   // Isolated executable data directory, not the running user's application directory.
   var uiStore = new SavedPlayerBuildStore(); uiStore.Save(Make(90001));
-  var app = new Application();
+  var app = new Application(); DemoResources.Load(app);
   ExtensionChecks.Run(Check);
   var window = new UserBuildWindow();
   var userList = (ListBox)window.FindName("Users"); userList.SelectedItem = userList.Items.Cast<object>().First(x => x.GetType().GetProperty("Label")!.GetValue(x)!.ToString()!.Contains("検証用ユーザー"));

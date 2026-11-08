@@ -18,6 +18,7 @@ public partial class UserBuildWindow : Window
     public UserBuildWindow()
     {
         InitializeComponent();
+        ExtensionWindowLayout.Attach(this);
         Reload();
     }
 

@@ -111,3 +111,12 @@ git push origin custom/quest-timeline-builds
 
 検証: Releaseビルド・publish成功、37項目の確認成功、2画面の検証用データ描画確認。複製した実際の履歴DBの整合性と直近10件のメタデータ読み込み互換性を確認。
 実ゲームの受信確認は未実施。試用版はoutputs/StarResonanceDps-custom-20261108に配置し、元の実行フォルダーには上書きしていない。
+
+## UIを既存の見た目へ統一（2026-11-08）
+
+追加した2画面に既存のAppHeader、Panel.WindowFrame、Panel.Root、Button.Text、Input.PathBox、Input.MultilineTextBox、Input.Switch、Input.SelectBox、Input.ValueSliderを適用。
+色とフォントは既存のBrush.*とFont.ProjectDefaultを参照し、テーマ・言語側のフォント設定に追従する。
+一覧とイベント表の選択色も既存のパレットに合わせた。管理画面の追加入口は既存のButton.Sidebarを共用する。
+計測とリセットの設定は「計測設定」で開閉し、通常はグラフと各トラックの表示領域を広くする。
+新しいウィンドウが作業領域からはみ出さないよう、表示先モニターのDPIと作業領域で初期サイズを調整する。
+37項目の確認と、検証用データによる実ウィンドウのビルド表示・設定開閉を確認。実ゲームの受信確認は未実施。

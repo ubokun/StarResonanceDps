@@ -20,6 +20,7 @@ public partial class CombatTimelineWindow : Window
     public CombatTimelineWindow()
     {
         InitializeComponent();
+        ExtensionWindowLayout.Attach(this);
         var settings = CombatExtensionSettings.Current;
         QuestClock.IsChecked = settings.SyncQuestClock; QuestReset.IsChecked = settings.ResetOnQuestTransition;
         AutoLink.IsChecked = settings.AutoLinkSavedPlayers;
@@ -92,7 +93,7 @@ public partial class CombatTimelineWindow : Window
         double X(double seconds) => left + (seconds - start) / options.VisibleSeconds * width;
         void Label(string value, double x, double y, Brush? color = null)
         {
-            var text = new TextBlock { Text = value, Foreground = color ?? Brushes.White, FontSize = 11, MaxWidth = 164,
+            var text = new TextBlock { Text = value, Foreground = color ?? (Brush)FindResource("Brush.TextSecondary"), FontSize = 11, MaxWidth = 164,
                 TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = value };
             Canvas.SetLeft(text, x); Canvas.SetTop(text, y); Plot.Children.Add(text);
         }
@@ -102,10 +103,10 @@ public partial class CombatTimelineWindow : Window
         for (var index = 0; index <= 4; index++)
         {
             var seconds = start + index * options.VisibleSeconds / 4d;
-            var line = new Line { X1 = X(seconds), X2 = X(seconds), Y1 = top, Y2 = top + height, Stroke = Brushes.DimGray };
+            var line = new Line { X1 = X(seconds), X2 = X(seconds), Y1 = top, Y2 = top + height, Stroke = (Brush)FindResource("Brush.BorderSoft") };
             Plot.Children.Add(line); Label(TimeSpan.FromSeconds(seconds).ToString(@"hh\:mm\:ss"), X(seconds) - 20, 8);
         }
-        var graph = new Polyline { Stroke = Brushes.DeepSkyBlue, StrokeThickness = 2 };
+        var graph = new Polyline { Stroke = (Brush)FindResource("Brush.Success"), StrokeThickness = 2 };
         foreach (var point in visiblePoints) graph.Points.Add(new Point(X(point.EndSeconds), top + height - point.ValuePerSecond / max * height));
         Plot.Children.Add(graph);
         var tracks = events.GroupBy(x => (x.Track, x.EntityUuid, x.Actor)).ToArray();
@@ -114,7 +115,7 @@ public partial class CombatTimelineWindow : Window
         {
             var y = top + height + 30 + row++ * 28;
             Label($"{track.Key.Track} / {track.Key.Actor}", 8, y);
-            Plot.Children.Add(new Line { X1 = left, X2 = left + width, Y1 = y + 8, Y2 = y + 8, Stroke = Brushes.DimGray });
+            Plot.Children.Add(new Line { X1 = left, X2 = left + width, Y1 = y + 8, Y2 = y + 8, Stroke = (Brush)FindResource("Brush.BorderSoft") });
             foreach (var item in track)
             {
                 var marker = new Ellipse { Width = 8, Height = 12,
@@ -125,6 +126,11 @@ public partial class CombatTimelineWindow : Window
         }
         Plot.Height = Math.Max(350, top + height + 60 + row * 28);
         EventList.ItemsSource = events.TakeLast(500).ToArray();
+    }
+
+    private void ToggleMeasurementSettings_Click(object sender, RoutedEventArgs e)
+    {
+        MeasurementSettings.Visibility = MeasurementSettings.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void SaveSettings_Click(object sender, RoutedEventArgs e)
