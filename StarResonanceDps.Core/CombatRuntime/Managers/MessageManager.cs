@@ -1,4 +1,4 @@
-﻿using StarResonanceDps.Core.CombatRuntime.Protocols;
+using StarResonanceDps.Core.CombatRuntime.Protocols;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -121,12 +121,14 @@ namespace StarResonanceDps.Core.CombatRuntime
 
             netCap.GameConnectionIdentified = GameServerStore.SetFromExeName;
 
-            netCap.MessageObserved = message => MessageObserved?.Invoke(message);
+            netCap.MessageObserved = message => { EntityTargetingPlayers.ObserveClientCall(message); MessageObserved?.Invoke(message); };
 
             netCap.RegisterProxyReturnHandler(WorldProxyServiceId, GetTeamInfoMethodId, ProcessGetTeamInfoReturn);
             netCap.RegisterProxyReturnHandler(WorldProxyServiceId, GetSocialDataMethodId, ProcessGetSocialDataReturn);
 
             // 自分が技を使うときの上りの要求とその応答。自分の推移グラフの技の記録はここから取る。
+            netCap.RegisterProxyHandler(WorldProxyServiceId, (uint)StarResonanceDps.Core.CombatRuntime.Protocols.ServiceMethods.WorldActivityNtf.ClientTargetChange,
+                (payload, _, extra) => ProcessClientTargetChange(payload,extra));
             netCap.RegisterProxyHandler(WorldProxyServiceId, UseSlotMethodId, ProcessUseSlotCall);
             netCap.RegisterProxyReturnHandler(WorldProxyServiceId, UseSlotMethodId, ProcessUseSlotReturn);
 
@@ -2119,6 +2121,14 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 消すときは <see cref="PlayerDeathStates"/> と同じく新しい辞書に差し替える(<see cref="ClearReceivedStateStores"/>)。
         /// </summary>
         private static Dictionary<uint, int> PendingUseSlotSkills = [];
+
+        // Candidate upstream target-change path; actual selection/clear reception requires game verification.
+        public static void ProcessClientTargetChange(ReadOnlySpan<byte> payloadBuffer,ExtraPacketData extraData)
+        {
+            var change=Zproto.WorldCsharp.Types.ClientTargetChange.Parser.ParseFrom(payloadBuffer);
+            var self=currentUserUuid!=0 ? currentUserUuid : AppState.PlayerUUID;
+            EntityTargetingPlayers.ApplyClientTargetChange(self,change.TargetUuid,change.Skillid);
+        }
 
         /// <summary>
         /// 自分が技を使うときの上りの要求 <c>UseSlot</c>。種類が技で、自動(<c>IsPassive</c>)でない要求の技IDを応答まで控える。

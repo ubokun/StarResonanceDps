@@ -9,13 +9,34 @@ public static class EntityTargetingPlayers
     private static readonly Dictionary<long,long> Targets = [];
     private static readonly Dictionary<long,long[]> Players = [];
     public static IReadOnlyList<long> Get(long targetUuid) { lock(Gate) return Players.GetValueOrDefault(targetUuid) ?? []; }
-    public static long ObservedTarget(Entity entity) => ReadTargetValue(entity.GetAttrKV("AttrTargetId") ?? entity.GetAttrKV("AttrTargetUuid"));
+    public static long ObservedTarget(Entity entity) => ReadTargetValue(entity.GetAttrKV("ClientSelectedTargetUuid") ?? entity.GetAttrKV("AttrTargetId") ?? entity.GetAttrKV("AttrTargetUuid"));
     private static long ReadTargetValue(object? value) => value switch
     { long number=>number, int number=>number, uint number=>number, ulong number when number<=long.MaxValue=>(long)number, _=>0 };
 
     private static readonly Dictionary<string,long> AttributeCounts=[];
     private static readonly Dictionary<string,HashSet<long>> AttributeActors=[];
     private static long _lastDiagnosticTicks;
+    private static readonly Dictionary<string,long> ClientCalls=[];
+    private static long _clientTargetChanges,_clientClears,_skillTargetChanges,_changesBeforeSelf;
+    public static void ObserveClientCall(Protocols.ObservedMessage message)
+    {
+        if(message.Kind!=Protocols.ObservedMessageKind.Call)return;
+        var key=$"{message.ServiceId}:{message.MethodId:X}";
+        lock(Gate) if(ClientCalls.Count<128 || ClientCalls.ContainsKey(key))ClientCalls[key]=ClientCalls.GetValueOrDefault(key)+1;
+    }
+    public static void ApplyClientTargetChange(long selfUuid,long targetUuid,int skillId)
+    {
+        lock(Gate)
+        {
+            _clientTargetChanges++;
+            if(targetUuid==0)_clientClears++;
+            if(skillId>0)_skillTargetChanges++;
+            if(selfUuid==0)_changesBeforeSelf++;
+        }
+        if(selfUuid==0 || Utils.UuidToEntityType(selfUuid)!=(long)EEntityType.EntChar)return;
+        EncounterManager.Current.GetOrCreateEntity(selfUuid).SetAttrKV("ClientSelectedTargetUuid",targetUuid);
+        Update(selfUuid,targetUuid);
+    }
     public static void ObserveAttribute(long actorUuid,string key,object value)
     {
         var kind=Utils.UuidToEntityType(actorUuid)==(long)EEntityType.EntChar ? "Player" : "Other";
@@ -37,6 +58,8 @@ public static class EntityTargetingPlayers
         lock(Gate) data=new { UpdatedUtc=now, EncounterId=encounter.EncounterId,
             AttributeUpdates=new Dictionary<string,long>(AttributeCounts),
             AttributeActorCounts=AttributeActors.ToDictionary(x=>x.Key,x=>x.Value.Count),
+            ClientCallCounts=new Dictionary<string,long>(ClientCalls), ClientTargetChanges=_clientTargetChanges,
+            ClientTargetClears=_clientClears, SkillContextTargetChanges=_skillTargetChanges, ClientChangesBeforeSelfKnown=_changesBeforeSelf,
             CurrentRelations=Targets.Count,
             RelationsMatchingKnownEnemies=Targets.Count(x=>encounter.Entities.TryGetValue(x.Value,out var target) && target.EntityType==EEntityType.EntMonster) };
         try
@@ -46,7 +69,7 @@ public static class EntityTargetingPlayers
         }
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException) { Serilog.Log.Debug(ex,"Could not write target reception diagnostics"); }
     }
-    public static void Clear() { lock(Gate) { Targets.Clear(); Players.Clear(); AttributeCounts.Clear(); AttributeActors.Clear(); _lastDiagnosticTicks=0; } }
+    public static void Clear() { lock(Gate) { Targets.Clear(); Players.Clear(); AttributeCounts.Clear(); AttributeActors.Clear(); ClientCalls.Clear(); _clientTargetChanges=0; _clientClears=0; _skillTargetChanges=0; _changesBeforeSelf=0; _lastDiagnosticTicks=0; } }
     public static void RemoveEntity(long uuid)
     {
         if (Utils.UuidToEntityType(uuid) == (long)EEntityType.EntChar) { Update(uuid,0); return; }

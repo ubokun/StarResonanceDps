@@ -600,6 +600,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 // Target references belong to the old map too; wait for a fresh target notification.
                 entity.Attributes.Remove("AttrTargetUuid");
                 entity.Attributes.Remove("AttrTargetId");
+                entity.Attributes.Remove("ClientSelectedTargetUuid");
             }
         }
 

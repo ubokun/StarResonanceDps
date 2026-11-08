@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+using System.Reflection;
+using Google.Protobuf;
+using ExtraPacketData=StarResonanceDps.Core.CombatRuntime.Protocols.ExtraPacketData;
 using System.Text.Json;
 using StarResonanceDps.App.Config;
 using StarResonanceDps.App.Models.Widgets;
@@ -83,6 +85,18 @@ internal static class EntityDisplayChecks
             encounter.SetAttrKV(player,"AttrTargetId",0L);
             check(!EntityTargetingPlayers.Get(enemy).Contains(991),"cleared player selection does not revive stale alternate target");
             encounter.Entities[player].Attributes.Remove("AttrTargetId");
+            var oldSelf=MessageManager.currentUserUuid;
+            try
+            {
+                MessageManager.currentUserUuid=player;
+                MessageManager.ProcessClientTargetChange(new Zproto.WorldCsharp.Types.ClientTargetChange {TargetUuid=enemy}.ToByteArray(),new ExtraPacketData(DateTime.UtcNow));
+                MessageManager.ProcessClientTargetChange(new Zproto.WorldCsharp.Types.ClientTargetChange {TargetUuid=otherEnemy}.ToByteArray(),new ExtraPacketData(DateTime.UtcNow));
+                check(!EntityTargetingPlayers.Get(enemy).Contains(991) && EntityTargetingPlayers.Get(otherEnemy).Contains(991),"serialized client target change moves player from old enemy to new enemy");
+                MessageManager.ProcessClientTargetChange(new Zproto.WorldCsharp.Types.ClientTargetChange().ToByteArray(),new ExtraPacketData(DateTime.UtcNow));
+                encounter.SetAttrKV(player,"AttrTargetId",otherEnemy);
+                check(!EntityTargetingPlayers.Get(otherEnemy).Contains(991),"explicit client deselection is not overwritten by stale target attribute");
+            }
+            finally {MessageManager.currentUserUuid=oldSelf;encounter.Entities[player].Attributes.Remove("ClientSelectedTargetUuid");encounter.Entities[player].Attributes.Remove("AttrTargetId");}
             EntityTargetingPlayers.Update(enemy,otherEnemy);
             check(EntityTargetingPlayers.Get(otherEnemy).Count==0,"enemy targeting a player is not confused with players targeting the enemy");
             EntityTargetingPlayers.RemoveEntity(second);

@@ -152,6 +152,7 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
         "AttrSkillLevelIdList",
         "AttrTargetUuid",
         "AttrTargetId",
+        "ClientSelectedTargetUuid",
     ];
 
     protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
