@@ -150,7 +150,7 @@ public sealed class PlayerTalentTreeWidgetViewModel : PlayerWidgetWindowViewMode
     /// 木の表はサーバーで違うので、行のサーバー(履歴の行はその回のサーバー)、無ければ今のサーバーで引く。
     /// 根のバフの一覧が未着・特化が分からない・変身中なら null。
     /// </summary>
-    private static TalentTreeDefinition? ResolveTree(PlayerRosterEntry? player)
+    internal static TalentTreeDefinition? ResolveTree(PlayerRosterEntry? player)
     {
         if (player?.RootBuffData is null)
         {
@@ -220,7 +220,7 @@ public sealed class PlayerTalentTreeWidgetViewModel : PlayerWidgetWindowViewMode
     /// 技の置き換えの節は、どれかの置き換えで最後に使ったのが置き換え後の技なら取っている、全部の元の技を最後に使っていれば取っていない、
     /// まだ使っていない置き換えがあれば分からない。ほかの節(能力値の変換など)は分からない。
     /// </summary>
-    private static TalentTreeNodeKind ResolveAbilityKind(TalentTreeNode node, PlayerRootBuffData rootBuffData, PlayerRosterEntry player)
+    internal static TalentTreeNodeKind ResolveAbilityKind(TalentTreeNode node, PlayerRootBuffData rootBuffData, PlayerRosterEntry player)
     {
         if (node.Buffs.Any(rootBuffData.BuffIds.Contains))
         {

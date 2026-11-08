@@ -1132,6 +1132,13 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         }
     }
 
+    public void OpenExtension(WidgetListItemViewModel widget)
+    {
+        widget.State = WidgetState.Running;
+        Open(widget);
+        ExtensionWidgetHost.ApplyTarget(widget.Kind);
+    }
+
     private void Open(WidgetListItemViewModel widget)
     {
         // 止めたプラグインのカードは、一覧から外れるまでの間に順番が回ることがある。保存した状態は変えず、次の起動で開く。
@@ -1151,6 +1158,11 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         TrackManagerWindow(owner);
 
         var savedBounds = WidgetStateManager.Instance.GetWidgetSnapshot(widget.Key).Window;
+        if (widget.Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog)
+        {
+            savedBounds.Width ??= 1100;
+            savedBounds.Height ??= 720;
+        }
         if (widget.PluginWidget is { } pluginWidget)
         {
             // プラグインのウィジェットの既定の大きさは定義にある(保存の正規化では分からない)。
@@ -1724,10 +1736,18 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     /// 1枚だけ開く種類の窓の中身。プレイヤーリストとエンティティリストは窓の中身もウィジェットの項目が持つ。
     /// プラグインのウィジェットの中身を作れなかったときだけ null。
     /// </summary>
+    private static WidgetWindowComposition CreateExtensionComposition(WidgetListItemViewModel widget)
+    {
+        var body = new ExtensionWidgetHost(widget.Kind);
+        return new WidgetWindowComposition(body, body, null, null, null);
+    }
+
     private WidgetWindowComposition? CreateWidgetWindowComposition(WidgetListItemViewModel widget)
     {
         return widget.Kind switch
         {
+            WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog =>
+                CreateExtensionComposition(widget),
             WidgetKind.Plugin => CreatePluginWidgetComposition(widget, targetId: null),
             WidgetKind.PlayerList => new WidgetWindowComposition(
                 new PlayerListWidgetView(),
@@ -2598,6 +2618,8 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
             foreach (var session in _openPlayerWindows.ToArray())
             {
+                session.ViewModel.RefreshBuildContext();
+                session.Window.SetHeaderText(session.ViewModel.HeaderText);
                 session.Window.RefreshDataStatus();
             }
 

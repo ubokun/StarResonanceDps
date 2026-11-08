@@ -65,6 +65,7 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
 
     /// <summary>プレイヤーリストに出している行(絞り込みの後)。状態の印の計算に使う。</summary>
     private IReadOnlyList<PlayerRosterEntry> _shownPlayerRoster = Array.Empty<PlayerRosterEntry>();
+    private EntityHistorySnapshot _entityHistory = EntityHistorySnapshot.Empty;
     private IReadOnlyList<NearbyEntityEntry> _nearbyEntities = Array.Empty<NearbyEntityEntry>();
 
     /// <summary>エンティティリストのヘイトの枠のプレイヤーの見た目を名簿から引く(<see cref="UpdateEntityListRoster"/> で名簿を受ける)。</summary>
@@ -886,7 +887,7 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
     public void RefreshLocalizedText()
     {
         DisplayName = PluginWidget is null
-            ? LocalizationManager.Instance.GetString(DisplayNameResourceKey)
+            ? (Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog ? DisplayNameResourceKey : LocalizationManager.Instance.GetString(DisplayNameResourceKey))
             : PluginWidget.GetDisplayName(LocalizationManager.Instance.CurrentCulture);
         RenderMapName();
         OnPropertyChanged(nameof(StateText));
@@ -1351,6 +1352,12 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
         SynchronizePlayerListEntries(resetEntries);
     }
 
+    public void UpdateEntityHistory(EntityHistorySnapshot snapshot)
+    {
+        _entityHistory=snapshot;
+        if(IsEntityList) { if(snapshot.IsHistorical) ApplyMapName(snapshot.SceneName,0); else {var nearby=NearbyEntityStore.Instance.Current;ApplyMapName(nearby.MapName,nearby.MapChannel);} SynchronizeEntityListEntries(false); }
+    }
+
     public void UpdateNearbyEntities(
         IReadOnlyList<NearbyEntityEntry> nearbyEntities,
         string mapName,
@@ -1362,7 +1369,7 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
             return;
         }
 
-        ApplyMapName(mapName, mapChannel);
+        if(!_entityHistory.IsHistorical) ApplyMapName(mapName, mapChannel);
         _nearbyEntities = nearbyEntities;
 
         var resetEntries = _entityListMapGeneration != mapGeneration;
@@ -1795,7 +1802,9 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
             return;
         }
 
-        var visibleEntities = GetVisibleNearbyEntities();
+        var activeEntities = GetVisibleNearbyEntities();
+        var deadEntities = _entityHistory.Defeated.Where(x=>IsListed(x)).ToArray();
+        var visibleEntities = activeEntities.Concat(deadEntities.Where(x=>!activeEntities.Any(a=>a.EntityUuid==x.EntityUuid))).ToArray();
         var menuRowRemoved = resetEntries;
 
         if (resetEntries)
@@ -1809,7 +1818,7 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
 
         var targetsChanged = false;
         var isMenuTargetShown = false;
-        for (var index = 0; index < visibleEntities.Count; index++)
+        for (var index = 0; index < visibleEntities.Length; index++)
         {
             var entity = visibleEntities[index];
             EntityListEntry entry;
@@ -1832,18 +1841,19 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
                 targetsChanged = true;
             }
 
+            entry.IsFirstDefeated = index == activeEntities.Count && deadEntities.Length>0;
             var isMenuTarget = IsEntityMenuTarget(entity.EntityUuid);
             entry.IsEntitySelectionMenuOpen = isMenuTarget;
             isMenuTargetShown |= isMenuTarget;
         }
 
-        for (var index = _entityListEntries.Count - 1; index >= visibleEntities.Count; index--)
+        for (var index = _entityListEntries.Count - 1; index >= visibleEntities.Length; index--)
         {
             menuRowRemoved |= ReferenceEquals(_entityListEntries[index], _entityMenuRow);
             _entityListEntries.RemoveAt(index);
         }
 
-        RenderEntityListFooter(visibleEntities);
+        RenderEntityListFooter(activeEntities);
         RefreshDataStatus();
         if (targetsChanged)
         {
@@ -1958,8 +1968,8 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
     private IReadOnlyList<NearbyEntityEntry> GetVisibleNearbyEntities()
     {
         var hidesObjects = (EntityDisplayMode)_meter.EntityDisplayModeIndex == EntityDisplayMode.HideObjects;
-        var visibleEntities = _nearbyEntities
-            .Where(entry => IsListed(entry) && (!hidesObjects || entry.HasHpBar))
+        var visibleEntities = (_entityHistory.IsHistorical ? _entityHistory.Alive : _nearbyEntities)
+            .Where(entry => !(entry.EntityType==Zproto.EEntityType.EntMonster && entry.CurrentHp==0) && IsListed(entry) && (!hidesObjects || entry.HasHpBar))
             .ToArray();
 
         if (!SortsListByName)

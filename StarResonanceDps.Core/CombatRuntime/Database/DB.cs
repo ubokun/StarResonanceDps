@@ -13,6 +13,7 @@ namespace StarResonanceDps.Core.CombatRuntime
 {
     public class DB
     {
+        public static event Action<Encounter>? EncounterSaved;
         public static string DbFilePath => CombatRuntimePaths.DatabasePath;
         public static MigrationStatus MigrationStatus = new MigrationStatus();
 
@@ -59,7 +60,8 @@ namespace StarResonanceDps.Core.CombatRuntime
 
         public static ulong GetNextEncounterId()
         {
-            const string sql = "SELECT COALESCE(MAX(EncounterId), 0) + 1 FROM Encounters";
+            // AUTOINCREMENT is not reset when the latest rows are deleted.
+            const string sql = "SELECT MAX(COALESCE((SELECT MAX(EncounterId) FROM Encounters), 0), COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'Encounters'), 0)) + 1";
             lock (DBLock)
             {
                 return DbConn.QuerySingle<ulong>(sql);
@@ -83,6 +85,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 using var transaction = DbConn.BeginTransaction();
                 var result = InsertEncounter(encounter, transaction);
                 transaction.Commit();
+                EncounterSaved?.Invoke(encounter);
 
                 // 上限を超えたぶんはその場で落とす。終了時だけの掃除だと、稼働中は上限を超えて溜まる。
                 if (CombatRuntimeSettings.DatabaseMaxEncounterCount > 0)
@@ -99,6 +102,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             var sw = Stopwatch.StartNew();
             lock (DBLock)
             {
+                // Keep builds inside the same encounter blob, without a separate user library or association.
+                foreach (var entity in encounter.Entities.Values.Where(x => x.EntityType == Zproto.EEntityType.EntChar && !x.IsNpc))
+                    entity.RecordedBuild ??= RecordedPlayerBuildSnapshot.Capture(entity);
                 using var encMs = new MemoryStream();
                 encounter.FillSkillActivationsForSave();
                 try

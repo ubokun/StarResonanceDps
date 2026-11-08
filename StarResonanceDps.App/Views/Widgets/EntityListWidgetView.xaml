@@ -129,177 +129,22 @@
             </Style.Triggers>
         </Style>
 
-        <!--
-            ヘイトの枠(EntityHateSlot)。HP バーの右に、狙っている相手がいて表示設定「狙われるプレイヤー」が表示なら左端がその相手で続けてヘイト1位から、
-            そうでなければ左端からヘイト1位を詰めて並べる。ヘイトは表示設定「ヘイト値」の人数(1〜5人)まで(並べ方は EntityListEntry)。
-            中身はクラスアイコン(25、プレイヤーリストと同じ大きさ)・プレイヤー名・バッジ。
-            バッジは枠の中に寄せ方と Margin で置く(プレイヤーリストのデバフバッジと同じ作り)。枠を越えた分は切れる。バッジはクラスアイコンの背面。
-            大きさはこの XAML の数字。ゲージの塗る高さは、ゲージの実際の大きさと割合から決める(HateGaugeFillHeightConverter)。
-            狙っている相手の印は、色を絵の形で抜いて描く(絵は焼き込みの影を抜いた白い形)。影は付けない。ヘイトのゲージは形を下から充填の色で塗り、塗っていない上の部分を黒で塗る
-            (同じ形を2枚重ねると、縁の半透明の画素で下の黒が透けて枠に見える)。
-            TIPS はクラスアイコン・プレイヤー名・狙っている相手の印・ゲージにそれぞれ置き(文はどれも「特化名(…)」)、枠には置かない。
-            WPF は TIPS を持つ要素の四角と開いた TIPS の四角を囲む範囲の中では TIPS を替えないので、枠に置くとその範囲が枠の四角になる。
-            当たり判定は型抜きを見ずに四角で当たり、文字は欄の四角全体で当たる。プレイヤー名は欄を文字の幅にし、
-            ゲージの絵は箱(45)の上下に空きが大きいので、絵はマウスを受けず、見える形を囲む四角(35×17、絵の不透明度10%以上の画素の範囲)で受ける。
-            ツールチップの色は窓のパレット(TIPS を持つ要素の Tag にウィジェットを入れる。戦闘状態の印と同じ)。
-        -->
+        <!-- 全員のヘイト合計を100%とした同じ幅の横ゲージを、順位順に縦へ並べる。 -->
         <DataTemplate x:Key="EntityList.HateSlotTemplate">
-            <Grid Width="42"
-                  Height="34">
-                <!-- 今狙っている相手の印。色を絵の形で抜いて描く(ゲージの充填と同じ作り)。 -->
-                <Rectangle Width="30"
-                           Height="30"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Margin="5,-11,0,0"
-                           Fill="{x:Static services:HateBadgeImages.AccentBrush}"
-                           OpacityMask="{x:Static services:HateBadgeImages.TargetMask}"
-                           RenderOptions.BitmapScalingMode="HighQuality"
-                           Visibility="{Binding IsTarget, Converter={StaticResource BooleanToVisibilityConverter}}"
-                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type local:EntityListWidgetView}}}"
-                           behaviors:ToolTipBehavior.IsEnabled="True">
-                    <Rectangle.ToolTip>
-                        <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
-                                 Style="{StaticResource ToolTip.WidgetWindowInfo}">
-                            <TextBlock Style="{StaticResource Text.WidgetWindow}"
-                                       FontSize="12"
-                                       Text="{Binding ToolTipText}" />
-                        </ToolTip>
-                    </Rectangle.ToolTip>
-                </Rectangle>
-
-                <!--
-                    ヘイトのゲージ。充填(下から)と黒の地(上から)は Canvas の高さで切る(端数の高さを丸めないように、ここだけ画素へ丸めない)。
-                    マウスは見える形を囲む透明な四角だけが受ける。
-                -->
-                <Grid x:Name="HateGaugeHost"
-                      Width="45"
-                      Height="45"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Margin="5,-11,0,0">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsTarget}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
-
-                    <Canvas VerticalAlignment="Top"
-                            ClipToBounds="True"
-                            UseLayoutRounding="False"
-                            IsHitTestVisible="False">
-                        <Canvas.Height>
-                            <MultiBinding Converter="{StaticResource EntityList.HateGaugeFillHeightConverter}"
-                                          ConverterParameter="Empty">
-                                <Binding Path="GaugeRatio" />
-                                <Binding ElementName="HateGaugeHost"
-                                         Path="ActualWidth" />
-                                <Binding ElementName="HateGaugeHost"
-                                         Path="ActualHeight" />
-                            </MultiBinding>
-                        </Canvas.Height>
-                        <Rectangle Canvas.Top="0"
-                                   Width="{Binding ActualWidth, ElementName=HateGaugeHost}"
-                                   Height="{Binding ActualHeight, ElementName=HateGaugeHost}"
-                                   Fill="#FF000000"
-                                   OpacityMask="{x:Static services:HateBadgeImages.GaugeMask}"
-                                   RenderOptions.BitmapScalingMode="HighQuality" />
-                    </Canvas>
-                    <Canvas VerticalAlignment="Bottom"
-                            ClipToBounds="True"
-                            UseLayoutRounding="False"
-                            IsHitTestVisible="False">
-                        <Canvas.Height>
-                            <MultiBinding Converter="{StaticResource EntityList.HateGaugeFillHeightConverter}">
-                                <Binding Path="GaugeRatio" />
-                                <Binding ElementName="HateGaugeHost"
-                                         Path="ActualWidth" />
-                                <Binding ElementName="HateGaugeHost"
-                                         Path="ActualHeight" />
-                            </MultiBinding>
-                        </Canvas.Height>
-                        <Rectangle Canvas.Bottom="0"
-                                   Width="{Binding ActualWidth, ElementName=HateGaugeHost}"
-                                   Height="{Binding ActualHeight, ElementName=HateGaugeHost}"
-                                   Fill="{x:Static services:HateBadgeImages.AccentBrush}"
-                                   OpacityMask="{x:Static services:HateBadgeImages.GaugeMask}"
-                                   RenderOptions.BitmapScalingMode="HighQuality" />
-                    </Canvas>
-                    <Rectangle Width="35"
-                               Height="17"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Fill="Transparent"
-                               Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type local:EntityListWidgetView}}}"
-                               behaviors:ToolTipBehavior.IsEnabled="True">
-                        <Rectangle.ToolTip>
-                            <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
-                                     Style="{StaticResource ToolTip.WidgetWindowInfo}">
-                                <TextBlock Style="{StaticResource Text.WidgetWindow}"
-                                           FontSize="12"
-                                           Text="{Binding ToolTipText}" />
-                            </ToolTip>
-                        </Rectangle.ToolTip>
-                    </Rectangle>
+            <Grid Width="202" Height="7" ToolTip="{Binding ToolTipText}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="10"/><ColumnDefinition Width="8"/><ColumnDefinition Width="66"/><ColumnDefinition Width="90"/><ColumnDefinition Width="28"/></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding RankLabel}" Style="{StaticResource Text.WidgetWindow}" FontSize="6" LineHeight="7" LineStackingStrategy="BlockLineHeight" VerticalAlignment="Center" TextAlignment="Center"/>
+                <Rectangle Grid.Column="1" Width="6" Height="6" Fill="{Binding ClassBrush}" OpacityMask="{Binding ClassIconMask}" Effect="{StaticResource Effect.ProfessionIconShadow}"/>
+                <TextBlock Grid.Column="2" Text="{Binding PlayerName}" Style="{StaticResource Text.WidgetWindow}" FontSize="6" LineHeight="7" LineStackingStrategy="BlockLineHeight" Margin="2,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <Grid Grid.Column="3" x:Name="RelativeHateBar" Height="4" ToolTip="受信した全員のヘイト合計に対する割合（小数第1位まで、端数切り捨て）">
+                    <Border Background="{Binding ClassBrush}" Opacity="0.2" CornerRadius="2"/>
+                    <Border Background="{Binding ClassBrush}" CornerRadius="2" HorizontalAlignment="Left">
+                        <Border.Width><MultiBinding Converter="{StaticResource EntityList.RatioToWidthConverter}"><Binding Path="RelativeHateRatio"/><Binding ElementName="RelativeHateBar" Path="ActualWidth"/></MultiBinding></Border.Width>
+                    </Border>
                 </Grid>
-
-                <!--
-                    クラスアイコンとプレイヤー名。バッジより後に置いて前面に描く。
-                    組み方はプレイヤーリストのクラスアイコンと特化の文字と同じ: 箱(幅はアイコンの幅)の上にアイコン、
-                    名前は Canvas に置いてアイコンの中心に合わせる(幅は枠の幅、上から 21 でアイコンに 4 重ねる)。
-                    Canvas の中なので、名前が箱からはみ出しても切れない。入らなければ「…」。
-                    名前の欄は枠の幅の中で中央に寄せて文字の幅にする(TIPS を受けるのは文字の上だけ)。
-                -->
-                <Grid Width="25"
-                      HorizontalAlignment="Left">
-                    <Rectangle Width="25"
-                               Height="25"
-                               VerticalAlignment="Top"
-                               Fill="{Binding ClassBrush}"
-                               OpacityMask="{Binding ClassIconMask}"
-                               RenderOptions.BitmapScalingMode="HighQuality"
-                               Effect="{StaticResource Effect.ProfessionIconShadow}"
-                               Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type local:EntityListWidgetView}}}"
-                               behaviors:ToolTipBehavior.IsEnabled="True">
-                        <Rectangle.ToolTip>
-                            <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
-                                     Style="{StaticResource ToolTip.WidgetWindowInfo}">
-                                <TextBlock Style="{StaticResource Text.WidgetWindow}"
-                                           FontSize="12"
-                                           Text="{Binding ToolTipText}" />
-                            </ToolTip>
-                        </Rectangle.ToolTip>
-                    </Rectangle>
-                    <Canvas>
-                        <Grid Canvas.Left="-8.5"
-                              Canvas.Top="21"
-                              Width="42">
-                            <TextBlock HorizontalAlignment="Center"
-                                       Style="{StaticResource Text.WidgetWindow}"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       Text="{Binding PlayerName}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type local:EntityListWidgetView}}}"
-                                       behaviors:ToolTipBehavior.IsEnabled="True">
-                                <TextBlock.ToolTip>
-                                    <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
-                                             Style="{StaticResource ToolTip.WidgetWindowInfo}">
-                                        <TextBlock Style="{StaticResource Text.WidgetWindow}"
-                                                   FontSize="12"
-                                                   Text="{Binding ToolTipText}" />
-                                    </ToolTip>
-                                </TextBlock.ToolTip>
-                            </TextBlock>
-                        </Grid>
-                    </Canvas>
-                </Grid>
+                <TextBlock Grid.Column="4" Text="{Binding RelativeHateText}" Style="{StaticResource Text.WidgetWindow}" FontSize="6" LineHeight="7" LineStackingStrategy="BlockLineHeight" TextAlignment="Right" VerticalAlignment="Center" Margin="2,0"/>
             </Grid>
+            <DataTemplate.Triggers><DataTrigger Binding="{Binding IsTarget}" Value="True"><Setter TargetName="RelativeHateBar" Property="Visibility" Value="Hidden"/></DataTrigger></DataTemplate.Triggers>
         </DataTemplate>
     </UserControl.Resources>
 
@@ -336,6 +181,8 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="討伐済み（この集計）" Style="{StaticResource Text.WidgetWindow}" FontSize="11" Margin="10,8,0,4" Visibility="{Binding IsFirstDefeated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         <Button Height="44"
                                 Margin="5,0,0,0"
                                 Padding="0"
@@ -362,6 +209,8 @@
                                     <MenuItem Header="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Widget_DebuffList]}"
                                               Command="{Binding RequestEntityDebuffListCommand}"
                                               CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
+                                    <MenuItem Header="ヘイトPSを開く" Tag="HateMeter" Click="OpenHateMeter_Click"
+                                              CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
                                 </ContextMenu>
                             </Button.ContextMenu>
                             <Button.Style>
@@ -416,6 +265,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="33" />
                                     <ColumnDefinition Width="128" />
+                                    <ColumnDefinition Width="70" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
@@ -854,11 +704,14 @@
                                 </Grid>
 
                                 <!-- ヘイトの枠。枠は行の部品を使い回しても作り直さないよう、並べる数を決めて1つずつ置く。 -->
-                                <StackPanel Grid.Column="2"
+                                <TextBlock Grid.Column="2" Width="66" MaxHeight="40" Margin="4,0,0,0" VerticalAlignment="Center"
+                                           Style="{StaticResource Text.WidgetWindow}" FontSize="8" LineHeight="10" LineStackingStrategy="BlockLineHeight"
+                                           Text="{Binding TargetingPlayerNames}" TextTrimming="CharacterEllipsis" ToolTip="{Binding AllTargetingPlayerNames}"/>
+                                <StackPanel Grid.Column="3"
                                             Margin="10,0,0,0"
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Center"
-                                            Orientation="Horizontal">
+                                            Orientation="Vertical">
                                     <ContentPresenter Content="{Binding HateSlots[0]}"
                                                       Style="{StaticResource EntityList.HateSlotPresenter}"
                                                       ContentTemplate="{StaticResource EntityList.HateSlotTemplate}" />
@@ -929,6 +782,7 @@
                                 </Canvas>
                             </Grid>
                         </Button>
+                      </StackPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

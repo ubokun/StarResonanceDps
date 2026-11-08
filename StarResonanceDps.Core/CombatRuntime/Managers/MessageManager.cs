@@ -1,4 +1,4 @@
-﻿using StarResonanceDps.Core.CombatRuntime.Protocols;
+using StarResonanceDps.Core.CombatRuntime.Protocols;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -113,7 +113,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             netCap.ProxyGate = ShouldDispatchProxy;
 
             // 予告のバーが終わった行を、そのあとに届いたパケットの中身より先にタイムラインへ残す。
-            netCap.BeforeParsePacket = EncounterManager.RecordEndedAnnouncementBars;
+            netCap.BeforeParsePacket = CustomCombatFeatures.BeforePacket;
 
             netCap.AfterParsePacket = ProcessAfterParsePacket;
 
@@ -121,12 +121,14 @@ namespace StarResonanceDps.Core.CombatRuntime
 
             netCap.GameConnectionIdentified = GameServerStore.SetFromExeName;
 
-            netCap.MessageObserved = message => MessageObserved?.Invoke(message);
+            netCap.MessageObserved = message => { EntityTargetingPlayers.ObserveClientCall(message); MessageObserved?.Invoke(message); };
 
             netCap.RegisterProxyReturnHandler(WorldProxyServiceId, GetTeamInfoMethodId, ProcessGetTeamInfoReturn);
             netCap.RegisterProxyReturnHandler(WorldProxyServiceId, GetSocialDataMethodId, ProcessGetSocialDataReturn);
 
             // 自分が技を使うときの上りの要求とその応答。自分の推移グラフの技の記録はここから取る。
+            netCap.RegisterProxyHandler(WorldProxyServiceId, (uint)StarResonanceDps.Core.CombatRuntime.Protocols.ServiceMethods.WorldActivityNtf.ClientTargetChange,
+                (payload, _, extra) => ProcessClientTargetChange(payload,extra));
             netCap.RegisterProxyHandler(WorldProxyServiceId, UseSlotMethodId, ProcessUseSlotCall);
             netCap.RegisterProxyReturnHandler(WorldProxyServiceId, UseSlotMethodId, ProcessUseSlotReturn);
 
@@ -171,6 +173,8 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         private static void ProcessAfterParsePacket()
         {
+            CustomCombatFeatures.RecordParty(EncounterManager.Current);
+            EntityTargetingPlayers.PublishDiagnostics(EncounterManager.Current);
             if (SelfAttributeChangeStore.CommitPacket() && currentUserUuid != 0)
             {
                 PlayerRosterProjection.UpsertSelf(currentUserUuid);
@@ -2118,6 +2122,14 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         private static Dictionary<uint, int> PendingUseSlotSkills = [];
 
+        // Candidate upstream target-change path; actual selection/clear reception requires game verification.
+        public static void ProcessClientTargetChange(ReadOnlySpan<byte> payloadBuffer,ExtraPacketData extraData)
+        {
+            var change=Zproto.WorldCsharp.Types.ClientTargetChange.Parser.ParseFrom(payloadBuffer);
+            var self=currentUserUuid!=0 ? currentUserUuid : AppState.PlayerUUID;
+            EntityTargetingPlayers.ApplyClientTargetChange(self,change.TargetUuid,change.Skillid);
+        }
+
         /// <summary>
         /// 自分が技を使うときの上りの要求 <c>UseSlot</c>。種類が技で、自動(<c>IsPassive</c>)でない要求の技IDを応答まで控える。
         ///
@@ -2477,6 +2489,9 @@ namespace StarResonanceDps.Core.CombatRuntime
 
                             break;
                         }
+                    case EAttrType.AttrIsSilence:
+                        EncounterManager.Current.SetAttrKV(uuid, attrIdName, !isNoValue && reader.ReadBool());
+                        break;
                     case EAttrType.AttrCdAcceleratePct:
                         {
                             var accelerationPct = isNoValue ? 0 : reader.ReadInt32();
@@ -2648,6 +2663,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     case EAttrType.AttrHateList:
                         if (isNoValue)
                         {
+                            HateObservationRecorder.Record(EncounterManager.Current, uuid, [], arrivalUtc);
                             EncounterManager.Current.SetAttrKV(uuid, attrIdName, new List<HateInfo>());
                             break;
                         }
@@ -2662,6 +2678,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                             reader.ReadMessage(hate);
                             hateList.Add(hate);
                         }
+                        HateObservationRecorder.Record(EncounterManager.Current, uuid, hateList, arrivalUtc);
                         EncounterManager.Current.SetAttrKV(uuid, "AttrHateList", hateList);
                         break;
                     case EAttrType.AttrSlot:
@@ -2774,6 +2791,9 @@ namespace StarResonanceDps.Core.CombatRuntime
                         break;
                 }
             }
+            EnemyCatalogStore.Current.Observe(EncounterManager.Current, uuid, arrivalUtc);
+            if (EncounterManager.Current.Entities.TryGetValue(uuid,out var observedEnemy))
+                DefeatedEnemyRecorder.Observe(EncounterManager.Current,observedEnemy,arrivalUtc);
         }
 
         /// <param name="isFullList">
@@ -3131,7 +3151,14 @@ namespace StarResonanceDps.Core.CombatRuntime
                 }
 
                 var selfStatsBefore = isSelfTarget ? CaptureSelfStats(targetUuid, attrCollection.Attrs) : null;
+                var previousEnemySkill = EncounterManager.Current.GetAttrKV(targetUuid, "AttrSkillId") is int oldSkill ? oldSkill : 0;
+                var previousSilence = EncounterManager.Current.GetAttrKV(targetUuid, "AttrIsSilence") is bool oldSilence ? (bool?)oldSilence : null;
                 ProcessAttrs(targetUuid, attrCollection.Attrs, extraData.ArrivalTime);
+                EnemyControlRecorder.RecordState(EncounterManager.Current, targetUuid, extraData.ArrivalTime,
+                    previousEnemySkill, EncounterManager.Current.GetAttrKV(targetUuid, "AttrSkillId") is int newSkill ? newSkill : 0,
+                    changedAttributes.Contains(EAttrType.AttrSkillId), previousSilence,
+                    EncounterManager.Current.GetAttrKV(targetUuid, "AttrIsSilence") is bool newSilence ? (bool?)newSilence : null,
+                    changedAttributes.Contains(EAttrType.AttrIsSilence));
                 if (selfStatsBefore is not null)
                 {
                     RecordSelfStatChanges(targetUuid, selfStatsBefore, extraData.ArrivalTime);
@@ -3213,6 +3240,10 @@ namespace StarResonanceDps.Core.CombatRuntime
                                     creationTime = dto.UtcDateTime;
                                 }
                                 sawBuffAdd = true;
+                                EnemyControlRecorder.RecordBuff(EncounterManager.Current, targetUuid, buffInfo.BaseId, extraData.ArrivalTime);
+                                CustomCombatFeatures.RecordFactor(EncounterManager.Current, targetUuid, buffInfo.BaseId,
+                                    buffInfo.FightSourceInfo?.FightSourceType == (int)EFightSource.Buff
+                                        ? buffInfo.FightSourceInfo.SourceConfigId : 0, extraData.ArrivalTime);
                                 addedBuffIds.Add(buffInfo.BaseId);
                                 if (buffInfo.BaseId == PotionHealBuffId)
                                 {
@@ -3518,7 +3549,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     // 足すのは実際に増えた HP(ActualValue)。ゲーム内メーターと同じ。名目(damage)との差は過剰回復。
                     if (isAttackerPlayer)
                     {
-                        EncounterManager.Current.AddHealing(attackerUuid, targetUuid, skillId, syncDamageInfo.OwnerLevel, syncDamageInfo.ActualValue, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData);
+                        EncounterManager.Current.AddHealing(attackerUuid, targetUuid, skillId, syncDamageInfo.OwnerLevel, syncDamageInfo.ActualValue, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData, foldedSource.IsBuffSource, identitySkillId);
                     }
                     else if (combatEventLogActors[damageIndex] != 0)
                     {
@@ -3530,7 +3561,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     // 記録するのはプレイヤーから敵への攻撃だけ。敵の攻撃・自傷・フレンドリーファイアは被ダメログ(AddTakenDamage)にだけ残す。
                     if (isAttackerPlayer && !isTargetPlayer)
                     {
-                        EncounterManager.Current.AddDamage(attackerUuid, targetUuid, skillId, identitySkillId, syncDamageInfo.OwnerLevel, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData);
+                        EncounterManager.Current.AddDamage(attackerUuid, targetUuid, skillId, identitySkillId, syncDamageInfo.OwnerLevel, damage, hpLessen, shieldBreak, syncDamageInfo.Property, syncDamageInfo.Type, syncDamageInfo.DamageMode, isCrit, isLucky, isCauseLucky, isMiss, isDead, extraData, foldedSource.IsBuffSource, damageSource == EDamageSource.Buff, identitySkillId);
                     }
 
                     // 敵の攻撃(プレイヤーへの被弾と敵どうし)は、発生源の技を記録の瞬間に控える。
@@ -3641,6 +3672,14 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (aoiSyncDelta == null)
             {
                 return;
+            }
+            // Self-only deltas may identify the actor in the enclosing message.
+            // Preserve an explicit inner UUID; never borrow a previously observed actor.
+            if (aoiSyncDelta.Uuid == 0 && uuid != 0)
+            {
+                EntityTargetingPlayers.ObserveSelfDeltaFallback(aoiSyncDelta.Attrs?.Attrs.Any(
+                    attr => (EAttrType)attr.Id is EAttrType.AttrTargetId or EAttrType.AttrTargetUuid) == true);
+                aoiSyncDelta.Uuid = uuid;
             }
             ProcessAoiSyncDelta(aoiSyncDelta, extraData);
 
@@ -4057,7 +4096,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             EncounterManager.Current.DungeonState = vData.FlowInfo.State;
-            BattleStateMachine.DungeonStateHistoryAdd(vData.FlowInfo.State);
+            BattleStateMachine.DungeonStateHistoryAdd(vData.FlowInfo.State, extraData.ArrivalTime, vData.TimerInfo?.StartTime);
 
             int dungeonVarDataIdx = 0;
             foreach (var dungeonVarData in vData.DungeonVar.DungeonVarData)
@@ -4115,7 +4154,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 {
                     EDungeonState dungeonState = (EDungeonState)dun.FlowInfo.State;
                     EncounterManager.Current.DungeonState = dungeonState;
-                    BattleStateMachine.DungeonStateHistoryAdd(dungeonState);
+                    BattleStateMachine.DungeonStateHistoryAdd(dungeonState, extraData.ArrivalTime, dun.TimerInfo?.StartTime);
                 }
             }
 

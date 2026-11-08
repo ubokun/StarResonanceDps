@@ -1,4 +1,4 @@
-using StarResonanceDps.Core.CombatRuntime;
+﻿using StarResonanceDps.Core.CombatRuntime;
 
 namespace StarResonanceDps.Core.Models;
 
@@ -61,4 +61,5 @@ public sealed record PlayerRosterEntry(
     IReadOnlyList<int>? TalentNodeIds = null,
     // バフを付けないアビリティの節の技の置き換えに出てくる技の、元の技 → 最後に使ったほう(元の技か置き換え後の技)。
     // どれもまだ使っていなければ null。履歴の行はその回に保存した値。
-    IReadOnlyDictionary<int, int>? LastReplaceableSkills = null);
+    IReadOnlyDictionary<int, int>? LastReplaceableSkills = null,
+    RecordedPlayerBuildSnapshot? RecordedBuild = null);

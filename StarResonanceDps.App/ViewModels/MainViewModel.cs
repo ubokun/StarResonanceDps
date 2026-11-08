@@ -124,6 +124,16 @@ public sealed partial class MainViewModel : ViewModelBase
         AddWidget(WidgetKind.HpsGraph, "Widget_HpsGraph");
         AddWidget(WidgetKind.DamageTakenSummary, "Widget_DamageTakenSummary");
         AddWidget(WidgetKind.Chat, "Widget_Chat");
+        AddWidget(WidgetKind.HatePs, "ヘイトPSメーター");
+        AddWidget(WidgetKind.EnemyCatalog, "遭遇した敵");
+        AddWidget(WidgetKind.PartyDps, "PT DPS推移");
+        ExtensionWidgetHost.OpenRequested = (kind, target) =>
+        {
+            var widget = _widgetItems.FirstOrDefault(x => x.Kind == kind);
+            if (widget is null) return;
+            ExtensionWidgetHost.Targets[kind] = target;
+            WidgetWindowManager.Instance.OpenExtension(widget);
+        };
 
         _playerListWidget.PlayerWindowRequested += PlayerListWidget_PlayerWindowRequested;
         _entityListWidget.EntityWindowRequested += EntityListWidget_EntityWindowRequested;
@@ -178,6 +188,7 @@ public sealed partial class MainViewModel : ViewModelBase
         SelfModuleStore.Changed += SelfModuleStore_Changed;
         SelfSeasonCultivateStore.Changed += SelfSeasonCultivateStore_Changed;
         _nearbyEntityStore.EntitiesChanged += NearbyEntityStore_EntitiesChanged;
+        EntityHistoryProjection.Changed += EntityHistory_Changed;
         _dungeonScoreStore.Changed += DungeonScoreStore_Changed;
         MessageManager.MatchFound += MessageManager_MatchFound;
         GrpcTeamManager.TeamEntryVoteStarted += GrpcTeamManager_TeamEntryVoteStarted;
@@ -188,6 +199,7 @@ public sealed partial class MainViewModel : ViewModelBase
         var roster = _playerRosterStore.Current;
         ApplyPlayerRosterSnapshot(roster);
         ApplyNearbyEntitySnapshot(_nearbyEntityStore.Current);
+        _entityListWidget.UpdateEntityHistory(EntityHistoryProjection.Current);
         _entityListWidget.UpdateDungeonScore(_dungeonScoreStore.Current);
     }
 
@@ -809,6 +821,20 @@ public sealed partial class MainViewModel : ViewModelBase
         }
     }
 
+    private void EntityHistory_Changed(EntityHistorySnapshot snapshot)
+    {
+        var dispatcher=Application.Current?.Dispatcher;
+        if(dispatcher is not null && !dispatcher.CheckAccess()) { dispatcher.BeginInvoke(()=>ApplyEntityHistory(snapshot)); return; }
+        ApplyEntityHistory(snapshot);
+    }
+    private void ApplyEntityHistory(EntityHistorySnapshot snapshot)
+    {
+        _entityListWidget.UpdateEntityHistory(snapshot);
+        var entities=(snapshot.IsHistorical ? snapshot.Alive : _nearbyEntityStore.Current.Entries).Concat(snapshot.Defeated).DistinctBy(x=>x.EntityUuid).ToArray();
+        _widgetWindowManager.UpdateEntityWindowPresentations(_entityListWidget.EntityListEntries,entities);
+        RefreshTargetSelections();
+    }
+
     private void ApplyNearbyEntitySnapshot(NearbyEntitySnapshot snapshot)
     {
         // エンティティ出現の通知はエンティティリストを開いていなくても見る。
@@ -818,7 +844,9 @@ public sealed partial class MainViewModel : ViewModelBase
             snapshot.MapName,
             snapshot.MapChannel,
             snapshot.MapGeneration);
-        _widgetWindowManager.UpdateEntityWindowPresentations(_entityListWidget.EntityListEntries, snapshot.Entries);
+        var history=EntityHistoryProjection.Current;
+        var entities=(history.IsHistorical ? history.Alive : snapshot.Entries).Concat(history.Defeated).DistinctBy(x=>x.EntityUuid).ToArray();
+        _widgetWindowManager.UpdateEntityWindowPresentations(_entityListWidget.EntityListEntries, entities);
         RefreshTargetSelections();
     }
 

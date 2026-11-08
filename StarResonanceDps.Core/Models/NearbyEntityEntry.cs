@@ -1,4 +1,4 @@
-using StarResonanceDps.Core.CombatRuntime;
+﻿using StarResonanceDps.Core.CombatRuntime;
 using Zproto;
 using MonsterClassification = StarResonanceDps.Core.CombatRuntime.EMonsterType;
 
@@ -42,7 +42,8 @@ public sealed record NearbyEntityEntry(
     bool IsInCombat,
     long TargetCharacterId,
     NearbyEntityHateRanking HateRanking,
-    NearbyEntityCast? Cast);
+    NearbyEntityCast? Cast,
+    IReadOnlyList<long>? TargetingCharacterIds = null);
 
 /// <summary>
 /// 詠唱1回。技の開始(<c>AttrSkillId</c> に値が入った周りの差分)の到着時刻と、技の表の詠唱バーの全体秒数。

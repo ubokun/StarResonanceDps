@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using StarResonanceDps.App.Behaviors;
@@ -23,10 +23,28 @@ public partial class TimelineWidgetView : UserControl, IWidgetVerticalScrollCont
 {
     private ScrollViewer? _scrollViewer;
     private bool _followsTail = true;
+    private readonly CombatTimelineWindow _extensionController;
+    private bool _extensionStarted;
+    private bool _extensionStopped;
 
     public TimelineWidgetView()
     {
         InitializeComponent();
+        _extensionController = new CombatTimelineWindow();
+        Content = null;
+        Resources.MergedDictionaries.Add(_extensionController.Resources);
+        System.Windows.Data.BindingOperations.SetBinding(this, ThemePaletteScope.PaletteProperty,
+            new System.Windows.Data.Binding("Widget.ThemePalette"));
+        SetResourceReference(ForegroundProperty, "Brush.TextPrimary");
+        Content = _extensionController.IntegrateExistingLog(LogItemsControl);
+        Unloaded += (_, _) => StopExtension();
+    }
+
+    private void StopExtension()
+    {
+        if (_extensionStopped) return;
+        _extensionStopped = true;
+        _extensionController.StopWidget(); _extensionController.Close();
     }
 
     public event EventHandler? VerticalScrollMetricsChanged;
@@ -66,6 +84,12 @@ public partial class TimelineWidgetView : UserControl, IWidgetVerticalScrollCont
 
     private void TimelineWidgetView_Loaded(object sender, RoutedEventArgs e)
     {
+        if (!_extensionStarted)
+        {
+            _extensionStarted = true;
+            if (Window.GetWindow(this) is { } owner) owner.Closed += (_, _) => StopExtension();
+            _extensionController.StartWidget();
+        }
         if (_scrollViewer is null)
         {
             LogItemsControl.ApplyTemplate();

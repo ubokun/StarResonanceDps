@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using StarResonanceDps.App.Config;
@@ -44,16 +44,27 @@ public sealed partial class EntityHateSlot : ObservableObject
     [ObservableProperty]
     private double _gaugeRatio;
 
+    [ObservableProperty] private double _relativeHateRatio;
+    [ObservableProperty] private string _relativeHateText = string.Empty;
+    [ObservableProperty] private string _rankLabel = string.Empty;
+
+    public static double GetRelativeHateRatio(long value, double total)
+        => total > 0 ? Math.Clamp(value / total, 0d, 1d) : 0d;
+
     internal void ShowTarget(EntityHatePlayerLook player)
     {
         IsTarget = true;
+        RankLabel = "◎"; RelativeHateRatio = 0; RelativeHateText = "";
         ApplyPlayer(player, LocalizationManager.Instance.GetString("EntityList_Targeted"));
         IsShown = true;
     }
 
-    internal void ShowRank(EntityHatePlayerLook player, long hateValue)
+    internal void ShowRank(EntityHatePlayerLook player, long hateValue, int rank, double totalHate)
     {
         IsTarget = false;
+        RankLabel = rank.ToString();
+        RelativeHateRatio = GetRelativeHateRatio(hateValue, totalHate);
+        RelativeHateText = (Math.Floor(RelativeHateRatio * 1000) / 10).ToString("0.#") + "%";
         ApplyPlayer(player, LocalizationManager.Instance.Format("EntityList_HateValue", hateValue));
         GaugeRatio = HateBadgeImages.GetGaugeRatio(hateValue);
         IsShown = true;

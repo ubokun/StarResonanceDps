@@ -1,4 +1,4 @@
-using StarResonanceDps.App.Config;
+﻿using StarResonanceDps.App.Config;
 
 namespace StarResonanceDps.App.Models.Widgets;
 
@@ -11,6 +11,7 @@ public sealed class EntityRowSettings
     private EntityRowSettings(
         string nameFormatString,
         int healthValueDisplayModeIndex,
+        bool healthAsPercentage,
         bool showsCombatState,
         bool showsTargetedPlayer,
         int hateRankCount,
@@ -19,6 +20,7 @@ public sealed class EntityRowSettings
     {
         NameFormatString = nameFormatString;
         HealthValueDisplayModeIndex = healthValueDisplayModeIndex;
+        HealthAsPercentage = healthAsPercentage;
         ShowsCombatState = showsCombatState;
         ShowsTargetedPlayer = showsTargetedPlayer;
         HateRankCount = hateRankCount;
@@ -31,6 +33,7 @@ public sealed class EntityRowSettings
 
     /// <summary>HP 数値の見せ方(<see cref="WidgetConfigDefaults.SeparateShieldHealthValueDisplayModeIndex"/> ならバリア量を括弧で分ける)。</summary>
     public int HealthValueDisplayModeIndex { get; }
+    public bool HealthAsPercentage { get; }
 
     /// <summary>戦闘状態の実体の名前の左に印を出すか。</summary>
     public bool ShowsCombatState { get; }
@@ -54,6 +57,7 @@ public sealed class EntityRowSettings
         return new EntityRowSettings(
             settings.PlayerInfoFormatString ?? WidgetConfigDefaults.DefaultEntityInfoFormatString,
             settings.HealthValueDisplayModeIndex,
+            settings.EntityHpAsPercentage,
             settings.CombatStateDisplayModeIndex == WidgetConfigDefaults.CombatStateDisplayShowIndex,
             settings.TargetedPlayerDisplayModeIndex == WidgetConfigDefaults.TargetedPlayerDisplayShowIndex,
             WidgetConfigDefaults.GetHateRankDisplayCount(settings.HateRankDisplayModeIndex),
@@ -68,6 +72,7 @@ public sealed class EntityRowSettings
         return new EntityRowSettings(
             settings.EntityInfoFormatString ?? WidgetConfigDefaults.DefaultEntityInfoFormatString,
             settings.HealthValueDisplayModeIndex,
+            false,
             settings.CombatStateDisplayModeIndex == WidgetConfigDefaults.CombatStateDisplayShowIndex,
             settings.TargetedPlayerDisplayModeIndex == WidgetConfigDefaults.TargetedPlayerDisplayShowIndex,
             WidgetConfigDefaults.GetEntityInfoHateRankDisplayCount(settings.HateRankDisplayModeIndex),

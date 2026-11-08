@@ -113,6 +113,13 @@
                     </Grid>
                 </Border>
 
+                <Border Style="{StaticResource Panel.SettingField}" Visibility="{Binding ShowsEntityHpPercentageSettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="HPを％で表示" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <ToggleButton Grid.Column="1" IsChecked="{Binding EntityHpAsPercentage, Mode=TwoWay}" Style="{StaticResource Input.Switch}"/>
+                    </Grid>
+                </Border>
+
                 <Border Visibility="{Binding ShowsHealthValueSettings, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Border.Style>
                         <Style TargetType="{x:Type Border}"

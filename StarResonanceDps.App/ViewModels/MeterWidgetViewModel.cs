@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -260,6 +260,13 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
                 : WidgetKind.HpsGraph,
             player);
     }
+
+    [RelayCommand]
+    private void RequestPlayerTalent(MeterPlayerEntry? player) => RequestPlayerWindow(WidgetKind.PlayerTalent, player);
+    [RelayCommand]
+    private void RequestPlayerSeasonTalent(MeterPlayerEntry? player) => RequestPlayerWindow(WidgetKind.PlayerSeasonTalent, player);
+    [RelayCommand]
+    private void RequestPlayerModule(MeterPlayerEntry? player) => RequestPlayerWindow(WidgetKind.PlayerModule, player);
 
     private void RequestPlayerWindow(WidgetKind widgetKind, MeterPlayerEntry? player)
     {

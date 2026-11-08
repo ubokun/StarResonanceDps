@@ -235,6 +235,9 @@
                                              Placement="MousePoint"
                                              Opened="PlayerSelectionContextMenu_Opened"
                                              Closed="PlayerSelectionContextMenu_Closed">
+                                    <MenuItem Header="アビリティ情報" Command="{Binding RequestPlayerTalentCommand}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+                                    <MenuItem Header="潜在心相晶情報" Command="{Binding RequestPlayerSeasonTalentCommand}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+                                    <MenuItem Header="モジュール情報" Command="{Binding RequestPlayerModuleCommand}" CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
                                     <MenuItem Header="{Binding SkillDetailMenuText}"
                                               Command="{Binding RequestSkillDetailCommand}"
                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />

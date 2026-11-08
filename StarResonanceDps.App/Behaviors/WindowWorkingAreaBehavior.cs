@@ -197,6 +197,26 @@ public static class WindowWorkingAreaBehavior
         return (int)Math.Ceiling(value * scale);
     }
 
+    internal static Rect GetWorkingAreaForWindow(Window window)
+    {
+        var handle = new WindowInteropHelper(window).Handle;
+        var monitor = MonitorFromWindow(handle, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (handle == IntPtr.Zero || !GetMonitorInfo(monitor, ref info) || !GetWindowRect(handle, out var bounds)
+            || !double.IsFinite(window.Left) || !double.IsFinite(window.Top)) return SystemParameters.WorkArea;
+        var transform = GetDeviceTransform(window);
+        var scaleX = transform.M11 > 0 ? transform.M11 : 1;
+        var scaleY = transform.M22 > 0 ? transform.M22 : 1;
+        return new Rect(window.Left + (info.WorkArea.Left - bounds.Left) / scaleX,
+            window.Top + (info.WorkArea.Top - bounds.Top) / scaleY,
+            (info.WorkArea.Right - info.WorkArea.Left) / scaleX,
+            (info.WorkArea.Bottom - info.WorkArea.Top) / scaleY);
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr windowHandle, out Rectangle bounds);
+
     [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromWindow(IntPtr windowHandle, uint flags);
 

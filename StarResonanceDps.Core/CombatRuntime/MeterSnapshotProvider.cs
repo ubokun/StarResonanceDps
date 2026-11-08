@@ -3175,6 +3175,22 @@ public static class MeterSnapshotProvider
     /// 前の回を手放すのはパケットの処理の側(<see cref="EncounterManager.ReleaseHeldPastEncounter"/>)で、ここは読むだけ。
     /// </para>
     /// </summary>
+    public static (Encounter Encounter, PlayerRosterEntry Player, Entity Entity)? GetBuildPlayer(long characterId, Encounter? specifiedEncounter = null)
+    {
+        var encounter = specifiedEncounter ?? ResolveActiveEncounter();
+        if (encounter is null || !TryResolvePlayerEntity(encounter, characterId, out _, out var entity) || entity is null)
+            return null;
+        // Build snapshots must never fill historical gaps from the current party.
+        var source = PlayerDataSourceResolver.Resolve(characterId, null, entity, IsSelf(entity), recordedOnly: true);
+        return (encounter, new PlayerRosterEntry(characterId, source.Name, source.ProfessionId,
+            ClassSpec: source.ClassSpec, SubProfessionId: source.SubProfessionId,
+            EquipmentData: source.EquipmentData, IsNpc: source.IsNpc,
+            SeasonTalentBuffId: source.SeasonTalentBuffId, IsSeasonTalentInactive: source.IsSeasonTalentInactive,
+            GameServer: specifiedEncounter is null && encounter == EncounterManager.Current ? GameServerStore.Current : encounter.ExData.GameServer,
+            RootBuffData: source.RootBuffData, TalentNodeIds: source.TalentNodeIds,
+            LastReplaceableSkills: source.LastReplaceableSkills, IsFromRecord: true, RecordedBuild: entity.RecordedBuild), entity);
+    }
+
     internal static Encounter? ResolveActiveEncounter()
     {
         if (AppState.OpenedHistoricalEncounter is { } openedHistoricalEncounter)
@@ -3184,6 +3200,7 @@ public static class MeterSnapshotProvider
 
         var currentEncounter = EncounterManager.Current;
         return CombatRuntimeSettings.KeepPastEncounterInMeterUntilNextDamage
+            && currentEncounter?.ExData.UseQuestClock != true
             && currentEncounter?.PastEncounterForMeter is { } pastEncounter
                 ? pastEncounter
                 : currentEncounter;

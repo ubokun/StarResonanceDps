@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using StarResonanceDps.App.Config;
@@ -20,6 +20,8 @@ public partial class AggregationView : UserControl
     private bool _needsReload = true;
 
     internal ScrollViewer ContentScrollViewer => HistoryScrollViewer;
+
+    internal void FilterUser(string server, long characterId, string name) => _viewModel.FilterUser(server, characterId, name);
 
     public AggregationView()
     {
@@ -107,6 +109,7 @@ public partial class AggregationView : UserControl
             _viewModel.Reload();
         }
 
+        _viewModel.SyncSelection();
         _viewModel.RefreshBenchmarkState();
         _benchmarkTimer.Start();
     }

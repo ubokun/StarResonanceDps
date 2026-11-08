@@ -153,6 +153,10 @@ namespace StarResonanceDps.Core.CombatRuntime
             EncounterStartReason reason = EncounterStartReason.None,
             [System.Runtime.CompilerServices.CallerMemberName] string enterDungeonCaller = "")
         {
+            // A synchronized quest is one aggregate; automatic phase splits would divide damage by the entire quest clock.
+            if (Current?.ExData.UseQuestClock == true && CustomCombatFeatures.QuestStartUtc.HasValue
+                && keepPastEncounterInMeter && (reason is EncounterStartReason.NewObjective or EncounterStartReason.Wipe))
+                return;
             // 計測が始まった後は区切らない(窓の途中で回が割れないように)。終わらせる側(停止・ログアウト・マップ移動)は、
             // 先に印を下ろしてから呼ぶ。待機中は区切ってよい(記録が無く、作り直した回も計測の回になる)。
             if (HasBenchmarkBegun)
@@ -265,6 +269,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             Current = new Encounter(CurrentBattleId) { PastEncounterForMeter = pastEncounterForMeter };
+            CustomCombatFeatures.InitializeEncounter(Current);
 
             // 持つのは1つ前の回まで。前の回が持っていた回を手放す(新しい回を出した後に外す)。
             if (priorEncounter != null)
@@ -556,6 +561,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     displayed.IsNpc,
                     SocialDataStore.GetAvatar(characterId),
                     Models.PlayerClassSpecResolver.GetBuffTransformation(entity.UUID) ?? Models.PlayerClassSpec.Unknown);
+                entity.RecordedBuild = RecordedPlayerBuildSnapshot.Capture(entity, displayed);
             }
         }
 
@@ -591,6 +597,10 @@ namespace StarResonanceDps.Core.CombatRuntime
 
                 // 空の一覧を入れる。キーごと消すと「未観測」と区別が付かなくなる。
                 entity.SetAttrKV("AttrShieldList", new List<ShieldInfo>());
+                // Target references belong to the old map too; wait for a fresh target notification.
+                entity.Attributes.Remove("AttrTargetUuid");
+                entity.Attributes.Remove("AttrTargetId");
+                entity.Attributes.Remove("ClientSelectedTargetUuid");
             }
         }
 
@@ -863,7 +873,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             {
                 lock (_combatEventLogGate)
                 {
-                    return _combatEventLog.Count > 0 || _takenHitLog.Count > 0;
+                    return _combatEventLog.Count > 0 || _takenHitLog.Count > 0 || ExData.EnemyControlEvents.Count > 0;
                 }
             }
         }
@@ -1018,6 +1028,12 @@ namespace StarResonanceDps.Core.CombatRuntime
         internal CombatClockReading ReadCombatClock(DateTime utcNow)
         {
             var isClosed = EndTime != DateTime.MinValue;
+            if (ExData.UseQuestClock && ExData.QuestStartUtc is { } questStart)
+            {
+                var questEnd = isClosed ? EndTime.ToUniversalTime() : utcNow;
+                if (questEnd < questStart) questEnd = questStart;
+                return new CombatClockReading(questStart, questEnd, questEnd - questStart, isClosed);
+            }
             if (ExData.FirstDamageTimeStamp is not { } start)
             {
                 return new CombatClockReading(null, null, TimeSpan.Zero, isClosed);
@@ -1101,6 +1117,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         public TimeSpan? ToCombatOffset(DateTime utc)
         {
+            if (ExData.UseQuestClock && ExData.QuestStartUtc is { } questStart) return utc - questStart;
             if (ExData.FirstDamageTimeStamp is not { } start)
             {
                 return null;
@@ -1178,7 +1195,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 止めるのは記録だけ。特化・職業の判定、CD の推定、バフ、予告のバーの控えは止めない。
         /// </para>
         /// </summary>
-        private bool IsRecorded(DateTime arrivalUtc, long? playerUuid)
+        internal bool IsRecorded(DateTime arrivalUtc, long? playerUuid)
         {
             if (IsAggregationStopped)
             {
@@ -1342,6 +1359,12 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             entity.SetAttrKV(key, value);
+            if (key is "AttrTargetUuid" or "AttrTargetId")
+            {
+                EntityTargetingPlayers.ObserveAttribute(uuid,key,value);
+                if (Utils.UuidToEntityType(uuid)==(long)EEntityType.EntChar)
+                    EntityTargetingPlayers.Update(uuid,!entity.IsNpc ? EntityTargetingPlayers.ObservedTarget(entity) : 0);
+            }
 
             if (key == "AttrId" && entity.EntityType != EEntityType.EntChar)
             {
@@ -1627,7 +1650,8 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         public bool HasStatsBeenRecorded()
         {
-            return TotalDamage > 0 || TotalHealing > 0 || HasCombatEventLogRecords;
+            return TotalDamage > 0 || TotalHealing > 0 || HasCombatEventLogRecords
+                || ExData.DefeatedEnemies.Count > 0 || ExData.HateObservations.Any(x=>x.Change>0);
         }
 
         /// <summary>
@@ -1803,6 +1827,14 @@ namespace StarResonanceDps.Core.CombatRuntime
             long attackerUuid, long targetUuid, long skillId, int identitySkillId, int skillLevel, long damage, long hpLessen, long shieldBreak,
             EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
             bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData)
+            => AddDamage(attackerUuid,targetUuid,skillId,identitySkillId,skillLevel,damage,hpLessen,shieldBreak,damageElement,damageType,damageMode,
+                isCrit,isLucky,isCauseLucky,isMiss,isDead,extraPacketData,false,false,identitySkillId);
+
+        public void AddDamage(
+            long attackerUuid, long targetUuid, long skillId, int identitySkillId, int skillLevel, long damage, long hpLessen, long shieldBreak,
+            EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
+            bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData,
+            bool isBuffSource, bool isEffectDamage, int originSkillId)
         {
             var attacker = GetOrCreateEntity(attackerUuid);
 
@@ -1843,6 +1875,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (damage > 0 && damageType != EDamageType.Immune)
             {
                 attacker.DamageStats.AddPerSecondValue(combatOffset, extraPacketData.ArrivalTime, damage);
+                if (!isMiss) HateCauseRecorder.Record(this, new() { PlayerUuid = attackerUuid, TargetUuid = targetUuid,
+                    Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
+                    Kind = isEffectDamage ? HateCauseKind.EffectDamage : HateCauseKind.Hit, Value = damage, OriginSkillId = originSkillId });
             }
         }
 
@@ -1857,6 +1892,14 @@ namespace StarResonanceDps.Core.CombatRuntime
             long attackerUuid, long targetUuid, long skillId, int skillLevel, long damage, long nominalHealing, long hpLessen, long shieldBreak,
             EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
             bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData)
+            => AddHealing(attackerUuid,targetUuid,skillId,skillLevel,damage,nominalHealing,hpLessen,shieldBreak,damageElement,damageType,damageMode,
+                isCrit,isLucky,isCauseLucky,isMiss,isDead,extraPacketData,false,0);
+
+        public void AddHealing(
+            long attackerUuid, long targetUuid, long skillId, int skillLevel, long damage, long nominalHealing, long hpLessen, long shieldBreak,
+            EDamageProperty damageElement, EDamageType damageType, EDamageMode damageMode,
+            bool isCrit, bool isLucky, bool isCauseLucky, bool isMiss, bool isDead, ExtraPacketData extraPacketData,
+            bool isBuffSource, int originSkillId)
         {
             // 実際に HP が増えた回復は戦闘の出来事で、MessageManager が記録の前に当てている(最初なら起点を立てる。回復だけの戦闘でも HPS メーターが動く)。
             // 起点より前の回復は、何も記録しない(過剰回復・行動時刻・履歴表示の解除も)。計測の回は窓の中の自分の回復だけ。
@@ -1896,6 +1939,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (damage > 0)
             {
                 entity.HealingStats.AddPerSecondValue(combatOffset, extraPacketData.ArrivalTime, damage);
+                if (!isMiss) HateCauseRecorder.Record(this, new() { PlayerUuid = attackerUuid, TargetUuid = targetUuid,
+                    Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
+                    Kind = HateCauseKind.Healing, Value = damage, OriginSkillId = originSkillId });
             }
         }
 
@@ -3089,6 +3135,17 @@ namespace StarResonanceDps.Core.CombatRuntime
     [ProtoContract]
     public class EncounterExData
     {
+        [ProtoMember(20)] public DateTime? QuestStartUtc { get; set; }
+        [ProtoMember(21)] public bool UseQuestClock { get; set; }
+        [ProtoMember(22)] public int IdleResetSeconds { get; set; }
+        [ProtoMember(23)] public List<FactorActivation> FactorActivations { get; set; } = [];
+        [ProtoMember(24)] public List<long> PartyCharacterIds { get; set; } = [];
+        [ProtoMember(25)] public int IntervalResetSeconds { get; set; }
+        [ProtoMember(26)] public bool QuestStartFromServer { get; set; }
+        [ProtoMember(29)] public List<DefeatedEnemyRecord> DefeatedEnemies { get; set; } = [];
+        [ProtoMember(28)] public List<HateObservation> HateObservations { get; set; } = [];
+        [ProtoMember(30)] public List<HateCauseRecord> HateCauses { get; set; } = [];
+        [ProtoMember(27)] public List<EnemyControlEvent> EnemyControlEvents { get; set; } = [];
         [ProtoMember(2)]
         public int DungeonDifficulty { get; set; } = 0;
         [ProtoMember(3)]
@@ -3374,6 +3431,8 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 書くのは保存の直前の焼き付け(<see cref="ApplyDisplayedIdentityForRecord"/>)だけで、回の作り直しでは運ばない。
         /// 履歴から来たプレイヤーの行は、今の店の値ではなくこの値で写真を取る。画像そのものは持たない。
         /// </summary>
+        public RecordedPlayerBuildSnapshot? RecordedBuild { get; set; }
+
         public SocialAvatarState? RecordedAvatar { get; private set; }
 
         /// <summary>

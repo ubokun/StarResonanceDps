@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -119,13 +119,16 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
         NotifyVerticalScrollMetricsChanged();
     }
 
-    /// <summary>行の左クリックはエンティティ情報を開く(右クリックのメニューの1行目と同じ)。</summary>
+    /// <summary>敵の左クリックは、その個体のヘイトPSを開く。ほかの実体は従来の情報画面を開く。</summary>
     private void EntityListItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: EntityListEntry entry }
             && DataContext is WidgetListItemViewModel viewModel)
         {
-            viewModel.RequestEntityInfoCommand.Execute(entry.Target);
+            if (entry.EntityType == Zproto.EEntityType.EntMonster)
+                Services.ExtensionWidgetHost.Open(WidgetKind.HatePs, entry.EntityUuid);
+            else
+                viewModel.RequestEntityInfoCommand.Execute(entry.Target);
         }
     }
 
@@ -159,10 +162,18 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
         // 項目の引数は Tag を読み、コマンドは押した行の部品に頼らない(開いている間に行が替わっても開いた時の相手を開く)。
         menu.DataContext = widget;
         menu.Tag = entry.Target;
+        foreach (var item in menu.Items.OfType<MenuItem>().Where(x=>Equals(x.Tag,"HateMeter")))
+            item.Visibility=entry.EntityType==Zproto.EEntityType.EntMonster ? Visibility.Visible : Visibility.Collapsed;
         ApplyEntitySelectionMenuStyles(menu);
         menu.PlacementTarget = button;
         widget.SetEntityMenuTarget(entry);
         menu.IsOpen = true;
+    }
+
+    private void OpenHateMeter_Click(object sender, RoutedEventArgs e)
+    {
+        if(sender is MenuItem { CommandParameter: EntityTargetInfo target } && target.EntityType==Zproto.EEntityType.EntMonster)
+            StarResonanceDps.App.Services.ExtensionWidgetHost.Open(WidgetKind.HatePs, target.EntityUuid);
     }
 
     private void EntitySelectionContextMenu_Closed(object sender, RoutedEventArgs e)
@@ -217,7 +228,7 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
             menu.Style = contextMenuStyle;
         }
 
-        var menuItems = menu.Items.OfType<MenuItem>().ToArray();
+        var menuItems = menu.Items.OfType<MenuItem>().Where(x=>x.Visibility==Visibility.Visible).ToArray();
         for (var index = 0; index < menuItems.Length; index++)
         {
             var styleKey = index switch

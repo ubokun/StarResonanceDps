@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using Zproto;
@@ -55,6 +55,7 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
             nameof(Entity.Attributes),
             nameof(Entity.SkillCasts),
             nameof(Entity.RecordedAvatar),
+            nameof(Entity.RecordedBuild),
             nameof(Entity.RecordedBuffTransformation),
             nameof(Entity.RootBuffIds),
             nameof(Entity.TalentNodeIdsByProfession),
@@ -132,6 +133,8 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
     private static readonly HashSet<string> NonPlayerEntityMembers =
     [
         nameof(Entity.UUID),
+        nameof(Entity.Hp),
+        nameof(Entity.MaxHp),
         nameof(Entity.Attributes),
         nameof(Entity.SkillCasts),
     ];
@@ -147,6 +150,9 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
         "AttrMaxHp",
         "AttrRankLevel",
         "AttrSkillLevelIdList",
+        "AttrTargetUuid",
+        "AttrTargetId",
+        "ClientSelectedTargetUuid",
     ];
 
     protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)

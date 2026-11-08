@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -81,7 +81,10 @@ public partial class App : Application
 
         try
         {
+            CombatExtensionSettings.Initialize();
             CombatRuntimeHost.Instance.Initialize();
+            EntityHistoryProjection.Initialize();
+
             SkillCooldownTracker.Instance.Initialize();
         }
         catch (Exception exception)
@@ -235,6 +238,7 @@ public partial class App : Application
         NotificationService.Shutdown();
         SkillCooldownTracker.Instance.Shutdown();
         CombatRuntimeHost.Instance.Shutdown();
+        EnemyCatalogStore.Current.Save();
         PluginManager.Instance.ShutdownAll();
         ReleaseSingleInstance();
         base.OnExit(e);

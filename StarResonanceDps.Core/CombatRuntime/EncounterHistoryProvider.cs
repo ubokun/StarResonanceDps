@@ -1,4 +1,4 @@
-using Serilog;
+﻿using Serilog;
 using StarResonanceDps.Core.CombatRuntime.Database;
 
 namespace StarResonanceDps.Core.CombatRuntime;
@@ -35,7 +35,7 @@ public sealed record EncounterHistoryEntry(
 /// <summary>履歴の1件を選んだ結果(<see cref="EncounterHistoryProvider.SelectAsync"/>)。</summary>
 public enum HistorySelectResult
 {
-    /// <summary>読めた。選択の反映はパケットのスレッドへ積んだ(反映されると <see cref="EncounterHistoryProvider.SelectionChanged"/> が上がる)。</summary>
+    /// <summary>読めて、選択の反映まで完了した(反映されると <see cref="EncounterHistoryProvider.SelectionChanged"/> が上がる)。</summary>
     Opened,
 
     /// <summary>DB にその回が無い(保存数の上限で消えたなど)。選択は変えない。</summary>
@@ -70,12 +70,15 @@ public static class EncounterHistoryProvider
 
     /// <summary>最新の選択の要求の番号。集計タブの操作(回を選ぶ・ライブへ戻す)とログアウトで進める。</summary>
     private static long _latestRequest;
+    private static bool _retainUntilManualReturn;
+    private static int _timelineInspectors;
 
     /// <summary>アプリを閉じている(<see cref="ShutdownLoads"/> の後)。新しい読み込みを受けず、反映もしない。</summary>
     private static bool _isShutDown;
 
     /// <summary>走っている読み込み。閉じるときに終わりを待つ(閉じた接続に当てない)。</summary>
     private static readonly List<Task> PendingLoads = [];
+    private static readonly CancellationTokenSource ShutdownToken = new();
 
     /// <summary>最新の要求の回を読めなかった(<see cref="HasLoadFailed"/>)。</summary>
     private static bool _hasLoadFailed;
@@ -110,7 +113,7 @@ public static class EncounterHistoryProvider
 
     /// <summary>
     /// ライブ側でイベントが起きたので履歴表示を解除する。
-    /// **設定が OFF か、履歴を開いていなければ何もしない。**
+    /// 設定OFF、履歴なし、またはタイムラインの履歴確認中は解除しない。
     ///
     /// <para>
     /// 呼ぶのは <c>Encounter.AddDamage</c> / <c>AddHealing</c>(戦闘)と
@@ -127,7 +130,7 @@ public static class EncounterHistoryProvider
     /// </summary>
     public static void NotifyLiveEncounterEvent()
     {
-        if (!CombatRuntimeSettings.ClearHistorySelectionOnNextEvent
+        if (_retainUntilManualReturn || Volatile.Read(ref _timelineInspectors) > 0 || !CombatRuntimeSettings.ClearHistorySelectionOnNextEvent
             || AppState.OpenedHistoricalEncounter is null)
         {
             return;
@@ -169,12 +172,14 @@ public static class EncounterHistoryProvider
 
     /// <summary>
     /// 履歴の1件を開く。**開いている間、全ウィジェットが新しいデータを表示しなくなる。**
-    /// DB は裏のスレッドで読み(画面を止めない)、読めたら反映をパケットのスレッドへ積む。
-    /// 読めなければ選択を変えない(結果で分かる)。返す Task は読み込みと反映の予約まで。
+    /// DB は裏で読み、選択の反映完了まで待つ。30秒で応答がなければ失敗として要求を無効化する。
     /// </summary>
-    public static Task<HistorySelectResult> SelectAsync(ulong encounterId)
+    public static Task<HistorySelectResult> SelectAsync(ulong encounterId) => SelectAsync(encounterId, false);
+
+    public static Task<HistorySelectResult> SelectAsync(ulong encounterId, bool retainUntilManualReturn)
     {
         Task<HistorySelectResult> load;
+        long request;
         lock (RequestGate)
         {
             if (_isShutDown)
@@ -182,8 +187,8 @@ public static class EncounterHistoryProvider
                 return Task.FromResult(HistorySelectResult.Superseded);
             }
 
-            var request = ++_latestRequest;
-            load = Task.Run(() => LoadAndApply(encounterId, request));
+            request = ++_latestRequest;
+            load = Task.Run(() => LoadAndApply(encounterId, request, retainUntilManualReturn));
             PendingLoads.Add(load);
         }
 
@@ -196,10 +201,28 @@ public static class EncounterHistoryProvider
                 }
             },
             TaskScheduler.Default);
-        return load;
+        return WaitForLoadAsync(load, request);
     }
 
-    private static HistorySelectResult LoadAndApply(ulong encounterId, long request)
+    private static async Task<HistorySelectResult> WaitForLoadAsync(Task<HistorySelectResult> load, long request)
+    {
+        try { return await load.WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false); }
+        catch (TimeoutException)
+        {
+            Log.Warning("History selection timed out (request {Request})", request);
+            SetLoadFailedIfLatest(request);
+            lock (RequestGate) if (_latestRequest == request) _latestRequest++;
+            return HistorySelectResult.Failed;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex,"History selection failed (request {Request})",request);
+            SetLoadFailedIfLatest(request);
+            return HistorySelectResult.Failed;
+        }
+    }
+
+    private static async Task<HistorySelectResult> LoadAndApply(ulong encounterId, long request, bool retainUntilManualReturn)
     {
         Encounter? encounter;
         try
@@ -225,20 +248,33 @@ public static class EncounterHistoryProvider
             return HistorySelectResult.Superseded;
         }
 
+        var applied = new TaskCompletionSource<HistorySelectResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         MessageManager.RunOnPacketThread(() =>
         {
-            // 待ち行列に並んでいる間に別の回かライブが選ばれていたら反映しない。
-            if (!IsLatestRequest(request))
+            if (!IsLatestRequest(request)) { applied.TrySetResult(HistorySelectResult.Superseded); return; }
+            var previous = AppState.OpenedHistoricalEncounter;
+            var previouslyRetained = _retainUntilManualReturn;
+            try
             {
-                return;
+                AppState.OpenedHistoricalEncounter = encounter;
+                _retainUntilManualReturn = retainUntilManualReturn || Volatile.Read(ref _timelineInspectors) > 0;
+                PlayerRosterProjection.RebuildRoster();
+                ClearLoadFailed();
+                SelectionChanged?.Invoke();
+                applied.TrySetResult(HistorySelectResult.Opened);
             }
-
-            AppState.OpenedHistoricalEncounter = encounter;
-            ClearLoadFailed();
-            PlayerRosterProjection.RebuildRoster();
-            SelectionChanged?.Invoke();
+            catch (Exception ex)
+            {
+                AppState.OpenedHistoricalEncounter = previous;
+                _retainUntilManualReturn = previouslyRetained;
+                Log.Error(ex, "History {EncounterId} could not be applied", encounterId);
+                applied.TrySetResult(HistorySelectResult.Failed);
+                try { PlayerRosterProjection.RebuildRoster(); SetLoadFailedIfLatest(request); }
+                catch(Exception rollbackError) { Log.Error(rollbackError,"History rollback notification failed"); }
+            }
         });
-        return HistorySelectResult.Opened;
+        try { return await applied.Task.WaitAsync(ShutdownToken.Token).ConfigureAwait(false); }
+        catch (OperationCanceledException) { return HistorySelectResult.Superseded; }
     }
 
     /// <summary>読めなかった。古い要求(後から別の回かライブが選ばれた)の失敗は印にしない。</summary>
@@ -305,8 +341,37 @@ public static class EncounterHistoryProvider
         }
     }
 
+    /// <summary>Prevent live packet events from clearing a history selection while a timeline is displayed.</summary>
+    public static IDisposable RetainWhileTimelineOpen()
+    {
+        Interlocked.Increment(ref _timelineInspectors);
+        RetainCurrentSelection();
+        return new TimelineInspection();
+    }
+
+    private sealed class TimelineInspection : IDisposable
+    {
+        private int _disposed;
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0) Interlocked.Decrement(ref _timelineInspectors);
+        }
+    }
+
+    /// <summary>Hold the displayed history while a timeline is open; never pin a later unrelated selection.</summary>
+    public static void RetainCurrentSelection()
+    {
+        var selectedId = SelectedEncounterId;
+        if (selectedId is null) return;
+        MessageManager.RunOnPacketThread(() =>
+        {
+            if (SelectedEncounterId == selectedId) _retainUntilManualReturn = true;
+        });
+    }
+
     private static void ApplyLive()
     {
+        _retainUntilManualReturn = false;
         AppState.OpenedHistoricalEncounter = null;
         ClearLoadFailed();
         PlayerRosterProjection.RebuildRoster();
@@ -326,6 +391,7 @@ public static class EncounterHistoryProvider
             pending = PendingLoads.ToArray();
         }
 
+        ShutdownToken.Cancel();
         Task.WaitAll(pending);
     }
 }

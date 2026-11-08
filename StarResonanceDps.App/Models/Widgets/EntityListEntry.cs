@@ -18,6 +18,9 @@ namespace StarResonanceDps.App.Models.Widgets;
 /// </summary>
 public sealed partial class EntityListEntry : ObservableObject
 {
+    [ObservableProperty] private bool _isFirstDefeated;
+    [ObservableProperty] private string _targetingPlayerNames = "";
+    [ObservableProperty] private string _allTargetingPlayerNames = "";
     private const string UnknownScoreText = "??";
 
     private readonly ObservableCollection<EntityHateSlot> _hateSlots = [];
@@ -203,7 +206,7 @@ public sealed partial class EntityListEntry : ObservableObject
             entity.CurrentHp,
             entity.MaxHp,
             entity.CurrentShield,
-            settings.HealthValueDisplayModeIndex);
+            settings.HealthValueDisplayModeIndex, settings.HealthAsPercentage);
         HasBreakGauge = entity.MaxBreak > 0;
         BreakRatio = HasBreakGauge ? GetRatio(entity.CurrentBreak, entity.MaxBreak) : 0d;
         BreakText = HasBreakGauge ? FormatValuePair(entity.CurrentBreak, entity.MaxBreak) : string.Empty;
@@ -230,6 +233,10 @@ public sealed partial class EntityListEntry : ObservableObject
             ClassBrush = CreateBrush(classColor);
         }
 
+        if(entity.EntityType==EEntityType.EntMonster && entity.CurrentHp==0) DisplayName="討伐済み · "+DisplayName;
+        var targeting = (entity.TargetingCharacterIds ?? []).Distinct().Select(id => hatePlayers.Resolve(id).DisplayName).ToArray();
+        AllTargetingPlayerNames = string.Join("\n", targeting);
+        TargetingPlayerNames = string.Join("\n", targeting.Take(3)) + (targeting.Length > 3 ? $"\n+{targeting.Length-3}人" : "");
         UpdateHateSlots(entity, settings, hatePlayers);
     }
 
@@ -250,6 +257,13 @@ public sealed partial class EntityListEntry : ObservableObject
     /// 狙っている相手がプレイヤーで「狙われるプレイヤー」が表示なら左端をその相手にし、続けてヘイト1位から。
     /// そうでなければ左端からヘイト1位を詰めて並べる。ヘイトは設定の人数まで(枠の数を決めておく行は、その数に収まるまで)。
     /// </summary>
+    public static double GetTotalHate(NearbyEntityHateRanking ranking)
+    {
+        double total = 0;
+        for (var i = 0; i < ranking.Count; i++) total += Math.Max(0, ranking[i].HateValue);
+        return total;
+    }
+
     private void UpdateHateSlots(NearbyEntityEntry entity, EntityRowSettings settings, EntityHatePlayerResolver hatePlayers)
     {
         var ranking = entity.HateRanking;
@@ -263,11 +277,12 @@ public sealed partial class EntityListEntry : ObservableObject
             GetHateSlot(shownCount++).ShowTarget(hatePlayers.Resolve(entity.TargetCharacterId));
         }
 
+        var totalHate = GetTotalHate(ranking);
         var rankCount = Math.Min(ranking.Count, settings.HateRankCount);
         for (var rankIndex = 0; rankIndex < rankCount && shownCount < slotLimit; rankIndex++)
         {
             var rank = ranking[rankIndex];
-            GetHateSlot(shownCount++).ShowRank(hatePlayers.Resolve(rank.CharacterId), rank.HateValue);
+            GetHateSlot(shownCount++).ShowRank(hatePlayers.Resolve(rank.CharacterId), rank.HateValue, rankIndex + 1, totalHate);
         }
 
         if (_fixedHateSlotCount is not null)
@@ -506,8 +521,9 @@ public sealed partial class EntityListEntry : ObservableObject
         long currentHp,
         long maxHp,
         long currentShield,
-        int displayModeIndex)
+        int displayModeIndex, bool percentage = false)
     {
+        if (percentage) return maxHp > 0 ? (Math.Clamp((double)currentHp / maxHp, 0, 1) * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%" : "--%";
         var shield = Math.Max(currentShield, 0L);
         // バリア量個別表示でも、バリアが無いときは括弧を出さない。
         return displayModeIndex == WidgetConfigDefaults.SeparateShieldHealthValueDisplayModeIndex
