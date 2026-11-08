@@ -159,7 +159,7 @@ internal static class PlayerDataSourceResolver
         var isSpecAbilityUnequipped = recordedOnly ? metadataEntity?.IsSpecAbilityUnequipped == true
             : ResolveSpecAbilityUnequipped(characterId, nearbyEntity, metadataEntity, isSelf);
 
-        return new PlayerDataSourceSnapshot(
+        var result = new PlayerDataSourceSnapshot(
             characterId,
             !string.IsNullOrEmpty(nearbyName)
                 ? nearbyName
@@ -224,6 +224,7 @@ internal static class PlayerDataSourceResolver
             ResolveTalentNodeIds(nearbyEntity, metadataEntity, professionId),
             nearbyEntity?.LastReplaceableSkills ?? metadataEntity?.LastReplaceableSkills,
             ResolveDataGaps(characterId, nearbyEntity, metadataEntity, partySupplement, isSelf));
+        return recordedOnly && metadataEntity?.RecordedBuild is { } build ? build.ApplyTo(result) : result;
     }
 
     /// <summary>

@@ -102,6 +102,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             var sw = Stopwatch.StartNew();
             lock (DBLock)
             {
+                // Keep builds inside the same encounter blob, without a separate user library or association.
+                foreach (var entity in encounter.Entities.Values.Where(x => x.EntityType == Zproto.EEntityType.EntChar && !x.IsNpc))
+                    entity.RecordedBuild ??= RecordedPlayerBuildSnapshot.Capture(entity);
                 using var encMs = new MemoryStream();
                 encounter.FillSkillActivationsForSave();
                 try

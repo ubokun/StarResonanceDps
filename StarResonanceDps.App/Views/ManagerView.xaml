@@ -32,9 +32,6 @@
                                 Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Navigation_Widgets]}" />
                         </StackPanel>
                     </RadioButton>
-                    <Button Style="{StaticResource Button.Sidebar}" Content="ヘイトPS" Click="HateMeterButton_Click" Margin="0,0,0,8" Padding="8"/>
-                    <Button Style="{StaticResource Button.Sidebar}" Content="遭遇した敵" Click="EnemyCatalogButton_Click" Margin="0,0,0,8" Padding="8"/>
-                    <Button Style="{StaticResource Button.Sidebar}" Content="拡張タイムライン" Click="CombatTimelineButton_Click" Margin="0,0,0,8" Padding="8" />
                     <RadioButton x:Name="AggregationNavigationButton"
                                  GroupName="ManagerNavigation"
                                  Style="{DynamicResource RadioButton.SidebarNavigation}"

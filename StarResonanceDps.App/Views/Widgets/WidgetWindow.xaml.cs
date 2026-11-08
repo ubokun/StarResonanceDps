@@ -1236,7 +1236,7 @@ public partial class WidgetWindow : Window
             return;
         }
 
-        if (_widget.Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps)
+        if (_widget.Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog)
         {
             var area = WindowWorkingAreaBehavior.GetWorkingAreaForWindow(owner);
             Width = Math.Min(Width, Math.Max(MinWidth, area.Width - 24));

@@ -11,7 +11,7 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
     public event EventHandler? DataStatusChanged;
     public void RefreshDataStatus()
     {
-        var status=WidgetDataStatusRules.ForTimeline(StarResonanceDps.Core.CombatRuntime.GameReceptionStateStore.Current,
+        var status=_kind == WidgetKind.EnemyCatalog ? default : WidgetDataStatusRules.ForTimeline(StarResonanceDps.Core.CombatRuntime.GameReceptionStateStore.Current,
             StarResonanceDps.Core.CombatRuntime.AppState.OpenedHistoricalEncounter is not null,
             StarResonanceDps.Core.CombatRuntime.EncounterHistoryProvider.HasLoadFailed);
         if(status==DataStatus)return;
@@ -32,6 +32,7 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
         _controller=kind switch {
             WidgetKind.PartyDps => new PartyDpsWindow(),
             WidgetKind.UserBuildLibrary => new UserBuildWindow(),
+            WidgetKind.EnemyCatalog => new EnemyCatalogWindow(),
             WidgetKind.CombatExtensionTimeline => new CombatTimelineWindow(),
             WidgetKind.HatePs => new HateMeterWindow(Targets.GetValueOrDefault(kind)),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)) };

@@ -330,8 +330,30 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
             : null;
     }
 
+    private bool IsBuildWidget => PlayerWidget.Kind is WidgetKind.PlayerTalent or WidgetKind.PlayerSeasonTalent or WidgetKind.PlayerModule;
+
+    public void RefreshBuildContext()
+    {
+        if (!IsBuildWidget) return;
+        var roster = PlayerRosterPresentationStore.Instance.Current.Entries;
+        UpdatePlayerFromRoster(roster.Where(x => x.CharacterId != 0).ToDictionary(x => x.CharacterId), roster.FirstOrDefault(x => x.IsSelf));
+    }
+
     private void UpdatePlayer(PlayerRosterEntry? player)
     {
+        if (IsBuildWidget && AppState.OpenedHistoricalEncounter is { } history)
+        {
+            var id = _requestedCharacterId ?? player?.CharacterId ?? AppState.PlayerUID;
+            player = MeterSnapshotProvider.GetBuildPlayer(id, history)?.Player;
+            if (player is not null)
+            {
+                var isSelf = id == AppState.PlayerUID;
+                var mode = PlayerRosterPresentationStore.Instance.NameDisplayMode;
+                player = player with { IsSelf = isSelf, IsLive = false,
+                    Name = mode == PlayerNameDisplayMode.Hide || mode == PlayerNameDisplayMode.HideOthers && !isSelf
+                        ? PlayerRosterPresentationStore.HiddenPlayerName : player.Name };
+            }
+        }
         if (player is not null)
         {
             if (_requestedCharacterId is null)
@@ -344,6 +366,7 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
 
         if (EqualityComparer<PlayerRosterEntry?>.Default.Equals(_selectedPlayer, player))
         {
+            if (IsBuildWidget) RefreshHeaderText();
             return;
         }
 
@@ -394,9 +417,11 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
             return;
         }
 
-        // メイン画面のカードの名前の欄と同じ組み立て(WidgetHeaderText)。
+        // Identify recorded build context so it cannot be mistaken for the current live loadout.
+        var prefix = IsBuildWidget && AppState.OpenedHistoricalEncounter is { } history
+            ? $"{HeaderPrefix}（集計#{history.EncounterId}）" : HeaderPrefix;
         HeaderText = WidgetHeaderText.ForPlayer(
-            HeaderPrefix,
+            prefix,
             _lastKnownPlayerName,
             _lastKnownPlayerUid,
             IsSelfTarget,

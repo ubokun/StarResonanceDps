@@ -3188,7 +3188,7 @@ public static class MeterSnapshotProvider
             SeasonTalentBuffId: source.SeasonTalentBuffId, IsSeasonTalentInactive: source.IsSeasonTalentInactive,
             GameServer: specifiedEncounter is null && encounter == EncounterManager.Current ? GameServerStore.Current : encounter.ExData.GameServer,
             RootBuffData: source.RootBuffData, TalentNodeIds: source.TalentNodeIds,
-            LastReplaceableSkills: source.LastReplaceableSkills, IsFromRecord: true), entity);
+            LastReplaceableSkills: source.LastReplaceableSkills, IsFromRecord: true, RecordedBuild: entity.RecordedBuild), entity);
     }
 
     internal static Encounter? ResolveActiveEncounter()

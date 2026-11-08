@@ -1158,7 +1158,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         TrackManagerWindow(owner);
 
         var savedBounds = WidgetStateManager.Instance.GetWidgetSnapshot(widget.Key).Window;
-        if (widget.Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps)
+        if (widget.Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog)
         {
             savedBounds.Width ??= 1100;
             savedBounds.Height ??= 720;
@@ -1746,7 +1746,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     {
         return widget.Kind switch
         {
-            WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps =>
+            WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog =>
                 CreateExtensionComposition(widget),
             WidgetKind.Plugin => CreatePluginWidgetComposition(widget, targetId: null),
             WidgetKind.PlayerList => new WidgetWindowComposition(
@@ -2618,6 +2618,8 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
             foreach (var session in _openPlayerWindows.ToArray())
             {
+                session.ViewModel.RefreshBuildContext();
+                session.Window.SetHeaderText(session.ViewModel.HeaderText);
                 session.Window.RefreshDataStatus();
             }
 

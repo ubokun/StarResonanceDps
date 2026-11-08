@@ -561,6 +561,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     displayed.IsNpc,
                     SocialDataStore.GetAvatar(characterId),
                     Models.PlayerClassSpecResolver.GetBuffTransformation(entity.UUID) ?? Models.PlayerClassSpec.Unknown);
+                entity.RecordedBuild = RecordedPlayerBuildSnapshot.Capture(entity, displayed);
             }
         }
 
@@ -3420,6 +3421,8 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 書くのは保存の直前の焼き付け(<see cref="ApplyDisplayedIdentityForRecord"/>)だけで、回の作り直しでは運ばない。
         /// 履歴から来たプレイヤーの行は、今の店の値ではなくこの値で写真を取る。画像そのものは持たない。
         /// </summary>
+        public RecordedPlayerBuildSnapshot? RecordedBuild { get; set; }
+
         public SocialAvatarState? RecordedAvatar { get; private set; }
 
         /// <summary>

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using StarResonanceDps.App.Localization;
 using StarResonanceDps.App.Models.Widgets;
@@ -140,8 +140,12 @@ public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel,
 
     private List<PlayerRootBuffEntry> CreateEntries(PlayerRosterEntry? player)
     {
-        var selfModuleEffects = UsesSelfData(player, RootBuffKind.ModuleEffect) ? SelfModuleStore.GetEquippedEffectLinks() : null;
-        var selfFactors = UsesSelfData(player, RootBuffKind.Factor) ? GetSelfFactors() : null;
+        var selfModuleEffects = player is { IsFromRecord: true }
+            ? player.RecordedBuild?.ModuleEffects
+            : UsesSelfData(player, RootBuffKind.ModuleEffect) ? SelfModuleStore.GetEquippedEffectLinks() : null;
+        var selfFactors = player is { IsFromRecord: true }
+            ? player.RecordedBuild?.Factors
+            : UsesSelfData(player, RootBuffKind.Factor) ? GetSelfFactors() : null;
         var rootBuffData = player?.RootBuffData;
         var entries = new List<PlayerRootBuffEntry>();
         foreach (var kind in _kinds)

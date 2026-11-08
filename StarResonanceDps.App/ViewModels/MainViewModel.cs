@@ -124,8 +124,8 @@ public sealed partial class MainViewModel : ViewModelBase
         AddWidget(WidgetKind.HpsGraph, "Widget_HpsGraph");
         AddWidget(WidgetKind.DamageTakenSummary, "Widget_DamageTakenSummary");
         AddWidget(WidgetKind.Chat, "Widget_Chat");
-        AddWidget(WidgetKind.CombatExtensionTimeline, "拡張タイムライン");
         AddWidget(WidgetKind.HatePs, "ヘイトPSメーター");
+        AddWidget(WidgetKind.EnemyCatalog, "遭遇した敵");
         AddWidget(WidgetKind.PartyDps, "PT DPS推移");
         ExtensionWidgetHost.OpenRequested = (kind, target) =>
         {

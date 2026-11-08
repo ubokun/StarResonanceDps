@@ -53,6 +53,21 @@ public partial class CombatTimelineWindow : Window
         CombatExtensionSettings.Validate(options); return options;
     }
 
+    internal FrameworkElement IntegrateExistingLog(FrameworkElement log)
+    {
+        var frame = (ContentControl)Content;
+        var frameGrid = (Grid)frame.Content;
+        var panel = frameGrid.Children.OfType<ContentControl>().First(x => x is not UserControl);
+        var body = (Grid)panel.Content;
+        panel.Content = null;
+        var parent = (Grid)EventList.Parent;
+        parent.Children.Remove(EventList);
+        Grid.SetRow(log, 3); log.Margin = new Thickness(0, 8, 0, 0);
+        parent.Children.Add(log);
+        // Existing text selection, copy, auto-follow and scroll behavior remain on the same log control.
+        return body;
+    }
+
     internal async void StartWidget() { LoadHistory(); _timer.Start(); await RefreshAsync(); }
     internal void StopWidget() => _timer.Stop();
     private async Task RefreshAsync()
@@ -159,7 +174,7 @@ public partial class CombatTimelineWindow : Window
         foreach (var choice in choices.Where(x => _selectedActions.Contains(x.Key))) ActionChoices.SelectedItems.Add(choice);
         _updating = updating;
     }
-    private void EnemyCatalog_Click(object sender, RoutedEventArgs e) => new EnemyCatalogWindow { Owner = this }.Show();
+    private void EnemyCatalog_Click(object sender, RoutedEventArgs e) => ExtensionWidgetHost.Open(Models.Widgets.WidgetKind.EnemyCatalog);
     private void ToggleActionFilter_Click(object sender, RoutedEventArgs e)
         => ActionFilterPanel.Visibility = ActionFilterPanel.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
     private void ActionSearchChanged(object sender, TextChangedEventArgs e) { if (ActionChoices is not null) UpdateActionChoices(); }

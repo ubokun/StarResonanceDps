@@ -13,6 +13,7 @@ public sealed class WidgetStateDocument
 public sealed class WidgetConfig
 {
     public bool PlayerListInfoActionsWidthApplied { get; set; }
+    public bool TimelineIntegratedLayoutApplied { get; set; }
     public bool IsFavorite { get; set; }
     public bool IsPinned { get; set; }
 
@@ -77,6 +78,7 @@ public sealed class WidgetConfig
         return new WidgetConfig
         {
             PlayerListInfoActionsWidthApplied = PlayerListInfoActionsWidthApplied,
+            TimelineIntegratedLayoutApplied = TimelineIntegratedLayoutApplied,
             IsFavorite = IsFavorite,
             IsPinned = IsPinned,
             IsClickThrough = IsClickThrough,
@@ -1107,8 +1109,8 @@ public static class WidgetConfigDefaults
     private const double PlayerListInitialWindowHeight = 460d;
     private const double MeterInitialWindowWidth = 440d;
     private const double MeterInitialWindowHeight = 460d;
-    private const double TimelineInitialWindowWidth = 440d;
-    private const double TimelineInitialWindowHeight = 460d;
+    private const double TimelineInitialWindowWidth = 1100d;
+    private const double TimelineInitialWindowHeight = 720d;
     private const double PlayerInfoInitialWindowWidth = 406d;
     private const double PlayerInfoInitialWindowHeight = 265d;
     private const double PlayerStatusInitialWindowWidth = 280d;
@@ -1919,6 +1921,7 @@ public static class WidgetConfigDefaults
             Theme = CreateTheme(),
             Window = CreateDefaultWindowConfig(kind),
             PlayerListInfoActionsWidthApplied = kind == WidgetKind.PlayerList,
+            TimelineIntegratedLayoutApplied = kind == WidgetKind.Timeline,
             Meter = SupportsMeterSettings(kind) ? CreateMeterSettings(kind) : null,
             MetricGraph = SupportsMetricGraphSettings(kind) ? CreateMetricGraphSettings(kind) : null,
             Timeline = SupportsTimelineSettings(kind) ? CreateTimelineSettings() : null,
@@ -3283,6 +3286,12 @@ public static class WidgetConfigDefaults
         {
             config.Window.Width = (config.Window.Width ?? PlayerListInitialWindowWidth) + PlayerListInfoActionsWidth;
             config.PlayerListInfoActionsWidthApplied = true;
+        }
+        if (kind == WidgetKind.Timeline && !config.TimelineIntegratedLayoutApplied)
+        {
+            config.Window.Width = Math.Max(config.Window.Width ?? TimelineInitialWindowWidth, TimelineInitialWindowWidth);
+            config.Window.Height = Math.Max(config.Window.Height ?? TimelineInitialWindowHeight, TimelineInitialWindowHeight);
+            config.TimelineIntegratedLayoutApplied = true;
         }
         config.Meter = SupportsMeterSettings(kind)
             ? CloneNormalizedMeter(kind, config.Meter)

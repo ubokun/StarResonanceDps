@@ -54,5 +54,6 @@ public enum WidgetKind
     UserBuildLibrary = 30,
     CombatExtensionTimeline = 31,
     HatePs = 32,
-    PartyDps = 33
+    PartyDps = 33,
+    EnemyCatalog = 34
 }

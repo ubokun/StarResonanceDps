@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using Zproto;
@@ -55,6 +55,7 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
             nameof(Entity.Attributes),
             nameof(Entity.SkillCasts),
             nameof(Entity.RecordedAvatar),
+            nameof(Entity.RecordedBuild),
             nameof(Entity.RecordedBuffTransformation),
             nameof(Entity.RootBuffIds),
             nameof(Entity.TalentNodeIdsByProfession),

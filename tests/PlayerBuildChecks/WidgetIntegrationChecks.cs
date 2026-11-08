@@ -15,7 +15,7 @@ internal static class WidgetIntegrationChecks
 {
     public static void Run(Action<bool,string> check)
     {
-        foreach (var kind in new[] { WidgetKind.UserBuildLibrary, WidgetKind.CombatExtensionTimeline, WidgetKind.HatePs, WidgetKind.PartyDps })
+        foreach (var kind in new[] { WidgetKind.UserBuildLibrary, WidgetKind.CombatExtensionTimeline, WidgetKind.HatePs, WidgetKind.PartyDps, WidgetKind.EnemyCatalog })
         {
             var vm = new WidgetListItemViewModel { Kind = kind, DisplayNameResourceKey = kind.ToString() };
             vm.RefreshLocalizedText();
@@ -30,6 +30,7 @@ internal static class WidgetIntegrationChecks
                 WidgetKind.UserBuildLibrary => controller.FindName("Users") as FrameworkElement,
                 WidgetKind.CombatExtensionTimeline => controller.FindName("Actors") as FrameworkElement,
                 WidgetKind.HatePs => controller.FindName("Players") as FrameworkElement,
+                WidgetKind.EnemyCatalog => controller.FindName("Enemies") as FrameworkElement,
                 _ => controller.GetType().GetField("_plot",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(controller) as FrameworkElement
             };
             check(actualControl is not null && body.IsAncestorOf(actualControl) && actualControl.IsVisible && actualControl.ActualHeight>50,
@@ -48,6 +49,30 @@ internal static class WidgetIntegrationChecks
             var timer = controller.GetType().GetField("_timer", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(controller) as DispatcherTimer;
             check(timer is null || !timer.IsEnabled, $"{kind} stops updates when widget closes");
         }
+        var oldTimelineConfig = new WidgetConfig { Window=new() { Width=440,Height=460 } };
+        WidgetConfigDefaults.Normalize(WidgetKind.Timeline,oldTimelineConfig);
+        check(oldTimelineConfig.Window.Width==1100 && oldTimelineConfig.Window.Height==720,"integrated timeline provides room for tracks and original log together");
+        oldTimelineConfig.Window.Width=900; WidgetConfigDefaults.Normalize(WidgetKind.Timeline,oldTimelineConfig);
+        check(oldTimelineConfig.Window.Width==900,"integrated timeline layout migration respects later user resizing");
+        var timelineWidget = new WidgetListItemViewModel { Kind = WidgetKind.Timeline };
+        var timelineVm = new TimelineWidgetViewModel(timelineWidget);
+        var timelineView = new TimelineWidgetView { DataContext = timelineVm };
+        var timelineOwner = new Window { Width=800, Height=500 };
+        var integratedWindow = new WidgetWindow(timelineWidget,timelineView,timelineVm,new WidgetWindowConfig { Width=1100,Height=720 },timelineOwner);
+        integratedWindow.Show(); integratedWindow.UpdateLayout();
+        var integratedController = (CombatTimelineWindow)typeof(TimelineWidgetView).GetField("_extensionController",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(timelineView)!;
+        var originalLog = (FrameworkElement)timelineView.FindName("LogItemsControl");
+        var integratedPlot = (FrameworkElement)integratedController.FindName("Plot");
+        check(timelineView.IsAncestorOf(originalLog) && timelineView.IsAncestorOf(integratedPlot) && originalLog.IsVisible && integratedPlot.IsVisible,
+            "existing timeline displays original log and added tracks together without switching or a second widget");
+        check(!timelineView.IsAncestorOf((FrameworkElement)integratedController.FindName("EventList")),
+            "integrated timeline retains original log instead of a duplicate extension event list");
+        var integratedBitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(1100,720,96,96,System.Windows.Media.PixelFormats.Pbgra32); integratedBitmap.Render(integratedWindow);
+        var integratedPng=new System.Windows.Media.Imaging.PngBitmapEncoder(); integratedPng.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(integratedBitmap));
+        using(var file=System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"timeline-integrated-log-preview.png")))integratedPng.Save(file);
+        integratedWindow.Close(); timelineOwner.Close();
+        var integratedTimer=(DispatcherTimer)typeof(CombatTimelineWindow).GetField("_timer",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(integratedController)!;
+        check(!integratedTimer.IsEnabled,"closing original timeline stops integrated track updates");
         var formerWidth = new WidgetConfig { Window = new() { Width = 510, Height = 460, X = 120, Y = 90 } };
         WidgetConfigDefaults.Normalize(WidgetKind.PlayerList, formerWidth);
         check(formerWidth.Window.Width == 690 && formerWidth.Window.Height == 460 && formerWidth.Window.X == 120, "player list adds exactly button width while preserving size and position settings");

@@ -86,14 +86,6 @@ public partial class ManagerView : UserControl
         QueueUpdateExternalScrollBar();
     }
 
-    private void CombatTimelineButton_Click(object sender, RoutedEventArgs e)
-    {
-        ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.CombatExtensionTimeline);
-    }
-
-    private void HateMeterButton_Click(object sender, RoutedEventArgs e) => ExtensionWidgetHost.Open(StarResonanceDps.App.Models.Widgets.WidgetKind.HatePs);
-    private void EnemyCatalogButton_Click(object sender, RoutedEventArgs e) => new EnemyCatalogWindow { Owner = Window.GetWindow(this) }.Show();
-
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ShowManagerDialog(new SettingsWindow());
