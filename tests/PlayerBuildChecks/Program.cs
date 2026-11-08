@@ -17,6 +17,7 @@ internal static class Program
 {
  [STAThread] private static void Main(string[] args)
  {
+  if(args is ["--probe-target-udp",var portList,var seconds]) { SelectionTransportProbe.Run(portList,int.Parse(seconds)); return; }
   if (args is ["--ui-demo"])
   {
    DB.Init();
