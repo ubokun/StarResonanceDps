@@ -3673,6 +3673,14 @@ namespace StarResonanceDps.Core.CombatRuntime
             {
                 return;
             }
+            // Self-only deltas may identify the actor in the enclosing message.
+            // Preserve an explicit inner UUID; never borrow a previously observed actor.
+            if (aoiSyncDelta.Uuid == 0 && uuid != 0)
+            {
+                EntityTargetingPlayers.ObserveSelfDeltaFallback(aoiSyncDelta.Attrs?.Attrs.Any(
+                    attr => (EAttrType)attr.Id is EAttrType.AttrTargetId or EAttrType.AttrTargetUuid) == true);
+                aoiSyncDelta.Uuid = uuid;
+            }
             ProcessAoiSyncDelta(aoiSyncDelta, extraData);
 
             // 敵が付けたバフと、表に名前の無いバフの由来は、差分を処理し終えてから決める。

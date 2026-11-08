@@ -1,4 +1,4 @@
-﻿using StarResonanceDps.Core.Services;
+using StarResonanceDps.Core.Services;
 using Zproto;
 namespace StarResonanceDps.Core.CombatRuntime;
 
@@ -17,9 +17,20 @@ public static class EntityTargetingPlayers
     private static readonly Dictionary<string,HashSet<long>> AttributeActors=[];
     private static long _lastDiagnosticTicks;
     private static readonly Dictionary<string,long> ClientCalls=[];
+    private static readonly Dictionary<string,long> ServerNotifications=[];
     private static long _clientTargetChanges,_clientClears,_skillTargetChanges,_changesBeforeSelf;
+    private static long _selfDeltaFallbacks,_selfTargetFallbacks;
+    public static void ObserveSelfDeltaFallback(bool containsTarget)
+    {
+        lock(Gate) { _selfDeltaFallbacks++; if(containsTarget)_selfTargetFallbacks++; }
+    }
     public static void ObserveClientCall(Protocols.ObservedMessage message)
     {
+        if(message.Kind==Protocols.ObservedMessageKind.Notify)
+        {
+            var name=$"{message.ServiceId}:{message.MethodId:X}";
+            lock(Gate) if(ServerNotifications.Count<256 || ServerNotifications.ContainsKey(name))ServerNotifications[name]=ServerNotifications.GetValueOrDefault(name)+1;
+        }
         if(message.Kind!=Protocols.ObservedMessageKind.Call)return;
         var key=$"{message.ServiceId}:{message.MethodId:X}";
         lock(Gate) if(ClientCalls.Count<128 || ClientCalls.ContainsKey(key))ClientCalls[key]=ClientCalls.GetValueOrDefault(key)+1;
@@ -58,8 +69,10 @@ public static class EntityTargetingPlayers
         lock(Gate) data=new { UpdatedUtc=now, EncounterId=encounter.EncounterId,
             AttributeUpdates=new Dictionary<string,long>(AttributeCounts),
             AttributeActorCounts=AttributeActors.ToDictionary(x=>x.Key,x=>x.Value.Count),
+            ServerNotificationCounts=new Dictionary<string,long>(ServerNotifications),
             ClientCallCounts=new Dictionary<string,long>(ClientCalls), ClientTargetChanges=_clientTargetChanges,
             ClientTargetClears=_clientClears, SkillContextTargetChanges=_skillTargetChanges, ClientChangesBeforeSelfKnown=_changesBeforeSelf,
+            SelfDeltaUuidFallbacks=_selfDeltaFallbacks, SelfTargetDeltaUuidFallbacks=_selfTargetFallbacks,
             CurrentRelations=Targets.Count,
             RelationsMatchingKnownEnemies=Targets.Count(x=>encounter.Entities.TryGetValue(x.Value,out var target) && target.EntityType==EEntityType.EntMonster) };
         try
@@ -69,7 +82,7 @@ public static class EntityTargetingPlayers
         }
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException) { Serilog.Log.Debug(ex,"Could not write target reception diagnostics"); }
     }
-    public static void Clear() { lock(Gate) { Targets.Clear(); Players.Clear(); AttributeCounts.Clear(); AttributeActors.Clear(); ClientCalls.Clear(); _clientTargetChanges=0; _clientClears=0; _skillTargetChanges=0; _changesBeforeSelf=0; _lastDiagnosticTicks=0; } }
+    public static void Clear() { lock(Gate) { Targets.Clear(); Players.Clear(); AttributeCounts.Clear(); AttributeActors.Clear(); ClientCalls.Clear(); ServerNotifications.Clear(); _clientTargetChanges=0; _clientClears=0; _skillTargetChanges=0; _changesBeforeSelf=0; _selfDeltaFallbacks=0; _selfTargetFallbacks=0; _lastDiagnosticTicks=0; } }
     public static void RemoveEntity(long uuid)
     {
         if (Utils.UuidToEntityType(uuid) == (long)EEntityType.EntChar) { Update(uuid,0); return; }

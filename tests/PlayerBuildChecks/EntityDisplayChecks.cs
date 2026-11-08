@@ -89,6 +89,23 @@ internal static class EntityDisplayChecks
             try
             {
                 MessageManager.currentUserUuid=player;
+                var oldAppUuid=AppState.PlayerUUID;var oldAppUid=AppState.PlayerUID;
+                try
+                {
+                    void SelfTarget(long target)
+                    {
+                        var bytes=new byte[CodedOutputStream.ComputeInt64Size(target)];using(var output=new CodedOutputStream(bytes)){output.WriteInt64(target);output.Flush();}
+                        var attrs=new AttrCollection();attrs.Attrs.Add(new Attr{Id=(int)EAttrType.AttrTargetId,RawData=ByteString.CopyFrom(bytes)});
+                        var delta=new AoiSyncDelta{Attrs=attrs};
+                        var packet=new Zproto.WorldNtfCsharp.Types.SyncToMeDeltaInfo{DeltaInfo=new AoiSyncToMeDelta{Uuid=player,BaseDelta=delta}};
+                        MessageManager.ProcessSyncToMeDeltaInfo(packet.ToByteArray(),new ExtraPacketData(DateTime.UtcNow));
+                    }
+                    SelfTarget(enemy);SelfTarget(otherEnemy);
+                    check(!EntityTargetingPlayers.Get(enemy).Contains(991) && EntityTargetingPlayers.Get(otherEnemy).Contains(991),"self-only serialized target delta uses outer UUID when inner UUID is absent");
+                    SelfTarget(0);
+                    check(!EntityTargetingPlayers.Get(otherEnemy).Contains(991),"self-only serialized clear delta removes the previous target");
+                }
+                finally {AppState.PlayerUUID=oldAppUuid;AppState.PlayerUID=oldAppUid;}
                 MessageManager.ProcessClientTargetChange(new Zproto.WorldCsharp.Types.ClientTargetChange {TargetUuid=enemy}.ToByteArray(),new ExtraPacketData(DateTime.UtcNow));
                 MessageManager.ProcessClientTargetChange(new Zproto.WorldCsharp.Types.ClientTargetChange {TargetUuid=otherEnemy}.ToByteArray(),new ExtraPacketData(DateTime.UtcNow));
                 check(!EntityTargetingPlayers.Get(enemy).Contains(991) && EntityTargetingPlayers.Get(otherEnemy).Contains(991),"serialized client target change moves player from old enemy to new enemy");
