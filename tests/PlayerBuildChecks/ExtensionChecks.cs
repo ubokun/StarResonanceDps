@@ -122,6 +122,13 @@ internal static class ExtensionChecks
   var imagePath = Path.Combine(AppContext.BaseDirectory,"combat-timeline-preview.png");
   using (var output = File.Create(imagePath)) encoder.Save(output);
   Console.WriteLine("PREVIEW " + imagePath);
+  ((ContentControl)window.FindName("MeasurementSettings")).Visibility = Visibility.Visible;
+  content.Measure(new Size(1140,780)); content.Arrange(new Rect(0,0,1140,780)); content.UpdateLayout();
+  var settingsBitmap = new RenderTargetBitmap(1140,780,96,96,PixelFormats.Pbgra32); settingsBitmap.Render(content);
+  var settingsEncoder = new PngBitmapEncoder(); settingsEncoder.Frames.Add(BitmapFrame.Create(settingsBitmap));
+  var settingsImagePath = Path.Combine(AppContext.BaseDirectory,"combat-settings-preview.png");
+  using (var settingsOutput = File.Create(settingsImagePath)) settingsEncoder.Save(settingsOutput);
+  Console.WriteLine("PREVIEW " + settingsImagePath);
   window.Close();
  }
 }
