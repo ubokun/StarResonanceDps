@@ -29,7 +29,7 @@ namespace StarResonanceDps.App.ViewModels;
 ///
 /// <para>
 /// 行の作りはメーターと同じ。左は時刻(タイムラインの行と同じ戦闘の経過)・クラスアイコン・名前、
-/// 右は設定「スキル名」の書式(エンティティ名・スキル名・タイプ、決め方はタイムラインの被弾の行と同じ)・被ダメ値・属性アイコン。
+/// 右は設定「スキル名」の書式(エンティティ名・スキル名・タイプ、決め方は<see cref="DamageTakenLogHitInfoFormatter"/>)・被ダメ値・属性アイコン。
 /// クラスアイコンは設定「アイコンカラー」の色で染め、ほかの文字とアイコンは白で、自分の強調表示と「(戦闘不能)」だけ色が付く(画面の側)。
 /// 下敷きのバーは右から伸び、色はその被弾の属性の色(設定「属性カラー」)、長さは一覧の中で被ダメ値が一番大きい被弾を100%にする。
 /// </para>
@@ -453,7 +453,7 @@ public sealed partial class DamageTakenLogWidgetViewModel : ViewModelBase, IDisp
 
     /// <summary>
     /// 出す被弾か。名前とクラスが分かっている人(<see cref="RefreshPersonDisplays"/> で作った人)の被弾で、
-    /// フィルターが自傷・フレンドリーファイア以外なら加害者がプレイヤーでないもの(タイムラインのフィルターと同じ決まり)。
+    /// フィルターが自傷・フレンドリーファイア以外なら加害者がプレイヤーでないもの。
     /// </summary>
     private bool IsShown(DamageTakenLogHit hit)
     {

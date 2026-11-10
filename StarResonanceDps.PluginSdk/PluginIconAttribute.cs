@@ -11,10 +11,12 @@ namespace StarResonanceDps.PluginSdk;
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = false, Inherited = false)]
 public sealed class PluginIconAttribute : Attribute
 {
+    /// <param name="resourcePath">The path of the image relative to the project, for example <c>Assets/Icon.ico</c>.</param>
     public PluginIconAttribute(string resourcePath)
     {
         ResourcePath = resourcePath ?? string.Empty;
     }
 
+    /// <summary>The path of the image relative to the project.</summary>
     public string ResourcePath { get; }
 }

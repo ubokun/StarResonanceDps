@@ -507,7 +507,7 @@ internal sealed class ModuleToolViewModel : ObservableObject, IDisposable
     {
         var maxLevel = _catalog.Effects.Max(effect => effect.MaxLevel);
         return Enumerable.Range(1, maxLevel)
-            .Select(level => new ModuleOption<int>(level, ModuleLevelText.Format(level)))
+            .Select(level => new ModuleOption<int>(level, _texts.Format("Module.Level", level)))
             .ToArray();
     }
 
@@ -573,7 +573,8 @@ internal sealed class ModuleToolViewModel : ObservableObject, IDisposable
                     _catalog.GetImage(definition.Icon),
                     _catalog.GetEffectName(definition.EffectId, culture),
                     effect.Links,
-                    effect.Level);
+                    effect.Level,
+                    _texts.Format("Module.Level", effect.Level));
             })
             .ToArray();
 

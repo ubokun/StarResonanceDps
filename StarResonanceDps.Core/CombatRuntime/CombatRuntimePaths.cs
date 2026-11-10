@@ -50,8 +50,7 @@ public static class CombatRuntimePaths
 
     public static string LogFilePath => Path.Combine(DataDirectory, "CombatRuntime.log");
 
-    /// <summary>計測ログの置き場。製品では無くなることがあるので、アプリのログ(<see cref="LogFilePath"/>)は置かない。</summary>
-    public static string LogsDirectory => Path.Combine(BaseDirectory, "Logs");
+    public static string ResidentDetectionsPath => Path.Combine(DataDirectory, "ResidentDetections.json");
 
     /// <summary>
     /// <see cref="DataDirectory"/> を作り、書けるかを確かめる。書けなければ例外(<see cref="IOException"/> /

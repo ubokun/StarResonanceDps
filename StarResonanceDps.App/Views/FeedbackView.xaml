@@ -1,0 +1,242 @@
+<UserControl x:Class="StarResonanceDps.App.Views.FeedbackView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:localization="clr-namespace:StarResonanceDps.App.Localization"
+             xmlns:viewModels="clr-namespace:StarResonanceDps.App.ViewModels"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <!-- 種類と番号の文字。報告済みの行は薄くする。 -->
+        <Style x:Key="Feedback.RowText" TargetType="{x:Type TextBlock}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsReported}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="Feedback.ReportedMark" TargetType="{x:Type Border}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Height" Value="23" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Background" Value="{DynamicResource Brush.InputHoverBackground}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- 検出された問題の2つのボタン。幅は4言語でいちばん長い文字に合わせて固定する。 -->
+        <Style x:Key="Feedback.ActionButton" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.InputAction}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Width" Value="140" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <!--
+            一覧のスクロール。ScrollViewer.ComboBoxDropDown と同じ作りで、バーを一覧の右に置き、バーの左に 5 の間を空ける
+            (5 はほかのタブの外のバーとパネルの間と同じ)。バーが出ていないときは一覧が全部の幅を使う。
+        -->
+        <Style x:Key="Feedback.ListScrollViewer" TargetType="{x:Type ScrollViewer}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="CanContentScroll" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                        <Grid SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                    Grid.Column="0"
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                    CanHorizontallyScroll="False"
+                                                    CanVerticallyScroll="False"
+                                                    Content="{TemplateBinding Content}"
+                                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                    Cursor="{TemplateBinding Cursor}"
+                                                    Margin="{TemplateBinding Padding}" />
+
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       Grid.Column="1"
+                                       Margin="5,0,0,0"
+                                       Style="{StaticResource ScrollBar.WidgetList}"
+                                       AutomationProperties.AutomationId="VerticalScrollBar"
+                                       Cursor="Arrow"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       Minimum="0"
+                                       Orientation="Vertical"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       IsTabStop="False" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24,20,24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Button Grid.Row="0"
+                Style="{StaticResource Button.LinkCard}"
+                Command="{Binding OpenIssueCommand}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Path Grid.Column="0"
+                      Width="20"
+                      Height="20"
+                      Margin="0,0,15,0"
+                      Style="{StaticResource Icon.Fill}"
+                      Data="{DynamicResource Icon.Report}" />
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Text.LinkCardTitle}"
+                               Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Issue_Title]}" />
+                    <TextBlock Style="{StaticResource Text.LinkCardDescription}"
+                               Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Issue_Description]}" />
+                </StackPanel>
+
+                <Path Grid.Column="2" Style="{StaticResource Icon.LinkCardExternalMark}" />
+            </Grid>
+        </Button>
+
+        <TextBlock Grid.Row="1"
+                   FontSize="12"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource Brush.TextSecondary}"
+                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Issue_Note]}" />
+
+        <Grid Grid.Row="2" Margin="0,16,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       VerticalAlignment="Center"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource Brush.TextPrimary}"
+                       Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Detections_Title]}" />
+
+            <Button Grid.Column="1"
+                    Margin="12,0,0,0"
+                    Style="{StaticResource Feedback.ActionButton}"
+                    Command="{Binding CheckReportStatusCommand}"
+                    Content="{Binding CheckReportStatusText}" />
+
+            <Button Grid.Column="2"
+                    Margin="8,0,0,0"
+                    Style="{StaticResource Feedback.ActionButton}"
+                    Command="{Binding ReportSelectedCommand}"
+                    Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Detections_Report]}" />
+        </Grid>
+
+        <TextBlock Grid.Row="3"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   FontSize="16"
+                   Foreground="{DynamicResource Brush.TextMuted}"
+                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Detections_Empty]}">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasItems}" Value="False">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <!-- 行は新しい番号の分しか増えず少ないので、仮想化しない。 -->
+        <ScrollViewer Grid.Row="3"
+                      Style="{StaticResource Feedback.ListScrollViewer}">
+            <ContentControl Margin="0"
+                            Padding="0"
+                            VerticalAlignment="Top"
+                            Style="{StaticResource Panel.ManagerItemCard}"
+                            Visibility="{Binding HasItems, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:FeedbackItemViewModel}">
+                            <StackPanel>
+                                <Grid Margin="16,0" Height="43">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="22" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="22" />
+                                        <ColumnDefinition Width="68" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <CheckBox Grid.Column="0"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource Input.CheckBox}"
+                                              IsEnabled="{Binding CanSelect}"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+
+                                    <TextBlock Grid.Column="2"
+                                               FontSize="14"
+                                               Style="{StaticResource Feedback.RowText}"
+                                               Text="{Binding ItemText}" />
+
+                                    <TextBlock Grid.Column="4"
+                                               VerticalAlignment="Center"
+                                               FontSize="14"
+                                               Foreground="{DynamicResource Brush.TextSecondary}"
+                                               Text="{Binding TimeText}" />
+
+                                    <Border Grid.Column="6"
+                                            Style="{StaticResource Feedback.ReportedMark}"
+                                            Visibility="{Binding IsReported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <TextBlock HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource Brush.TextSecondary}"
+                                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Feedback_Detection_Reported]}" />
+                                    </Border>
+                                </Grid>
+
+                                <Border Height="1"
+                                        Background="{DynamicResource Brush.BorderSoft}"
+                                        Visibility="{Binding ShowsDivider, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ContentControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

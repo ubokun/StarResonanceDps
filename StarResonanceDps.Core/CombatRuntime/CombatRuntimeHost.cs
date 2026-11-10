@@ -45,14 +45,14 @@ public sealed class CombatRuntimeHost
             if (!CombatRuntimeSettings.HasBeenApplied)
             {
                 throw new InvalidOperationException(
-                    "CombatRuntimeSettings.Apply を呼んでから CombatRuntimeHost.Initialize を呼ぶこと。");
+                    "Call CombatRuntimeSettings.Apply before CombatRuntimeHost.Initialize.");
             }
 
             // ログの設定は起動の最初に App が行う(ConfigureLogging)。初期化の中で行うと、それより前の失敗が残らない。
             if (!_isLoggingConfigured)
             {
                 throw new InvalidOperationException(
-                    "CombatRuntimeHost.ConfigureLogging を呼んでから CombatRuntimeHost.Initialize を呼ぶこと。");
+                    "Call CombatRuntimeHost.ConfigureLogging before CombatRuntimeHost.Initialize.");
             }
 
             Directory.CreateDirectory(CombatRuntimePaths.DataDirectory);
@@ -127,5 +127,30 @@ public sealed class CombatRuntimeHost
 
         Log.Logger = loggerConfiguration.CreateLogger();
         _isLoggingConfigured = true;
+    }
+
+    /// <summary>
+    /// 前のバージョンのログ(Data\CombatRuntime.log)を消す。アプリのバージョンが変わった最初の起動で、<see cref="ConfigureLogging"/> の後に App が呼ぶ。
+    /// ログのファイルは開いている間は消せないので、閉じて消して開き直す。消せなくてもアプリの処理は止めない。
+    /// </summary>
+    public static void ClearLogs()
+    {
+        Log.CloseAndFlush();
+
+        Exception? failure = null;
+        try
+        {
+            File.Delete(CombatRuntimePaths.LogFilePath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            failure = exception;
+        }
+
+        ConfigureLogging();
+        if (failure is not null)
+        {
+            Log.Warning(failure, "Could not delete {Path}", CombatRuntimePaths.LogFilePath);
+        }
     }
 }

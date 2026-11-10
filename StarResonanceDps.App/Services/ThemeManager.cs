@@ -18,6 +18,7 @@ public sealed class ThemeManager
         ("Brush.PanelBackground", colors => colors.PanelBackground),
         ("Brush.Border", colors => colors.Border),
         ("Brush.BorderSoft", colors => colors.BorderSoft),
+        ("Brush.BorderStrong", colors => colors.BorderStrong),
         ("Brush.ControlBackground", colors => colors.ControlBackground),
         ("Brush.ControlActiveBackground", colors => colors.ControlActiveBackground),
         ("Brush.WidgetCardImageButtonBackground", colors => WithAlpha(colors.ControlBackground)),

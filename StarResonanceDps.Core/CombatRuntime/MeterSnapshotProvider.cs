@@ -3109,8 +3109,7 @@ public static class MeterSnapshotProvider
     ///
     /// <para>
     /// HP・バフ・スキル枠はDBから復元できないので、履歴を開いても固める意味がない。
-    /// 履歴に追従するのは <see cref="ResolveActiveEncounter"/> を通る4系統だけ
-    /// (メーター2種 / スキル詳細 / ヒール・ダメージ詳細 / グラフ)。
+    /// 履歴に追従するのは<see cref="ResolveActiveEncounter"/>を通る読み出しだけ。
     /// </para>
     /// </summary>
     private static Encounter? ResolvePlayerDetailEncounter()

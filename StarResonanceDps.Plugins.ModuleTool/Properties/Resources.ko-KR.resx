@@ -105,10 +105,13 @@
     <value>{0}에 수신</value>
   </data>
   <data name="Module.Inventory.Summary" xml:space="preserve">
-    <value>{0}개 (장착 중 {1}/{2})</value>
+    <value>{0}개(장착 중 {1}/{2})</value>
   </data>
   <data name="Module.Inventory.UnknownModules" xml:space="preserve">
     <value>지원하지 않는 모듈 {0}개는 검색에 넣지 않습니다</value>
+  </data>
+  <data name="Module.Level" xml:space="preserve">
+    <value>Lv{0}</value>
   </data>
   <data name="Module.Message.SaveError.Message" xml:space="preserve">
     <value>모듈 도구 설정을 저장하지 못했습니다.</value>
@@ -148,19 +151,19 @@
     <value>탁월</value>
   </data>
   <data name="Module.Results.ConditionsWithNote" xml:space="preserve">
-    <value>{0} ({1})</value>
+    <value>{0}({1})</value>
   </data>
   <data name="Module.Results.Count" xml:space="preserve">
-    <value>{0}개 ({1}초)</value>
+    <value>{0}개({1}초)</value>
   </data>
   <data name="Module.Results.InventoryChanged" xml:space="preserve">
     <value>보유 모듈이 바뀌었습니다. 다시 검색해 주세요</value>
   </data>
   <data name="Module.Results.Summary" xml:space="preserve">
-    <value>{0}개 중 상위 {1}개 ({2}초)</value>
+    <value>{0}개 중 상위 {1}개({2}초)</value>
   </data>
   <data name="Module.Search.Progress" xml:space="preserve">
-    <value>{0}% ({1}초)</value>
+    <value>{0}%({1}초)</value>
   </data>
   <data name="Module.Section.Conditions" xml:space="preserve">
     <value>조건</value>

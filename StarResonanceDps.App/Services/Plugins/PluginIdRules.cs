@@ -7,16 +7,16 @@ internal static class PluginIdRules
 {
     private const int MaxLength = 128;
 
-    /// <summary>前後の空白を除いた ID が、1〜<see cref="MaxLength"/> 文字の ASCII の英数字と「.」「-」「_」だけか。</summary>
+    /// <summary>ID が、1〜<see cref="MaxLength"/> 文字の ASCII の英数字と「.」「-」「_」だけか。前後の空白も認めない(プラグインは書いたままの ID で引く)。</summary>
     public static bool IsValid(string? id)
     {
-        var trimmed = id?.Trim() ?? string.Empty;
-        if (trimmed.Length == 0 || trimmed.Length > MaxLength)
+        var value = id ?? string.Empty;
+        if (value.Length == 0 || value.Length > MaxLength)
         {
             return false;
         }
 
-        foreach (var character in trimmed)
+        foreach (var character in value)
         {
             var isAllowed = character is >= 'a' and <= 'z'
                 or >= 'A' and <= 'Z'

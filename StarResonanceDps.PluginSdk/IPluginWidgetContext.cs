@@ -6,6 +6,7 @@ namespace StarResonanceDps.PluginSdk;
 /// </summary>
 public interface IPluginWidgetContext
 {
+    /// <summary>The <see cref="PluginWidgetDefinition.Id"/> of the widget.</summary>
     string WidgetId { get; }
 
     /// <summary>

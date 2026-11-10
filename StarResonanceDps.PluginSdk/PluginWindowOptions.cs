@@ -6,6 +6,14 @@ namespace StarResonanceDps.PluginSdk;
 /// </summary>
 public sealed record PluginWindowOptions
 {
+    /// <summary>
+    /// Every value must be a finite number above 0, and the initial size must be at least the minimum size;
+    /// otherwise <see cref="ArgumentOutOfRangeException"/> is thrown.
+    /// </summary>
+    /// <param name="width">The initial width.</param>
+    /// <param name="height">The initial height.</param>
+    /// <param name="minWidth">The minimum width.</param>
+    /// <param name="minHeight">The minimum height.</param>
     public PluginWindowOptions(
         double width,
         double height,
@@ -37,12 +45,16 @@ public sealed record PluginWindowOptions
         MinHeight = minHeight;
     }
 
+    /// <summary>The initial width.</summary>
     public double Width { get; }
 
+    /// <summary>The initial height.</summary>
     public double Height { get; }
 
+    /// <summary>The minimum width.</summary>
     public double MinWidth { get; }
 
+    /// <summary>The minimum height.</summary>
     public double MinHeight { get; }
 
     private static void ValidateDimension(double value, string parameterName)

@@ -113,7 +113,7 @@ internal static class PluginDiagnostics
     public static readonly DiagnosticDescriptor EmptyWidgetTargets = new(
         "SRDPS013",
         "Multi-window widget never has targets",
-        "GetWidgetTargets always returns an empty list, so the widget can never open a window; return at least one target",
+        "GetWidgetTargets always returns an empty list, so the widget's windows always stay empty; return at least one target",
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);

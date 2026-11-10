@@ -438,9 +438,16 @@ public sealed partial class MainViewModel : ViewModelBase
     /// カードの名前の欄(選んでいる項目で開く窓のタイトル)と起動ボタンを当て直す。
     /// 名簿・周りの実体・言語・表示設定(名前を伏せるか)が変わったときと、1秒ごとの時計(合図の無いバフの行・メーターの行のため)で呼ぶ。
     /// 値が同じならカードは変えない。
+    /// 起動できないときに見せるだけのメイン窓では当て直さない(並べるものを数えるのに回の控えへ触る。Core を初期化していないので、
+    /// EncounterManager の静的コンストラクタが DB へ書きに行って例外になる。コンストラクタの時計と購読と同じ)。
     /// </summary>
     private void RefreshTargetSelections()
     {
+        if (!CombatRuntimeHost.Instance.IsInitialized)
+        {
+            return;
+        }
+
         _targetSelection.RefreshAll(_widgetItems);
     }
 

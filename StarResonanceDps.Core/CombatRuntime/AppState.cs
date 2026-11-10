@@ -228,7 +228,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
 
             var overrides = loadedOverrides
-                ?? throw new InvalidDataException($"{relativePath} が空です。");
+                ?? throw new InvalidDataException($"{relativePath} is empty.");
 
             foreach (var (key, value) in overrides)
             {

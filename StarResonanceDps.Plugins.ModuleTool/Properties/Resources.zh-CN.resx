@@ -110,6 +110,9 @@
   <data name="Module.Inventory.UnknownModules" xml:space="preserve">
     <value>不支持的模组{0}个未纳入搜索</value>
   </data>
+  <data name="Module.Level" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="Module.Message.SaveError.Message" xml:space="preserve">
     <value>无法保存模组工具的设置。</value>
   </data>

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Windows;
@@ -258,7 +257,7 @@ public sealed class PluginManager
             return;
         }
 
-        if (ReadPluginInfo(sourcePath) is not { } selectedInfo)
+        if (ReadPluginInfo(sourcePath, scan) is not { } selectedInfo)
         {
             PluginAddFailureMessage.ShowInvalidFile(owner);
             return;
@@ -509,8 +508,8 @@ public sealed class PluginManager
                 return entry;
             }
 
-            var loadContext = new PluginLoadContext(entry.MainAssemblyPath, readsFromMemory: false);
-            var assembly = loadContext.LoadPluginAssembly(entry.MainAssemblyPath);
+            var loadContext = new PluginLoadContext(entry.MainAssemblyPath);
+            var assembly = loadContext.LoadFromAssemblyPath(entry.MainAssemblyPath);
 
             // WPF の資源の指定(/アセンブリ名;component/...)は、まだ読まれていない部品をこの読み込み先から探せないので、部品を先に読む。
             foreach (var dependencyPath in scan.ManagedAssemblies.Where(path =>
@@ -814,15 +813,17 @@ public sealed class PluginManager
 
     /// <summary>
     /// DLLが起動時と同じ確かめ(<see cref="CreateRegistration"/>)を通るプラグインかを見て、プラグインの情報(鍵・版など)を返す。通らなければnull。
-    /// ファイルを掴まないよう、中身をメモリから捨てられる読み込み先に読み(部品も選んだDLLのフォルダから)、見終わったら捨てる。
+    /// 読み込まずに中身だけを読み、プラグインのコードも動かさない。
+    /// WPF は /名前;component/ を読み込み済みのアセンブリの名前で探し、同じ名前なら最後に読んだものに当たるので、読み込むと動いている同じプラグインの画面を読めなくなる
+    /// (捨てられる読み込み先へ読んでも、WPF の画面を読んだ後は消えない)。
     /// </summary>
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static PluginInfo? ReadPluginInfo(string assemblyPath)
+    private static PluginInfo? ReadPluginInfo(string assemblyPath, PluginDependencyScan scan)
     {
-        var loadContext = new PluginLoadContext(assemblyPath, readsFromMemory: true);
         try
         {
-            var assembly = loadContext.LoadPluginAssembly(assemblyPath);
+            var resolver = new PathAssemblyResolver(PluginDependencyScanner.GetHostAssemblyPaths().Concat(scan.ManagedAssemblies));
+            using var context = new MetadataLoadContext(resolver);
+            var assembly = context.LoadFromAssemblyPath(assemblyPath);
             return CreateRegistration(assembly, Path.GetFileNameWithoutExtension(assemblyPath)).Info;
         }
         catch (Exception exception)
@@ -830,12 +831,11 @@ public sealed class PluginManager
             LogPluginError(Path.GetFileNameWithoutExtension(assemblyPath), "The selected file is not a supported plugin DLL.", exception);
             return null;
         }
-        finally
-        {
-            loadContext.Unload();
-        }
     }
 
+    /// <summary>
+    /// プラグインの決まりを確かめる。起動時の読み込みと「＋」の確かめ(<see cref="MetadataLoadContext"/>)で同じ処理を使うので、属性はデータで読み、SDK の型は名前で比べる。
+    /// </summary>
     /// <param name="fileName">入口の DLL のファイル名(拡張子なし)。アセンブリ名と同じでなければならない(フォルダの名前と WPF の資源の指定に使う)。</param>
     private static PluginRegistration CreateRegistration(Assembly assembly, string fileName)
     {
@@ -850,15 +850,27 @@ public sealed class PluginManager
             throw new InvalidOperationException($"The plugin assembly name '{assemblyName}' is used by the app.");
         }
 
-        var registrationAttribute = assembly.GetCustomAttribute<PluginRegistrationAttribute>()
-            ?? throw new InvalidOperationException("The plugin registration attribute is missing.");
-
-        if (registrationAttribute.ApiVersion != PluginSdkVersion.Current)
+        // 新しい SDK で作ったプラグインは読み込めない(本体の中の SDK を使う)。読み込まない確かめではここで見分ける。
+        var hostSdkVersion = typeof(IStarResonancePlugin).Assembly.GetName().Version;
+        var pluginSdkVersion = assembly.GetReferencedAssemblies()
+            .FirstOrDefault(reference => string.Equals(reference.Name, PluginLoadContext.SdkAssemblyName, StringComparison.OrdinalIgnoreCase))
+            ?.Version;
+        if (pluginSdkVersion > hostSdkVersion)
         {
-            throw new InvalidOperationException($"Unsupported plugin API version '{registrationAttribute.ApiVersion}'.");
+            throw new InvalidOperationException($"The plugin was built with SDK {pluginSdkVersion}, which is newer than the app's SDK {hostSdkVersion}.");
         }
 
-        var entryType = registrationAttribute.EntryType
+        var attributes = assembly.GetCustomAttributesData();
+        var registrationArguments = FindAttributeArguments<PluginRegistrationAttribute>(attributes).FirstOrDefault()
+            ?? throw new InvalidOperationException("The plugin registration attribute is missing.");
+
+        var apiVersion = registrationArguments[1].Value;
+        if (apiVersion is not int version || version != PluginSdkVersion.Current)
+        {
+            throw new InvalidOperationException($"Unsupported plugin API version '{apiVersion}'.");
+        }
+
+        var entryType = registrationArguments[0].Value as Type
             ?? throw new InvalidOperationException("The plugin entry type is missing.");
 
         if (!ReferenceEquals(entryType.Assembly, assembly))
@@ -874,7 +886,8 @@ public sealed class PluginManager
             throw new InvalidOperationException("The plugin entry type must be a public, non-abstract, non-generic class.");
         }
 
-        if (!typeof(IStarResonancePlugin).IsAssignableFrom(entryType))
+        var interfaceNames = entryType.GetInterfaces().Select(type => type.FullName).ToHashSet(StringComparer.Ordinal);
+        if (!interfaceNames.Contains(typeof(IStarResonancePlugin).FullName))
         {
             throw new InvalidOperationException($"'{entryType.FullName}' does not implement IStarResonancePlugin.");
         }
@@ -885,31 +898,31 @@ public sealed class PluginManager
         }
 
         var displayNames = ReadLocalizedTexts(
-            assembly.GetCustomAttributes<PluginDisplayNameAttribute>().Select(attribute => (attribute.CultureName, attribute.DisplayName)),
+            FindAttributeArguments<PluginDisplayNameAttribute>(attributes).Select(arguments => (ReadText(arguments, 0), ReadText(arguments, 1))),
             "display name");
         if (displayNames.Count == 0)
         {
             throw new InvalidOperationException("At least one localized plugin display name is required.");
         }
 
-        var author = assembly.GetCustomAttribute<PluginAuthorAttribute>()?.Author.Trim();
+        var author = ReadSingleText<PluginAuthorAttribute>(attributes);
         if (string.IsNullOrEmpty(author))
         {
             throw new InvalidOperationException("The plugin author attribute is missing or empty.");
         }
 
-        var version = assembly.GetCustomAttribute<PluginVersionAttribute>()?.Version.Trim();
-        if (!PluginVersionRules.IsValid(version))
+        var pluginVersion = ReadSingleText<PluginVersionAttribute>(attributes);
+        if (!PluginVersionRules.IsValid(pluginVersion))
         {
             throw new InvalidOperationException("The plugin version attribute is missing or is not three numbers separated by dots.");
         }
 
-        var hasWindow = typeof(IPluginWindowProvider).IsAssignableFrom(entryType);
+        var hasWindow = interfaceNames.Contains(typeof(IPluginWindowProvider).FullName);
         IReadOnlyDictionary<string, string>? genres = null;
         if (hasWindow)
         {
             genres = ReadLocalizedTexts(
-                assembly.GetCustomAttributes<PluginGenreAttribute>().Select(attribute => (attribute.CultureName, attribute.Genre)),
+                FindAttributeArguments<PluginGenreAttribute>(attributes).Select(arguments => (ReadText(arguments, 0), ReadText(arguments, 1))),
                 "genre");
             if (genres.Count == 0)
             {
@@ -917,19 +930,42 @@ public sealed class PluginManager
             }
         }
 
-        var iconPath = assembly.GetCustomAttribute<PluginIconAttribute>()?.ResourcePath.Trim();
+        var iconPath = ReadSingleText<PluginIconAttribute>(attributes);
         var info = new PluginInfo(
             assemblyName,
             displayNames,
             genres,
             author,
-            version,
+            pluginVersion,
             string.IsNullOrEmpty(iconPath) ? null : iconPath,
             hasWindow,
-            hasWidgets: typeof(IPluginWidgetProvider).IsAssignableFrom(entryType)
-                || typeof(IPluginMultiWidgetProvider).IsAssignableFrom(entryType),
-            hasNotifications: typeof(IPluginNotificationProvider).IsAssignableFrom(entryType));
+            hasWidgets: interfaceNames.Contains(typeof(IPluginWidgetProvider).FullName)
+                || interfaceNames.Contains(typeof(IPluginMultiWidgetProvider).FullName),
+            hasNotifications: interfaceNames.Contains(typeof(IPluginNotificationProvider).FullName));
         return new PluginRegistration(info, entryType);
+    }
+
+    private static IEnumerable<IList<CustomAttributeTypedArgument>> FindAttributeArguments<TAttribute>(IList<CustomAttributeData> attributes)
+        where TAttribute : Attribute
+    {
+        return attributes
+            .Where(attribute => attribute.AttributeType.FullName == typeof(TAttribute).FullName)
+            .Select(attribute => attribute.ConstructorArguments);
+    }
+
+    /// <summary>引数の文字列。null は属性のコンストラクタと同じく空にする。</summary>
+    private static string ReadText(IList<CustomAttributeTypedArgument> arguments, int index)
+    {
+        return arguments[index].Value as string ?? string.Empty;
+    }
+
+    /// <summary>文字列を1つ取る属性の値(前後の空白を除く)。属性が無ければ null。</summary>
+    private static string? ReadSingleText<TAttribute>(IList<CustomAttributeData> attributes)
+        where TAttribute : Attribute
+    {
+        return FindAttributeArguments<TAttribute>(attributes).FirstOrDefault() is { } arguments
+            ? ReadText(arguments, 0).Trim()
+            : null;
     }
 
     private static IReadOnlyDictionary<string, string> ReadLocalizedTexts(
@@ -1024,7 +1060,7 @@ public sealed class PluginManager
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            Log.Error(exception, "Failed to delete the partially copied plugin folder: {Folder}", folder);
+            Log.Error(exception, "Failed to delete the temporary plugin folder: {Folder}", folder);
         }
     }
 

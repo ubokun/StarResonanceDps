@@ -1,12 +1,14 @@
 namespace StarResonanceDps.PluginSdk;
 
 /// <summary>
-/// One setting a plugin adds to a host screen (for example a notification item, <see cref="PluginNotificationDefinition.Settings"/>).
+/// One setting a plugin adds to a host screen: a widget's settings (<see cref="PluginWidgetSettingSection.Settings"/>)
+/// or a notification item's settings (<see cref="PluginNotificationDefinition.Settings"/>).
 /// The host draws the row with the same look as its own settings and saves the value. Use one of the derived types.
 ///
 /// <para>
 /// Localized texts follow the rules of <see cref="PluginNotificationDefinition"/>.
-/// <see cref="Id"/> follows the ID rules (1 to 128 ASCII letters, digits, <c>.</c>, <c>-</c> or <c>_</c>) and is unique among the settings of the item (without case).
+/// <see cref="Id"/> follows the ID rules (1 to 128 ASCII letters, digits, <c>.</c>, <c>-</c> or <c>_</c>) and is unique among the settings
+/// of the widget or the notification item (without case).
 /// The saved value is kept under this ID, so do not change it between versions.
 /// When a saved value no longer fits the definition (an option was removed, the range changed), the host uses the default or the nearest end of the range.
 /// </para>
@@ -17,6 +19,7 @@ public abstract class PluginSettingDefinition
     {
     }
 
+    /// <summary>The setting ID, used to read the value. The saved value is kept under this ID.</summary>
     public required string Id { get; init; }
 
     /// <summary>The row name (at least one text).</summary>
@@ -29,6 +32,7 @@ public abstract class PluginSettingDefinition
 /// <summary>An on/off switch. Read with <see cref="PluginSettingValues.GetSwitch"/>.</summary>
 public sealed class PluginSwitchSetting : PluginSettingDefinition
 {
+    /// <summary>The value until the user changes it.</summary>
     public bool DefaultValue { get; init; }
 }
 
@@ -45,6 +49,7 @@ public sealed class PluginChoiceSetting : PluginSettingDefinition
 /// <summary>An option of a <see cref="PluginChoiceSetting"/>.</summary>
 public sealed class PluginChoiceOption
 {
+    /// <summary>The option ID, returned by <see cref="PluginSettingValues.GetChoice"/>.</summary>
     public required string Id { get; init; }
 
     /// <summary>The option name (at least one text).</summary>
@@ -71,6 +76,7 @@ public sealed class PluginNumberSetting : PluginSettingDefinition
 /// <summary>A one-line text box. Read with <see cref="PluginSettingValues.GetText"/>.</summary>
 public sealed class PluginTextSetting : PluginSettingDefinition
 {
+    /// <summary>The value until the user changes it. <c>null</c> becomes an empty string.</summary>
     public string DefaultValue { get; init; } = string.Empty;
 }
 
@@ -88,8 +94,9 @@ public sealed class PluginColorSetting : PluginSettingDefinition
 }
 
 /// <summary>
-/// A slider with the value shown on its right. The value moves in steps of <see cref="Step"/> from <see cref="Minimum"/>,
-/// and is applied when the user releases the thumb. Read with <see cref="PluginSettingValues.GetSlider"/>.
+/// A slider with the value shown on its right. The value moves in steps of <see cref="Step"/> from <see cref="Minimum"/>.
+/// In the notification tab the value is applied when the user releases the thumb; in a widget's settings window
+/// it changes while the thumb moves (as a preview). Read with <see cref="PluginSettingValues.GetSlider"/>.
 /// </summary>
 public sealed class PluginSliderSetting : PluginSettingDefinition
 {

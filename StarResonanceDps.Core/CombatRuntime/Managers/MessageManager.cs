@@ -698,7 +698,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (serviceUuid == (ulong)EServiceId.WorldNtf
                 && methodId == (uint)StarResonanceDps.Core.CombatRuntime.Protocols.ServiceMethods.WorldNtf.SyncContainerData)
             {
-                OpenGateAfterLogin("フルコンテナ");
+                OpenGateAfterLogin("SyncContainerData");
                 return true;
             }
 
@@ -3594,7 +3594,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     EncounterManager.Current.MarkBuffSourcedSkill(targetUuid, skillId);
                 }
 
-                // 見出し表で名前を持たない行の出どころを決める(検知ログも兼ねる)。
+                // 見出し表で名前を持たない行の出どころを決める(検出された問題の検知も兼ねる)。
                 // 印を付けた後に呼ぶので、バフ由来かどうかも正しく残る。
                 if (isAttackerPlayer)
                 {
@@ -3882,7 +3882,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     sceneData.LevelMapId,
                     sceneData.LineId,
                     sceneData.SceneGuid,
-                    "フルコンテナ",
+                    "SyncContainerData",
                     resetForSceneChange: false);
             }
 

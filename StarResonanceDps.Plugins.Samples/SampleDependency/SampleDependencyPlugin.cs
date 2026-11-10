@@ -24,8 +24,9 @@ public sealed class SampleDependencyPlugin : IStarResonancePlugin, IPluginWindow
     {
         var text = new TextBlock { Margin = new Thickness(24, 8, 24, 24), FontSize = 16, Text = Greeting.Text };
 
-        // Write the DLL's version in the address when two plugins may carry different versions of the same DLL.
-        var colors = new ResourceDictionary { Source = new Uri("/SampleDependency.Library;component/Colors.xaml", UriKind.Relative) };
+        // The address includes the DLL's version (AssemblyVersion in its project), so that plugins carrying different versions of the same DLL
+        // each get their own resources.
+        var colors = new ResourceDictionary { Source = new Uri("/SampleDependency.Library;v1.0.0.0;component/Colors.xaml", UriKind.Relative) };
         text.Foreground = (System.Windows.Media.Brush)colors["SampleDependency.Accent"];
         return text;
     }

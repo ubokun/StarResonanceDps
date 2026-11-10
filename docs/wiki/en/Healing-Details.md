@@ -1,0 +1,40 @@
+![Healing Details](images/en/HealingSummary1.png)
+
+This widget shows the healing done by one player in a table split into normal, crit, and lucky hits, and as shares by element and by type (physical, magic, and so on).
+
+## How to open
+
+- On the "Healing Details" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [HPS Meter](HPS-Meter), following the HPS Meter's "Filter settings" (the default is yourself).
+- You can also open it by right-clicking a row in the [HPS Meter](HPS-Meter) and choosing "Healing Details".
+- A window is opened per target. If a window for the same target is already open, that window is brought to the front.
+
+## What it shows
+
+It works the same way as [Damage Details](Damage-Details), and the values are the amount healed.
+
+- Title: "Healing Details - target name".
+- Top table: The value, rate, and hit count for "Total", "Normal", "Crit", and "Lucky".
+- Element Share and Type Share: The total and share of healing by element and by type. Healing potions, cuisine, and natural recovery go into No element and Unclassified.
+- When the total is 0, nothing is shown.
+
+## Controls
+
+- Hovering over a share row changes the row's color. Clicking does nothing.
+- When you make the window smaller by hand, scroll with the mouse wheel or the scroll bar on the right.
+
+## Settings
+
+The window settings and theme are described in [Common Widget Settings](Common-Widget-Settings).
+
+### Icon Colors
+
+Choose the bar color for each of the nine elements and for each of Physical, Magic, and Unclassified. You can change how dark the bars are with "Icon Colors Opacity" (default: 100%).
+
+## Notes
+
+- The amount of healing is the HP actually gained. Healing on people at full HP is counted in neither the healing nor the hit count.
+- Healing potions, cuisine, and natural recovery also count as healing by the person who drank or ate them. Cuisine and natural recovery of people who were around you before the app started are not counted until you approach them again (the circle in the window title is yellow).
+- Enemy healing is not included.
+- While a benchmark is running, only your own data is recorded. Windows for other people are empty.
+- When "Stop Aggregation in Non-Combat Areas" in Settings is on (the default), nothing is aggregated in Asterleeds, Homestead Courtyard, and Homestead House.
+- While a history entry is open, the values of the opened battle are shown ("[Aggregation](Aggregation)").

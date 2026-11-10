@@ -637,10 +637,10 @@ VOICEVOXを起動し直してください。</value>
     <value>Copyright © 2026 kokoukohiro(GNU GPL v3)</value>
   </data>
   <data name="Help_VersionWithStatus" xml:space="preserve">
-    <value>{0}({1})</value>
+    <value>{0} ({1})</value>
   </data>
   <data name="Update_Status_Checking" xml:space="preserve">
-    <value>確認中</value>
+    <value>更新を確認中</value>
   </data>
   <data name="Update_Status_UpToDate" xml:space="preserve">
     <value>最新</value>
@@ -649,10 +649,10 @@ VOICEVOXを起動し直してください。</value>
     <value>新しいバージョンがあります</value>
   </data>
   <data name="Update_Status_NoRelease" xml:space="preserve">
-    <value>公開されたバージョンありません</value>
+    <value>公開されたバージョンがありません</value>
   </data>
   <data name="Update_Status_Failed" xml:space="preserve">
-    <value>確認できませんでした</value>
+    <value>更新を確認できませんでした</value>
   </data>
   <data name="Update_Title" xml:space="preserve">
     <value>更新</value>
@@ -697,24 +697,24 @@ VOICEVOXを起動し直してください。</value>
   <data name="Update_Error_Message" xml:space="preserve">
     <value>更新できませんでした。</value>
   </data>
-  <data name="Update_Error_Network" xml:space="preserve">
+  <data name="GitHub_Error_Network" xml:space="preserve">
     <value>インターネットへの接続を確認して、もう一度お試しください。</value>
   </data>
-  <data name="Update_Error_Server" xml:space="preserve">
+  <data name="GitHub_Error_Server" xml:space="preserve">
     <value>GitHubのサーバーが応答しませんでした。
 しばらくしてから、もう一度お試しください。</value>
   </data>
-  <data name="Update_Error_RateLimit" xml:space="preserve">
+  <data name="GitHub_Error_RateLimit" xml:space="preserve">
     <value>GitHubへのアクセスが一時的に制限されています。
 しばらくしてから、もう一度お試しください。</value>
   </data>
   <data name="Update_Error_InvalidRelease" xml:space="preserve">
     <value>リリースの情報を読み取れませんでした。
-リリースノートからzipを取得して、アプリのフォルダへ上書きしてください。</value>
+{0}からzipを取得して、アプリのフォルダへ上書きしてください。</value>
   </data>
   <data name="Update_Error_NotFromZip" xml:space="preserve">
     <value>リリースのzipから入れたアプリではないので、アプリの中から更新できません。
-リリースノートからzipを取得してください。</value>
+{0}からzipを取得してください。</value>
   </data>
   <data name="Update_Error_Corrupt" xml:space="preserve">
     <value>ダウンロードしたファイルが壊れていました。
@@ -733,13 +733,16 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Update_Error_RestoreFailed" xml:space="preserve">
     <value>元のバージョンに戻せませんでした。
-リリースノートからzipを取得して、アプリのフォルダへ上書きしてください。</value>
+{0}からzipを取得して、アプリのフォルダへ上書きしてください。</value>
   </data>
-  <data name="Update_OpenReleaseNotes" xml:space="preserve">
-    <value>リリースノートを開く</value>
+  <data name="Update_ReleaseNotesLink" xml:space="preserve">
+    <value>リリースノート</value>
   </data>
   <data name="Update_RestartFailed_Message" xml:space="preserve">
     <value>更新しましたが、起動し直せませんでした。</value>
+  </data>
+  <data name="Update_RestartFailedNotUpdated_Message" xml:space="preserve">
+    <value>元のバージョンを起動し直せませんでした。</value>
   </data>
   <data name="Update_RestartFailed_Detail" xml:space="preserve">
     <value>アプリのフォルダのStarResonanceDps.exeを起動してください。</value>
@@ -900,6 +903,27 @@ VOICEVOXを起動し直してください。</value>
   <data name="NumberDisplay_Wan" xml:space="preserve">
     <value>日本語表記（万億兆）</value>
   </data>
+  <data name="NumberUnit_Kmbt_Thousand" xml:space="preserve">
+    <value>K</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Billion" xml:space="preserve">
+    <value>B</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Trillion" xml:space="preserve">
+    <value>T</value>
+  </data>
+  <data name="NumberUnit_Wan_TenThousand" xml:space="preserve">
+    <value>万</value>
+  </data>
+  <data name="NumberUnit_Wan_HundredMillion" xml:space="preserve">
+    <value>億</value>
+  </data>
+  <data name="NumberUnit_Wan_Trillion" xml:space="preserve">
+    <value>兆</value>
+  </data>
   <data name="Settings_Display_PlayerName" xml:space="preserve">
     <value>プレイヤー名</value>
   </data>
@@ -911,6 +935,9 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="PlayerNameDisplay_HideOthers" xml:space="preserve">
     <value>自分以外非表示</value>
+  </data>
+  <data name="PlayerName_UidFormat" xml:space="preserve">
+    <value>UID:{0}</value>
   </data>
   <data name="Hotkey_PlayerNameShowOrHide" xml:space="preserve">
     <value>プレイヤー名表示/非表示</value>
@@ -1249,6 +1276,9 @@ VOICEVOXを起動し直してください。</value>
   <data name="Widget_PlayerModule" xml:space="preserve">
     <value>モジュール情報</value>
   </data>
+  <data name="PlayerModule_LevelFormat" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="PlayerInfo_Uid" xml:space="preserve">
     <value>UID</value>
   </data>
@@ -1387,9 +1417,6 @@ VOICEVOXを起動し直してください。</value>
   <data name="Settings_PlayerInfo_Field_PlayerUid" xml:space="preserve">
     <value>プレイヤーUID</value>
   </data>
-  <data name="Metric_No" xml:space="preserve">
-    <value>NO.</value>
-  </data>
   <data name="Metric_Element" xml:space="preserve">
     <value>属性</value>
   </data>
@@ -1411,20 +1438,8 @@ VOICEVOXを起動し直してください。</value>
   <data name="Metric_SkillName" xml:space="preserve">
     <value>スキル名</value>
   </data>
-  <data name="Metric_Damage" xml:space="preserve">
-    <value>与ダメ</value>
-  </data>
-  <data name="Metric_Healing" xml:space="preserve">
-    <value>ヒール</value>
-  </data>
-  <data name="Metric_ActiveDps" xml:space="preserve">
-    <value>aDPS</value>
-  </data>
   <data name="Metric_EncounterDps" xml:space="preserve">
     <value>DPS</value>
-  </data>
-  <data name="Metric_ActiveHps" xml:space="preserve">
-    <value>aHPS</value>
   </data>
   <data name="Metric_EncounterHps" xml:space="preserve">
     <value>HPS</value>
@@ -1434,15 +1449,6 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Metric_CritRate" xml:space="preserve">
     <value>会心率</value>
-  </data>
-  <data name="Metric_AveragePerHit" xml:space="preserve">
-    <value>平均ヒット</value>
-  </data>
-  <data name="Metric_DamageShare" xml:space="preserve">
-    <value>与ダメ%</value>
-  </data>
-  <data name="Metric_HealingShare" xml:space="preserve">
-    <value>ヒール%</value>
   </data>
   <data name="Confirm_NpcapUpdate_Title" xml:space="preserve">
     <value>Npcap更新</value>
@@ -1756,10 +1762,10 @@ VOICEVOXを起動し直してください。</value>
     <value>[画像]</value>
   </data>
   <data name="Chat_Voice" xml:space="preserve">
-    <value>[ボイス]</value>
+    <value>[ボイスメッセージ]</value>
   </data>
   <data name="Chat_VoiceTextFormat" xml:space="preserve">
-    <value>[ボイス] {0}</value>
+    <value>[ボイスメッセージ] {0}</value>
   </data>
   <data name="Settings_Section_ChatTextColors_Title" xml:space="preserve">
     <value>テキストカラー</value>
@@ -2521,5 +2527,79 @@ VOICEVOXを起動し直してください。</value>
 {0}
 このファイルは、アプリが次に設定を保存したときに上書きされます。
 必要に応じて、設定をやり直してください。</value>
+  </data>
+  <data name="Navigation_Feedback" xml:space="preserve">
+    <value>フィードバック</value>
+  </data>
+  <data name="Feedback_Issue_Title" xml:space="preserve">
+    <value>不具合報告・機能要望</value>
+  </data>
+  <data name="Feedback_Issue_Description" xml:space="preserve">
+    <value>GitHubの投稿画面を開きます</value>
+  </data>
+  <data name="Feedback_Issue_Note" xml:space="preserve">
+    <value>※報告内容はGitHubで公開され、投稿にはアカウントが必要です</value>
+  </data>
+  <data name="Feedback_Detections_Title" xml:space="preserve">
+    <value>検出された問題</value>
+  </data>
+  <data name="Feedback_Detections_Check" xml:space="preserve">
+    <value>報告状況を確認</value>
+  </data>
+  <data name="Feedback_Detections_CancelCheck" xml:space="preserve">
+    <value>確認をキャンセル</value>
+  </data>
+  <data name="Feedback_Detections_Report" xml:space="preserve">
+    <value>選んだ項目を報告</value>
+  </data>
+  <data name="Feedback_Detections_Empty" xml:space="preserve">
+    <value>検出された問題がありません</value>
+  </data>
+  <data name="Feedback_Detection_BlankSourceName" xml:space="preserve">
+    <value>名前のないスキル</value>
+  </data>
+  <data name="Feedback_Detection_SourceLandingConflict" xml:space="preserve">
+    <value>スキル名判定の不一致</value>
+  </data>
+  <data name="Feedback_Detection_SpecConflict" xml:space="preserve">
+    <value>クラス判定の不一致</value>
+  </data>
+  <data name="Feedback_Detection_ItemFormat" xml:space="preserve">
+    <value>{0}({1})</value>
+  </data>
+  <data name="Plugins_Empty" xml:space="preserve">
+    <value>インストール済みのプラグインがありません</value>
+  </data>
+  <data name="Feedback_Detection_Reported" xml:space="preserve">
+    <value>報告済み</value>
+  </data>
+  <data name="Feedback_AlreadyReported_Message" xml:space="preserve">
+    <value>選んだ項目はすでに報告されています。</value>
+  </data>
+  <data name="Feedback_CheckError_Title" xml:space="preserve">
+    <value>報告状況確認エラー</value>
+  </data>
+  <data name="Feedback_CheckError_Message" xml:space="preserve">
+    <value>報告済みか確認できませんでした。</value>
+  </data>
+  <data name="Feedback_Report_Title" xml:space="preserve">
+    <value>検出された項目の報告</value>
+  </data>
+  <data name="Feedback_Report_IssueTitle" xml:space="preserve">
+    <value>[バージョン {0}] 検出された項目{1}件</value>
+  </data>
+  <data name="Feedback_Opened_Message" xml:space="preserve">
+    <value>GitHubの投稿画面を開きました。</value>
+  </data>
+  <data name="Feedback_Opened_Detail" xml:space="preserve">
+    <value>そのまま「Create」を押すと、報告が完了します。
+「報告状況を確認」を押すと投稿の結果を確認できます。</value>
+  </data>
+  <data name="Feedback_OpenedMany_Message" xml:space="preserve">
+    <value>GitHubの投稿画面を{0}個開きました。</value>
+  </data>
+  <data name="Feedback_OpenedMany_Detail" xml:space="preserve">
+    <value>それぞれの画面で「Create」を押すと、報告が完了します。
+「報告状況を確認」を押すと投稿の結果を確認できます。</value>
   </data>
 </root>

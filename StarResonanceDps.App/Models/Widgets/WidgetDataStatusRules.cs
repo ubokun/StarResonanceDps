@@ -295,7 +295,7 @@ public static class WidgetDataStatusRules
                 EnemyApproach);
     }
 
-    /// <summary>与ダメ詳細・ヒール詳細・スキル詳細2種・推移グラフ2種。履歴を出している間は中身の全部が履歴。</summary>
+    /// <summary>与ダメ詳細・ヒール詳細・被ダメ詳細・スキル詳細2種・推移グラフ2種。履歴を出している間は中身の全部が履歴。</summary>
     /// <param name="hasHistoryLoadFailed">履歴の回を読めなかった(次に選び直すまで)。</param>
     /// <param name="identity">窓の相手(今の回の実体から引いた素性)。相手が回にいなければ null。</param>
     /// <param name="countsSkillLevels">技の段階(G○)を出す窓(推移グラフ)か。</param>

@@ -407,6 +407,16 @@
         M4 7h3a1 1 0 0 0 1-1V5a2 2 0 0 1 4 0v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 1 0 4h-1a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-1a2 2 0 0 0-4 0v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a2 2 0 0 0 0-4H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1
     </Geometry>
 
+    <!-- リンクの欄(Button.LinkCard)の右の、外部のページを開く印。 -->
+    <Style x:Key="Icon.LinkCardExternalMark" TargetType="{x:Type Path}" BasedOn="{StaticResource Icon.Stroke}">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Margin" Value="12,0,0,0" />
+        <Setter Property="Stroke" Value="{DynamicResource Brush.TextSecondary}" />
+        <Setter Property="Data" Value="{DynamicResource Icon.ExternalLink}" />
+    </Style>
+
     <Geometry x:Key="Icon.Log">
         M5 1.5H15A1.6 1.6 0 0 1 17 3.1V16.9A1.6 1.6 0 0 1 15.4 18.5H4.6A1.6 1.6 0 0 1 3 16.9V3.1A1.6 1.6 0 0 1 4.6 1.5Z
         M7.1 6H12.9
@@ -573,7 +583,7 @@
     </Geometry>
 
     <!--
-        充填式(元SVGは fill="currentColor")。Icon.Fill と組で使う。メインウィンドウの「集計」タブ。
+        充填式(元SVGは fill="currentColor")。Icon.Fill と組で使う。メインウィンドウの「集計」。
         中抜きは逆回りの内側パスで作ってあるので F1(Nonzero)。元SVGの塗り規則と同じ。
         元SVGの背景 `M0 0h24v24H0z fill="none"` は viewBox の下敷きなので落としてある
         (残すと Nonzero で全面が塗られる)。
@@ -605,7 +615,7 @@
     </Geometry>
 
     <!--
-        輪郭式(元SVGは fill="none" stroke="currentColor")。Icon.Stroke と組で使う。メイン窓の「通知」タブ。
+        輪郭式(元SVGは fill="none" stroke="currentColor")。Icon.Stroke と組で使う。メイン窓の「通知」。
         元SVGの下敷きの矩形(M0 0h24v24H0z)は入れていない。
     -->
     <Geometry x:Key="Icon.Notification">
@@ -658,9 +668,20 @@
         M14 2v4a2 2 0 0 0 2 2h4
     </Geometry>
 
-    <!-- 輪郭式(元SVGはfill="none" stroke="currentColor")。Icon.Strokeと組で使う。ヘルプタブのリンクの欄の右の、外部のページを開く印。 -->
+    <!-- 輪郭式(元SVGはfill="none" stroke="currentColor")。Icon.Strokeと組で使う。リンクの欄の右の、外部のページを開く印。 -->
     <Geometry x:Key="Icon.ExternalLink">
         M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3M15 4h5v5m0-5l-7 7
+    </Geometry>
+
+    <!-- 輪郭式(元SVGはfill="none" stroke="currentColor")。Icon.Strokeと組で使う。フィードバックのタブ。 -->
+    <Geometry x:Key="Icon.Feedback">
+        M3.75 10A4.25 4.25 0 1 0 12.25 10A4.25 4.25 0 1 0 3.75 10Z
+        M14.25 10.25h-1.5m-1 2.5 1.5 1.5m0-8.5-1.5 1.5m-10 3h1.5m1 2.5-1.5 1.5m0-8.5 1.5 1.5m1.5-1.5s-.75-3 2.25-3 2.25 3 2.25 3
+    </Geometry>
+
+    <!-- 塗り(元SVGはfill="currentColor")。Icon.Fillと組で使う。フィードバックタブの不具合報告・機能要望の欄。 -->
+    <Geometry x:Key="Icon.Report">
+        F1 M11.741 14.966a1 1 0 0 1-.607-.466c-.439-.76.29-1.69 1.127-1.466c.254.068.475.238.607.466c.439.76-.29 1.69-1.127 1.466m-.707-7.225c.226-.842 1.396-.996 1.832-.241c.101.175.121.302.134.5v3c-.03.451-.288.844-.741.966c-.656.176-1.217-.327-1.259-.966V8ZM6 19c-.262 0-1.092.028-1.485-.036C3.046 18.726 2.059 17.498 2 16.04V5.96c.032-.788.314-1.52.877-2.083S4.172 3.032 4.96 3h14.08c.788.032 1.52.314 2.083.877s.845 1.295.877 2.083v10.08c-.038.946-.453 1.817-1.226 2.383c-.513.376-1.103.552-1.734.577h-7.653c-.135.029.029-.025-.097.032l-3.366 2.525l-.346.169a1.29 1.29 0 0 1-1.506-.753L6 20.595Zm2 0l2.176-1.632A2.1 2.1 0 0 1 11.28 17h7.68c.622-.025 1.015-.418 1.04-1.04V6.04c-.014-.336-.132-.641-.412-.845c-.188-.138-.398-.186-.628-.195H5.04c-.336.014-.641.132-.845.412c-.138.188-.186.398-.195.628v9.92c.058 1.433 1.651.966 2.58 1.04c.331.027.533.075.813.28C8.02 17.738 8 18.304 8 19
     </Geometry>
 
 </ResourceDictionary>

@@ -114,10 +114,10 @@ public sealed class SourceLandingResolver
 
     private SourceLanding ResolveEntity(Walk walk, long uuid, EntityOrigin origin, DateTime arrivalTime)
     {
-        walk.Add($"実体 {uuid} 付与元 {SourceTypeName(origin.SourceType)} {origin.SourceId}");
+        walk.Add($"entity {uuid} source {SourceTypeName(origin.SourceType)} {origin.SourceId}");
         if (!walk.EnterEntity(uuid))
         {
-            return walk.Stop("実体の循環");
+            return walk.Stop("entity cycle");
         }
 
         return (EFightSource)origin.SourceType switch
@@ -128,11 +128,11 @@ public sealed class SourceLandingResolver
                 ? LandSkill(walk, origin.SourceId)
                 : origin.SummonerUuid != 0
                     ? FromEntity(walk, origin.SummonerUuid, arrivalTime)
-                    : walk.Stop("召喚者なし"),
+                    : walk.Stop("no summoner"),
             EFightSource.Bullet => origin.SummonerUuid != 0
                 ? FromEntity(walk, origin.SummonerUuid, arrivalTime)
-                : walk.Stop("召喚者なし"),
-            _ => walk.Stop("付与元の種類が対象外")
+                : walk.Stop("no summoner"),
+            _ => walk.Stop("source type not handled")
         };
     }
 
@@ -168,12 +168,12 @@ public sealed class SourceLandingResolver
         }
         else if (damageSource == EDamageSource.Skill && attackerRawUuid == attackerUuid)
         {
-            walk.Add($"技 {ownerId}(本人)");
+            walk.Add($"skill {ownerId} (self)");
             landing = LandSkill(walk, ownerId);
         }
         else
         {
-            landing = walk.Stop($"起点なし(発生源 {damageSource})");
+            landing = walk.Stop($"no start (damage source {damageSource})");
         }
 
         trace = walk.ToString();
@@ -212,14 +212,14 @@ public sealed class SourceLandingResolver
     {
         if (CombatDataCatalog.TryGetModEffectIdByRootBuff(buffId, out _))
         {
-            walk.Add($"モジュールの根 {buffId}");
+            walk.Add($"module root {buffId}");
             landing = walk.Land(new SourceLanding(SourceLandingKind.Module, buffId));
             return true;
         }
 
         if (CombatDataCatalog.TryGetImagineSkillIdByPassiveRoot(buffId, out var imagineSkillId))
         {
-            walk.Add($"イマジンのパッシブの根 {buffId} → 技 {imagineSkillId}");
+            walk.Add($"imagine passive root {buffId} -> skill {imagineSkillId}");
             landing = LandSkill(walk, imagineSkillId);
             return true;
         }
@@ -236,7 +236,7 @@ public sealed class SourceLandingResolver
         var visited = new HashSet<int>();
         for (var step = 0; step < MaxBuffSteps; step++)
         {
-            walk.Add($"バフ {buffId}");
+            walk.Add($"buff {buffId}");
             if (CombatDataCatalog.IsRogueEntryBuff(buffId))
             {
                 return walk.Land(new SourceLanding(SourceLandingKind.RogueEntry, buffId));
@@ -249,12 +249,12 @@ public sealed class SourceLandingResolver
 
             if (!visited.Add(buffId))
             {
-                return walk.Stop("循環");
+                return walk.Stop("cycle");
             }
 
             if (!BuffInstanceIndex.Instance.TryResolveSource(buffId, rawUuid, attackerUuid, arrivalTime, out var sourceType, out var sourceId, out var fireUuid))
             {
-                return walk.Stop("生きている実体が無いか、付与元がそろわない");
+                return walk.Stop("no live instance or source incomplete");
             }
 
             if (sourceType == (int)EFightSource.Buff)
@@ -266,7 +266,7 @@ public sealed class SourceLandingResolver
             return LandNonBuffSource(walk, sourceType, sourceId, fireUuid, arrivalTime);
         }
 
-        return walk.Stop("段数の上限");
+        return walk.Stop("step limit");
     }
 
     /// <summary>付与元が親のバフ以外の段。技 → 術者がプレイヤーならその技・召喚体なら実体の控え、弾 → プレイヤーの弾の控え、それ以外は止まる。</summary>
@@ -274,25 +274,25 @@ public sealed class SourceLandingResolver
     {
         if (sourceType == (int)EFightSource.Skill && sourceId > 0)
         {
-            walk.Add($"技 {sourceId}(術者 {fireUuid})");
+            walk.Add($"skill {sourceId} (caster {fireUuid})");
             return IsPlayer(fireUuid)
                 ? LandSkill(walk, sourceId)
                 : fireUuid != 0
                     ? FromEntity(walk, fireUuid, arrivalTime)
-                    : walk.Stop("術者なし");
+                    : walk.Stop("no caster");
         }
 
         if (sourceType == (int)EFightSource.Bullet && sourceId > 0)
         {
-            walk.Add($"弾 {sourceId}(術者 {fireUuid})");
+            walk.Add($"bullet {sourceId} (caster {fireUuid})");
             return IsPlayer(fireUuid)
                 ? FromBulletOfPlayer(walk, fireUuid, sourceId, arrivalTime)
                 : fireUuid != 0
                     ? FromEntity(walk, fireUuid, arrivalTime)
-                    : walk.Stop("術者なし");
+                    : walk.Stop("no caster");
         }
 
-        return walk.Stop($"付与元 {SourceTypeName(sourceType)} {sourceId}");
+        return walk.Stop($"source {SourceTypeName(sourceType)} {sourceId}");
     }
 
     private SourceLanding FromBulletOfPlayer(Walk walk, long playerUuid, int bulletId, DateTime arrivalTime)
@@ -306,22 +306,22 @@ public sealed class SourceLandingResolver
 
         if (!found)
         {
-            return walk.Stop($"プレイヤーの弾 {bulletId} の控えなし");
+            return walk.Stop($"player bullet {bulletId} not stored");
         }
 
         if (known.IsSplit)
         {
-            return walk.Stop($"プレイヤーの弾 {bulletId} の着地先が割れている");
+            return walk.Stop($"player bullet {bulletId} landing split");
         }
 
         if (known.Landing.Kind != SourceLandingKind.None)
         {
-            walk.Add($"[プレイヤーの弾 {bulletId} → {known.Landing}]");
+            walk.Add($"[player bullet {bulletId} -> {known.Landing}]");
             return known.Landing;
         }
 
         // まだ着地していない。最後に出たその弾の実体をたどり直す。
-        walk.Add($"プレイヤーの弾 {bulletId} は未着地 → 実体 {known.LastUuid}");
+        walk.Add($"player bullet {bulletId} not landed -> entity {known.LastUuid}");
         return FromEntity(walk, known.LastUuid, arrivalTime);
     }
 
@@ -329,7 +329,7 @@ public sealed class SourceLandingResolver
     {
         if (!EntityOriginIndex.Instance.TryGetOrigin(uuid, out var origin, out var storedLanding, out var trace))
         {
-            return walk.Stop($"実体 {uuid} の控えなし");
+            return walk.Stop($"entity {uuid} not stored");
         }
 
         if (storedLanding.Kind != SourceLandingKind.None)
@@ -341,7 +341,7 @@ public sealed class SourceLandingResolver
         // 出現の瞬間には着地できなかった控え。いまの状態でたどり直し、着けば控えを更新する。
         var retry = walk.Child();
         var landing = ResolveEntity(retry, uuid, origin, arrivalTime);
-        walk.Add($"[たどり直し {retry}]");
+        walk.Add($"[retry {retry}]");
         if (landing.Kind != SourceLandingKind.None)
         {
             Store(uuid, origin, landing, retry);
@@ -353,7 +353,7 @@ public sealed class SourceLandingResolver
     private static SourceLanding LandSkill(Walk walk, int skillId)
     {
         return string.IsNullOrEmpty(CombatDataCatalog.GetSkillNameWithoutInternalId(skillId))
-            ? walk.Stop($"技 {skillId} の名前が空")
+            ? walk.Stop($"skill {skillId} name empty")
             : walk.Land(new SourceLanding(SourceLandingKind.Skill, skillId));
     }
 
@@ -389,13 +389,13 @@ public sealed class SourceLandingResolver
 
         public SourceLanding Land(SourceLanding landing)
         {
-            _steps.Add($"→ 着地 {landing}");
+            _steps.Add($"-> landed {landing}");
             return landing;
         }
 
         public SourceLanding Stop(string reason)
         {
-            _steps.Add($"→ 止まる: {reason}");
+            _steps.Add($"-> stopped: {reason}");
             return SourceLanding.None;
         }
 

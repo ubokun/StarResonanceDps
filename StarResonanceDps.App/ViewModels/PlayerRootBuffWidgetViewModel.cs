@@ -23,8 +23,8 @@ namespace StarResonanceDps.App.ViewModels;
 /// </summary>
 public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable
 {
-    /// <summary>リンク数の届いていないモジュール効果の段階。</summary>
-    private const string UnknownModuleLevelText = "Lv??";
+    /// <summary>リンク数の届いていないモジュール効果の段階で、書式の数字の位置へ差し込む文字(バフリストの経過不明と同じ)。</summary>
+    private const string UnknownModuleLevelText = "??";
 
     private readonly ObservableCollection<PlayerRootBuffEntry> _entries = [];
 
@@ -227,9 +227,9 @@ public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel,
                 CombatDataCatalog.GetModuleEffectName(effectId),
                 CombatIconResolver.ResolveRootBuffIcon(RootBuffKind.ModuleEffect, CombatDataCatalog.GetModuleEffectIconName(effectId)),
                 RootBuffKind.ModuleEffect,
-                level is { } known
-                    ? string.Create(CultureInfo.InvariantCulture, $"Lv{known}")
-                    : UnknownModuleLevelText));
+                LocalizationManager.Instance.Format(
+                    "PlayerModule_LevelFormat",
+                    level?.ToString(CultureInfo.InvariantCulture) ?? UnknownModuleLevelText)));
         }
     }
 

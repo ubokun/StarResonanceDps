@@ -40,7 +40,7 @@ internal static class PluginNotificationValidator
                 return false;
             }
 
-            var id = definition.Id.Trim();
+            var id = definition.Id;
             if (!ids.Add(id))
             {
                 error = $"The notification ID '{id}' is defined more than once.";
@@ -107,7 +107,7 @@ internal static class PluginNotificationValidator
                 return false;
             }
 
-            var key = field.Key?.Trim() ?? string.Empty;
+            var key = field.Key ?? string.Empty;
             if (key.Length is 0 or > MaxFieldKeyLength || !key.All(char.IsAsciiLetterOrDigit))
             {
                 error = $"the field key '{field.Key}' must be 1 to {MaxFieldKeyLength} ASCII letters and digits.";

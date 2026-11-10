@@ -217,7 +217,7 @@
     <value>'{0}'은(는) 다른 앱이 사용 중입니다.</value>
   </data>
   <data name="Hotkey_RegisterFailed_Error" xml:space="preserve">
-    <value>'{0}'을(를) 설정할 수 없습니다 (오류 {1}).</value>
+    <value>'{0}'을(를) 설정할 수 없습니다(오류 {1}).</value>
   </data>
   <data name="Hotkey_HelperUnavailable_Message" xml:space="preserve">
     <value>단축키가 비활성화되었습니다.</value>
@@ -264,7 +264,7 @@
     <value>VOICEVOX 다운로드</value>
   </data>
   <data name="Settings_Notification_VoicevoxSpeakerMissing" xml:space="preserve">
-    <value>{0} (찾을 수 없음)</value>
+    <value>{0}(찾을 수 없음)</value>
   </data>
   <data name="Voicevox_Error_Title" xml:space="preserve">
     <value>VOICEVOX 연결 오류</value>
@@ -597,7 +597,7 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>업데이트 확인</value>
   </data>
   <data name="Help_Intro_Summary" xml:space="preserve">
-    <value>블루 프로토콜: 스타 레조넌스의 전투 정보(DPS 등)를 표시하는 비공식 도구입니다 (Windows용).</value>
+    <value>블루 프로토콜: 스타 레조넌스의 전투 정보(DPS 등)를 표시하는 비공식 도구입니다(Windows용).</value>
   </data>
   <data name="Help_Intro_Features" xml:space="preserve">
     <value>전투 상황을 실시간으로 표시하고, 지난 전투의 결과도 돌아볼 수 있습니다. 전투 중 일어나는 일의 알림과 기능 확장도 지원합니다.</value>
@@ -633,13 +633,13 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>버전별 변경 사항</value>
   </data>
   <data name="Help_Copyright" xml:space="preserve">
-    <value>Copyright © 2026 kokoukohiro (GNU GPL v3)</value>
+    <value>Copyright © 2026 kokoukohiro(GNU GPL v3)</value>
   </data>
   <data name="Help_VersionWithStatus" xml:space="preserve">
     <value>{0} ({1})</value>
   </data>
   <data name="Update_Status_Checking" xml:space="preserve">
-    <value>확인 중</value>
+    <value>업데이트 확인 중</value>
   </data>
   <data name="Update_Status_UpToDate" xml:space="preserve">
     <value>최신</value>
@@ -651,7 +651,7 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>공개된 버전 없음</value>
   </data>
   <data name="Update_Status_Failed" xml:space="preserve">
-    <value>확인하지 못했습니다</value>
+    <value>업데이트를 확인하지 못했습니다</value>
   </data>
   <data name="Update_Title" xml:space="preserve">
     <value>업데이트</value>
@@ -696,24 +696,24 @@ VOICEVOX를 다시 시작하세요.</value>
   <data name="Update_Error_Message" xml:space="preserve">
     <value>업데이트하지 못했습니다.</value>
   </data>
-  <data name="Update_Error_Network" xml:space="preserve">
+  <data name="GitHub_Error_Network" xml:space="preserve">
     <value>인터넷 연결을 확인한 뒤 다시 시도해 주세요.</value>
   </data>
-  <data name="Update_Error_Server" xml:space="preserve">
+  <data name="GitHub_Error_Server" xml:space="preserve">
     <value>GitHub 서버가 응답하지 않았습니다.
 잠시 후 다시 시도해 주세요.</value>
   </data>
-  <data name="Update_Error_RateLimit" xml:space="preserve">
+  <data name="GitHub_Error_RateLimit" xml:space="preserve">
     <value>GitHub 접속이 일시적으로 제한되었습니다.
 잠시 후 다시 시도해 주세요.</value>
   </data>
   <data name="Update_Error_InvalidRelease" xml:space="preserve">
     <value>릴리스 정보를 읽지 못했습니다.
-릴리스 노트에서 zip을 받아 앱 폴더에 덮어쓰세요.</value>
+{0}에서 zip을 받아 앱 폴더에 덮어쓰세요.</value>
   </data>
   <data name="Update_Error_NotFromZip" xml:space="preserve">
     <value>릴리스 zip으로 설치한 앱이 아니므로 앱 안에서 업데이트할 수 없습니다.
-릴리스 노트에서 zip을 받으세요.</value>
+{0}에서 zip을 받으세요.</value>
   </data>
   <data name="Update_Error_Corrupt" xml:space="preserve">
     <value>다운로드한 파일이 손상되었습니다.
@@ -732,13 +732,16 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="Update_Error_RestoreFailed" xml:space="preserve">
     <value>이전 버전으로 되돌리지 못했습니다.
-릴리스 노트에서 zip을 받아 앱 폴더에 덮어쓰세요.</value>
+{0}에서 zip을 받아 앱 폴더에 덮어쓰세요.</value>
   </data>
-  <data name="Update_OpenReleaseNotes" xml:space="preserve">
-    <value>릴리스 노트 열기</value>
+  <data name="Update_ReleaseNotesLink" xml:space="preserve">
+    <value>릴리스 노트</value>
   </data>
   <data name="Update_RestartFailed_Message" xml:space="preserve">
     <value>업데이트했지만 다시 시작하지 못했습니다.</value>
+  </data>
+  <data name="Update_RestartFailedNotUpdated_Message" xml:space="preserve">
+    <value>원래 버전을 다시 시작하지 못했습니다.</value>
   </data>
   <data name="Update_RestartFailed_Detail" xml:space="preserve">
     <value>앱 폴더의 StarResonanceDps.exe를 실행해 주세요.</value>
@@ -894,10 +897,31 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>숫자</value>
   </data>
   <data name="NumberDisplay_KMB" xml:space="preserve">
-    <value>서양식 (KMBT)</value>
+    <value>서양식(KMBT)</value>
   </data>
   <data name="NumberDisplay_Wan" xml:space="preserve">
-    <value>동아시아식 (만억조)</value>
+    <value>동아시아식(만억조)</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Thousand" xml:space="preserve">
+    <value>K</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Billion" xml:space="preserve">
+    <value>B</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Trillion" xml:space="preserve">
+    <value>T</value>
+  </data>
+  <data name="NumberUnit_Wan_TenThousand" xml:space="preserve">
+    <value>만</value>
+  </data>
+  <data name="NumberUnit_Wan_HundredMillion" xml:space="preserve">
+    <value>억</value>
+  </data>
+  <data name="NumberUnit_Wan_Trillion" xml:space="preserve">
+    <value>조</value>
   </data>
   <data name="Settings_Display_PlayerName" xml:space="preserve">
     <value>플레이어 이름</value>
@@ -910,6 +934,9 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="PlayerNameDisplay_HideOthers" xml:space="preserve">
     <value>자신 이외 숨기기</value>
+  </data>
+  <data name="PlayerName_UidFormat" xml:space="preserve">
+    <value>UID:{0}</value>
   </data>
   <data name="Hotkey_PlayerNameShowOrHide" xml:space="preserve">
     <value>플레이어 이름 표시/숨기기</value>
@@ -1247,6 +1274,9 @@ VOICEVOX를 다시 시작하세요.</value>
   <data name="Widget_PlayerModule" xml:space="preserve">
     <value>모듈 정보</value>
   </data>
+  <data name="PlayerModule_LevelFormat" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="PlayerInfo_Uid" xml:space="preserve">
     <value>UID</value>
   </data>
@@ -1374,7 +1404,7 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>깊은 잠 심상의</value>
   </data>
   <data name="Settings_PlayerInfo_Field_AbilityScore" xml:space="preserve">
-    <value>능력 등급</value>
+    <value>능력 점수</value>
   </data>
   <data name="Settings_PlayerInfo_Field_SeasonStrength" xml:space="preserve">
     <value>시즌 강도</value>
@@ -1384,9 +1414,6 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="Settings_PlayerInfo_Field_PlayerUid" xml:space="preserve">
     <value>플레이어 UID</value>
-  </data>
-  <data name="Metric_No" xml:space="preserve">
-    <value>번호</value>
   </data>
   <data name="Metric_Element" xml:space="preserve">
     <value>원소</value>
@@ -1409,20 +1436,8 @@ VOICEVOX를 다시 시작하세요.</value>
   <data name="Metric_SkillName" xml:space="preserve">
     <value>스킬 이름</value>
   </data>
-  <data name="Metric_Damage" xml:space="preserve">
-    <value>피해</value>
-  </data>
-  <data name="Metric_Healing" xml:space="preserve">
-    <value>치유</value>
-  </data>
-  <data name="Metric_ActiveDps" xml:space="preserve">
-    <value>aDPS</value>
-  </data>
   <data name="Metric_EncounterDps" xml:space="preserve">
     <value>DPS</value>
-  </data>
-  <data name="Metric_ActiveHps" xml:space="preserve">
-    <value>aHPS</value>
   </data>
   <data name="Metric_EncounterHps" xml:space="preserve">
     <value>HPS</value>
@@ -1432,15 +1447,6 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="Metric_CritRate" xml:space="preserve">
     <value>치명타율</value>
-  </data>
-  <data name="Metric_AveragePerHit" xml:space="preserve">
-    <value>평균 타격</value>
-  </data>
-  <data name="Metric_DamageShare" xml:space="preserve">
-    <value>피해%</value>
-  </data>
-  <data name="Metric_HealingShare" xml:space="preserve">
-    <value>치유%</value>
   </data>
   <data name="Confirm_NpcapUpdate_Title" xml:space="preserve">
     <value>Npcap 업데이트</value>
@@ -1754,10 +1760,10 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>[이미지]</value>
   </data>
   <data name="Chat_Voice" xml:space="preserve">
-    <value>[음성]</value>
+    <value>[음성 메시지]</value>
   </data>
   <data name="Chat_VoiceTextFormat" xml:space="preserve">
-    <value>[음성] {0}</value>
+    <value>[음성 메시지] {0}</value>
   </data>
   <data name="Settings_Section_ChatTextColors_Title" xml:space="preserve">
     <value>텍스트 색상</value>
@@ -2517,5 +2523,79 @@ VOICEVOX를 다시 시작하세요.</value>
 {0}
 이 파일은 앱이 다음에 설정을 저장할 때 덮어씁니다.
 필요하면 설정을 다시 하세요.</value>
+  </data>
+  <data name="Navigation_Feedback" xml:space="preserve">
+    <value>피드백</value>
+  </data>
+  <data name="Feedback_Issue_Title" xml:space="preserve">
+    <value>버그 제보 · 기능 요청</value>
+  </data>
+  <data name="Feedback_Issue_Description" xml:space="preserve">
+    <value>GitHub 작성 화면을 엽니다</value>
+  </data>
+  <data name="Feedback_Issue_Note" xml:space="preserve">
+    <value>※제보 내용은 GitHub에 공개되며 작성에는 계정이 필요합니다</value>
+  </data>
+  <data name="Feedback_Detections_Title" xml:space="preserve">
+    <value>감지된 문제</value>
+  </data>
+  <data name="Feedback_Detections_Check" xml:space="preserve">
+    <value>제보 상태 확인</value>
+  </data>
+  <data name="Feedback_Detections_CancelCheck" xml:space="preserve">
+    <value>확인 취소</value>
+  </data>
+  <data name="Feedback_Detections_Report" xml:space="preserve">
+    <value>선택한 항목 제보</value>
+  </data>
+  <data name="Feedback_Detections_Empty" xml:space="preserve">
+    <value>감지된 문제가 없습니다</value>
+  </data>
+  <data name="Feedback_Detection_BlankSourceName" xml:space="preserve">
+    <value>이름 없는 스킬</value>
+  </data>
+  <data name="Feedback_Detection_SourceLandingConflict" xml:space="preserve">
+    <value>스킬 이름 판정 불일치</value>
+  </data>
+  <data name="Feedback_Detection_SpecConflict" xml:space="preserve">
+    <value>클래스 판정 불일치</value>
+  </data>
+  <data name="Feedback_Detection_ItemFormat" xml:space="preserve">
+    <value>{0}({1})</value>
+  </data>
+  <data name="Plugins_Empty" xml:space="preserve">
+    <value>설치된 플러그인이 없습니다</value>
+  </data>
+  <data name="Feedback_Detection_Reported" xml:space="preserve">
+    <value>제보 완료</value>
+  </data>
+  <data name="Feedback_AlreadyReported_Message" xml:space="preserve">
+    <value>선택한 항목은 이미 제보되었습니다.</value>
+  </data>
+  <data name="Feedback_CheckError_Title" xml:space="preserve">
+    <value>제보 상태 확인 오류</value>
+  </data>
+  <data name="Feedback_CheckError_Message" xml:space="preserve">
+    <value>제보 여부를 확인하지 못했습니다.</value>
+  </data>
+  <data name="Feedback_Report_Title" xml:space="preserve">
+    <value>감지된 항목 제보</value>
+  </data>
+  <data name="Feedback_Report_IssueTitle" xml:space="preserve">
+    <value>[버전 {0}] 감지된 항목 {1}건</value>
+  </data>
+  <data name="Feedback_Opened_Message" xml:space="preserve">
+    <value>GitHub 작성 화면을 열었습니다.</value>
+  </data>
+  <data name="Feedback_Opened_Detail" xml:space="preserve">
+    <value>그대로 'Create'를 누르면 제보가 완료됩니다.
+'제보 상태 확인'을 누르면 작성 결과를 확인할 수 있습니다.</value>
+  </data>
+  <data name="Feedback_OpenedMany_Message" xml:space="preserve">
+    <value>GitHub 작성 화면을 {0}개 열었습니다.</value>
+  </data>
+  <data name="Feedback_OpenedMany_Detail" xml:space="preserve">
+    <value>각 화면에서 'Create'를 누르면 제보가 완료됩니다.
+'제보 상태 확인'을 누르면 작성 결과를 확인할 수 있습니다.</value>
   </data>
 </root>

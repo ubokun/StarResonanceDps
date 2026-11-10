@@ -66,4 +66,11 @@ public sealed partial class HelpViewModel : ObservableObject
     {
         ExternalLinkOpener.Open(url);
     }
+
+    /// <summary>アプリの言語で開く先が変わるページを、押した時点の言語で開く。</summary>
+    [RelayCommand]
+    private void OpenLocalizedLink(LocalizedProjectPage page)
+    {
+        ExternalLinkOpener.Open(ProjectLinks.GetLocalizedUrl(page, LocalizationManager.Instance.CurrentCulture));
+    }
 }

@@ -11,6 +11,7 @@ public sealed class ThemeColorPalette
     private const double PanelContrastWeight = 0.030;
     private const double BorderSoftContrastWeight = 0.090;
     private const double BorderContrastWeight = 0.160;
+    private const double BorderStrongContrastWeight = 0.230;
     private const double ControlContrastWeight = 0.100;
     private const double ControlActiveContrastWeight = 0.150;
     private const double InputContrastWeight = 0.020;
@@ -24,6 +25,7 @@ public sealed class ThemeColorPalette
         Color panelBackground,
         Color border,
         Color borderSoft,
+        Color borderStrong,
         Color controlBackground,
         Color controlActiveBackground,
         Color inputBackground,
@@ -36,6 +38,7 @@ public sealed class ThemeColorPalette
         PanelBackground = panelBackground;
         Border = border;
         BorderSoft = borderSoft;
+        BorderStrong = borderStrong;
         ControlBackground = controlBackground;
         ControlActiveBackground = controlActiveBackground;
         InputBackground = inputBackground;
@@ -48,6 +51,7 @@ public sealed class ThemeColorPalette
         PanelBackgroundBrush = CreateBrush(PanelBackground);
         BorderBrush = CreateBrush(Border);
         BorderSoftBrush = CreateBrush(BorderSoft);
+        BorderStrongBrush = CreateBrush(BorderStrong);
         ControlBackgroundBrush = CreateBrush(ControlBackground);
         ControlActiveBackgroundBrush = CreateBrush(ControlActiveBackground);
         InputBackgroundBrush = CreateBrush(InputBackground);
@@ -61,6 +65,7 @@ public sealed class ThemeColorPalette
     public Color PanelBackground { get; }
     public Color Border { get; }
     public Color BorderSoft { get; }
+    public Color BorderStrong { get; }
     public Color ControlBackground { get; }
     public Color ControlActiveBackground { get; }
     public Color InputBackground { get; }
@@ -73,6 +78,7 @@ public sealed class ThemeColorPalette
     public SolidColorBrush PanelBackgroundBrush { get; }
     public SolidColorBrush BorderBrush { get; }
     public SolidColorBrush BorderSoftBrush { get; }
+    public SolidColorBrush BorderStrongBrush { get; }
     public SolidColorBrush ControlBackgroundBrush { get; }
     public SolidColorBrush ControlActiveBackgroundBrush { get; }
     public SolidColorBrush InputBackgroundBrush { get; }
@@ -90,6 +96,7 @@ public sealed class ThemeColorPalette
             ColorUtilities.Blend(windowSurface, contrastColor, PanelContrastWeight),
             ColorUtilities.Blend(windowSurface, contrastColor, BorderContrastWeight),
             ColorUtilities.Blend(windowSurface, contrastColor, BorderSoftContrastWeight),
+            ColorUtilities.Blend(windowSurface, contrastColor, BorderStrongContrastWeight),
             ColorUtilities.Blend(windowSurface, contrastColor, ControlContrastWeight),
             ColorUtilities.Blend(windowSurface, contrastColor, ControlActiveContrastWeight),
             ColorUtilities.Blend(windowSurface, contrastColor, InputContrastWeight),

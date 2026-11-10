@@ -636,10 +636,10 @@
     <value>Copyright © 2026 kokoukohiro(GNU GPL v3)</value>
   </data>
   <data name="Help_VersionWithStatus" xml:space="preserve">
-    <value>{0}({1})</value>
+    <value>{0} ({1})</value>
   </data>
   <data name="Update_Status_Checking" xml:space="preserve">
-    <value>检查中</value>
+    <value>正在检查更新</value>
   </data>
   <data name="Update_Status_UpToDate" xml:space="preserve">
     <value>最新</value>
@@ -651,7 +651,7 @@
     <value>暂无已发布的版本</value>
   </data>
   <data name="Update_Status_Failed" xml:space="preserve">
-    <value>无法检查</value>
+    <value>无法检查更新</value>
   </data>
   <data name="Update_Title" xml:space="preserve">
     <value>更新</value>
@@ -696,24 +696,24 @@
   <data name="Update_Error_Message" xml:space="preserve">
     <value>无法更新。</value>
   </data>
-  <data name="Update_Error_Network" xml:space="preserve">
+  <data name="GitHub_Error_Network" xml:space="preserve">
     <value>请检查网络连接后重试。</value>
   </data>
-  <data name="Update_Error_Server" xml:space="preserve">
+  <data name="GitHub_Error_Server" xml:space="preserve">
     <value>GitHub服务器没有响应。
 请稍后重试。</value>
   </data>
-  <data name="Update_Error_RateLimit" xml:space="preserve">
+  <data name="GitHub_Error_RateLimit" xml:space="preserve">
     <value>GitHub访问暂时受限。
 请稍后重试。</value>
   </data>
   <data name="Update_Error_InvalidRelease" xml:space="preserve">
     <value>无法读取发行版信息。
-请从更新日志下载zip并覆盖到应用文件夹。</value>
+请从{0}下载zip并覆盖到应用文件夹。</value>
   </data>
   <data name="Update_Error_NotFromZip" xml:space="preserve">
     <value>此应用不是通过发行版zip安装的，无法在应用内更新。
-请从更新日志下载zip。</value>
+请从{0}下载zip。</value>
   </data>
   <data name="Update_Error_Corrupt" xml:space="preserve">
     <value>下载的文件已损坏。
@@ -732,13 +732,16 @@
   </data>
   <data name="Update_Error_RestoreFailed" xml:space="preserve">
     <value>无法恢复到原来的版本。
-请从更新日志下载zip并覆盖到应用文件夹。</value>
+请从{0}下载zip并覆盖到应用文件夹。</value>
   </data>
-  <data name="Update_OpenReleaseNotes" xml:space="preserve">
-    <value>打开更新日志</value>
+  <data name="Update_ReleaseNotesLink" xml:space="preserve">
+    <value>更新日志</value>
   </data>
   <data name="Update_RestartFailed_Message" xml:space="preserve">
     <value>已更新，但无法重新启动。</value>
+  </data>
+  <data name="Update_RestartFailedNotUpdated_Message" xml:space="preserve">
+    <value>无法重新启动原版本。</value>
   </data>
   <data name="Update_RestartFailed_Detail" xml:space="preserve">
     <value>请启动应用文件夹中的StarResonanceDps.exe。</value>
@@ -894,10 +897,31 @@
     <value>数值</value>
   </data>
   <data name="NumberDisplay_KMB" xml:space="preserve">
-    <value>三位计数法 (KMBT)</value>
+    <value>三位计数法(KMBT)</value>
   </data>
   <data name="NumberDisplay_Wan" xml:space="preserve">
-    <value>四位计数法 (万亿兆)</value>
+    <value>四位计数法(万亿兆)</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Thousand" xml:space="preserve">
+    <value>K</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Billion" xml:space="preserve">
+    <value>B</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Trillion" xml:space="preserve">
+    <value>T</value>
+  </data>
+  <data name="NumberUnit_Wan_TenThousand" xml:space="preserve">
+    <value>万</value>
+  </data>
+  <data name="NumberUnit_Wan_HundredMillion" xml:space="preserve">
+    <value>亿</value>
+  </data>
+  <data name="NumberUnit_Wan_Trillion" xml:space="preserve">
+    <value>兆</value>
   </data>
   <data name="Settings_Display_PlayerName" xml:space="preserve">
     <value>玩家名称</value>
@@ -910,6 +934,9 @@
   </data>
   <data name="PlayerNameDisplay_HideOthers" xml:space="preserve">
     <value>隐藏其他玩家</value>
+  </data>
+  <data name="PlayerName_UidFormat" xml:space="preserve">
+    <value>UID:{0}</value>
   </data>
   <data name="Hotkey_PlayerNameShowOrHide" xml:space="preserve">
     <value>玩家名称显示/隐藏</value>
@@ -1248,6 +1275,9 @@
   <data name="Widget_PlayerModule" xml:space="preserve">
     <value>模组信息</value>
   </data>
+  <data name="PlayerModule_LevelFormat" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="PlayerInfo_Uid" xml:space="preserve">
     <value>玩家编号</value>
   </data>
@@ -1375,7 +1405,7 @@
     <value>深眠心相仪</value>
   </data>
   <data name="Settings_PlayerInfo_Field_AbilityScore" xml:space="preserve">
-    <value>战力</value>
+    <value>能力评分</value>
   </data>
   <data name="Settings_PlayerInfo_Field_SeasonStrength" xml:space="preserve">
     <value>赛季强度</value>
@@ -1385,9 +1415,6 @@
   </data>
   <data name="Settings_PlayerInfo_Field_PlayerUid" xml:space="preserve">
     <value>玩家UID</value>
-  </data>
-  <data name="Metric_No" xml:space="preserve">
-    <value>序号</value>
   </data>
   <data name="Metric_Element" xml:space="preserve">
     <value>元素</value>
@@ -1410,20 +1437,8 @@
   <data name="Metric_SkillName" xml:space="preserve">
     <value>技能名称</value>
   </data>
-  <data name="Metric_Damage" xml:space="preserve">
-    <value>伤害</value>
-  </data>
-  <data name="Metric_Healing" xml:space="preserve">
-    <value>治疗</value>
-  </data>
-  <data name="Metric_ActiveDps" xml:space="preserve">
-    <value>aDPS</value>
-  </data>
   <data name="Metric_EncounterDps" xml:space="preserve">
     <value>DPS</value>
-  </data>
-  <data name="Metric_ActiveHps" xml:space="preserve">
-    <value>aHPS</value>
   </data>
   <data name="Metric_EncounterHps" xml:space="preserve">
     <value>HPS</value>
@@ -1433,15 +1448,6 @@
   </data>
   <data name="Metric_CritRate" xml:space="preserve">
     <value>暴击率</value>
-  </data>
-  <data name="Metric_AveragePerHit" xml:space="preserve">
-    <value>平均单次</value>
-  </data>
-  <data name="Metric_DamageShare" xml:space="preserve">
-    <value>伤害%</value>
-  </data>
-  <data name="Metric_HealingShare" xml:space="preserve">
-    <value>治疗%</value>
   </data>
   <data name="Confirm_NpcapUpdate_Title" xml:space="preserve">
     <value>Npcap更新</value>
@@ -1755,10 +1761,10 @@
     <value>[图片]</value>
   </data>
   <data name="Chat_Voice" xml:space="preserve">
-    <value>[语音]</value>
+    <value>[语音消息]</value>
   </data>
   <data name="Chat_VoiceTextFormat" xml:space="preserve">
-    <value>[语音] {0}</value>
+    <value>[语音消息] {0}</value>
   </data>
   <data name="Settings_Section_ChatTextColors_Title" xml:space="preserve">
     <value>文本颜色</value>
@@ -2520,5 +2526,79 @@
 {0}
 应用下次保存设置时，此文件将被覆盖。
 如有需要，请重新进行设置。</value>
+  </data>
+  <data name="Navigation_Feedback" xml:space="preserve">
+    <value>反馈</value>
+  </data>
+  <data name="Feedback_Issue_Title" xml:space="preserve">
+    <value>问题反馈与功能建议</value>
+  </data>
+  <data name="Feedback_Issue_Description" xml:space="preserve">
+    <value>打开GitHub提交页面</value>
+  </data>
+  <data name="Feedback_Issue_Note" xml:space="preserve">
+    <value>※反馈内容将在GitHub上公开，提交需要账号</value>
+  </data>
+  <data name="Feedback_Detections_Title" xml:space="preserve">
+    <value>检测到的问题</value>
+  </data>
+  <data name="Feedback_Detections_Check" xml:space="preserve">
+    <value>检查反馈状态</value>
+  </data>
+  <data name="Feedback_Detections_CancelCheck" xml:space="preserve">
+    <value>取消检查</value>
+  </data>
+  <data name="Feedback_Detections_Report" xml:space="preserve">
+    <value>反馈所选项目</value>
+  </data>
+  <data name="Feedback_Detections_Empty" xml:space="preserve">
+    <value>未检测到问题</value>
+  </data>
+  <data name="Feedback_Detection_BlankSourceName" xml:space="preserve">
+    <value>无名称技能</value>
+  </data>
+  <data name="Feedback_Detection_SourceLandingConflict" xml:space="preserve">
+    <value>技能名称判定不一致</value>
+  </data>
+  <data name="Feedback_Detection_SpecConflict" xml:space="preserve">
+    <value>职业判定不一致</value>
+  </data>
+  <data name="Feedback_Detection_ItemFormat" xml:space="preserve">
+    <value>{0}({1})</value>
+  </data>
+  <data name="Plugins_Empty" xml:space="preserve">
+    <value>没有已安装的插件</value>
+  </data>
+  <data name="Feedback_Detection_Reported" xml:space="preserve">
+    <value>已反馈</value>
+  </data>
+  <data name="Feedback_AlreadyReported_Message" xml:space="preserve">
+    <value>所选项目已有人反馈。</value>
+  </data>
+  <data name="Feedback_CheckError_Title" xml:space="preserve">
+    <value>反馈状态检查错误</value>
+  </data>
+  <data name="Feedback_CheckError_Message" xml:space="preserve">
+    <value>无法确认是否已反馈。</value>
+  </data>
+  <data name="Feedback_Report_Title" xml:space="preserve">
+    <value>检测到的项目反馈</value>
+  </data>
+  <data name="Feedback_Report_IssueTitle" xml:space="preserve">
+    <value>[版本 {0}] 检测到的项目{1}项</value>
+  </data>
+  <data name="Feedback_Opened_Message" xml:space="preserve">
+    <value>已打开GitHub提交页面。</value>
+  </data>
+  <data name="Feedback_Opened_Detail" xml:space="preserve">
+    <value>直接点击“Create”即可完成反馈。
+点击“检查反馈状态”即可确认提交结果。</value>
+  </data>
+  <data name="Feedback_OpenedMany_Message" xml:space="preserve">
+    <value>已打开{0}个GitHub提交页面。</value>
+  </data>
+  <data name="Feedback_OpenedMany_Detail" xml:space="preserve">
+    <value>在每个页面点击“Create”即可完成反馈。
+点击“检查反馈状态”即可确认提交结果。</value>
   </data>
 </root>

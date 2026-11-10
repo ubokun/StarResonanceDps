@@ -9,6 +9,7 @@ using StarResonanceDps.App.Services;
 using StarResonanceDps.App.Views;
 using StarResonanceDps.Core.Logging;
 using StarResonanceDps.Core.CombatRuntime;
+using StarResonanceDps.Core.Diagnostics;
 using StarResonanceDps.Core.Services;
 
 namespace StarResonanceDps.App;
@@ -46,7 +47,7 @@ public partial class App : Application
         RegisterUnhandledExceptionHandlers();
         ManagerTraceOutput.Configure();
 
-        // 設定・履歴・ログは実行フォルダの Data に書く。書けなければ動かせない(ログもそのフォルダの中なので書けない)。
+        // 設定・履歴・ログは実行フォルダの Data に書く。Data に書けなければ動かせない。
         // 窓の言語とテーマは、設定を読むだけ読んで当てる。
         if (!TryEnsureWritableDataDirectory())
         {
@@ -57,6 +58,11 @@ public partial class App : Application
 
         // ログはここから。これより後の失敗(設定・言語・テーマ・Npcap・初期化・受け手の無い例外)は全部 Data\CombatRuntime.log に残る。
         CombatRuntimeHost.ConfigureLogging();
+        if (ResidentDetectionStore.Load(AppUpdateService.CurrentVersion.ToString(3)))
+        {
+            CombatRuntimeHost.ClearLogs();
+        }
+
         AppUpdateService.CleanUpAtStartup(e.Args);
 
         var configManager = ConfigManager.Instance;

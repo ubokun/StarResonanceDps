@@ -14,12 +14,12 @@ namespace StarResonanceDps.Core.Diagnostics;
 ///
 /// <list type="bullet">
 ///   <item>
-///     <b>TALENT</b> — 枝タレントのバフが特化Xを書こうとしたが、控えてあるマーカーはY。
+///     <b>SpecTalentConflict</b> — 枝タレントのバフが特化Xを書こうとしたが、控えてあるマーカーはY。
 ///     「専用バフの下流の効果が、共有タレントや反対側の特化からも出る」形が典型で、
 ///     10刻み丸めが特化を誤って断定している。
 ///   </item>
 ///   <item>
-///     <b>SKILL</b> — 置換後スキルIDが特化Xを示したが、控えてあるマーカーはY。
+///     <b>SpecSkillConflict</b> — 置換後スキルIDが特化Xを示したが、控えてあるマーカーはY。
 ///     味方に発生させるスキルが判定表に当たるとこの形で出る。
 ///   </item>
 /// </list>
@@ -32,23 +32,14 @@ namespace StarResonanceDps.Core.Diagnostics;
 ///
 /// <para>
 /// <b>これは調査用の一時計測ではない。</b> 常設で、プローブ撤去の対象外。
-/// リリース前に掃除する。
-/// </para>
-///
-/// <para>
-/// 出力先は AppContext.BaseDirectory/Logs/<b>Resident</b>/SpecConflictProbe_(起動時刻).txt。
-/// <b>食い違いが1件も無ければファイルを作らない</b>ので、存在すること自体が検知の合図になる。
+/// 検知はフィードバックタブの一覧(<see cref="ResidentDetectionStore"/>)へ送り、報告の本文になる。本文は公開されるので、術者や保持者の番号は持たない。
+/// 同じ番号は1起動に1回だけ送る(一覧も種類と番号ごとに1件しか持たない)。
 /// </para>
 /// </summary>
 public static class SpecConflictProbe
 {
-    private const string LogNamePrefix = "SpecConflictProbe";
-
-    /// <summary>同じIDを何度も書かない。1回の起動につき最初の数件だけ残す。</summary>
-    private const int MaxRecordsPerId = 3;
-
     private static readonly object Sync = new();
-    private static readonly Dictionary<(char Kind, int Id), int> SeenCounts = [];
+    private static readonly HashSet<(char Kind, int Id)> SeenIds = [];
 
     /// <summary>
     /// タレント由来のバフが、控えてあるマーカーと違う特化を書こうとした回。
@@ -66,20 +57,18 @@ public static class SpecConflictProbe
         int fightSourceType,
         int sourceConfigId,
         int markerBuffId,
-        string markerSpec,
-        long casterUuid,
-        long holderUuid)
+        string markerSpec)
     {
         if (!ShouldRecord('T', observedBuffId))
         {
             return;
         }
 
-        Write(string.Create(
+        var id = observedBuffId.ToString(CultureInfo.InvariantCulture);
+        var details = string.Create(
             CultureInfo.InvariantCulture,
-            $"TALENT 観測ID={observedBuffId} 丸め={grantedBuffId} 表の特化={spec} 距離={distanceFromRoot} "
-            + $"ftype={fightSourceType} src={sourceConfigId} "
-            + $"控えマーカー={markerBuffId}({markerSpec}) 術者={casterUuid} 保持者={holderUuid}"));
+            $"rounded={grantedBuffId} spec={spec} distance={distanceFromRoot} ftype={fightSourceType} src={sourceConfigId} marker={markerBuffId}({markerSpec})");
+        ResidentDetectionStore.Add(ResidentDetectionKind.SpecTalentConflict, id, details);
     }
 
     /// <summary>
@@ -89,50 +78,23 @@ public static class SpecConflictProbe
         int skillId,
         string spec,
         int markerBuffId,
-        string markerSpec,
-        long entityUuid)
+        string markerSpec)
     {
         if (!ShouldRecord('S', skillId))
         {
             return;
         }
 
-        Write(string.Create(
-            CultureInfo.InvariantCulture,
-            $"SKILL  置換後スキルID={skillId} 表の特化={spec} "
-            + $"控えマーカー={markerBuffId}({markerSpec}) uuid={entityUuid}"));
+        var id = skillId.ToString(CultureInfo.InvariantCulture);
+        var details = string.Create(CultureInfo.InvariantCulture, $"spec={spec} marker={markerBuffId}({markerSpec})");
+        ResidentDetectionStore.Add(ResidentDetectionKind.SpecSkillConflict, id, details);
     }
 
     private static bool ShouldRecord(char kind, int id)
     {
         lock (Sync)
         {
-            SeenCounts.TryGetValue((kind, id), out var count);
-            SeenCounts[(kind, id)] = count + 1;
-            return count < MaxRecordsPerId;
-        }
-    }
-
-    private static void Write(string message)
-    {
-        try
-        {
-            var line = DateTimeOffset.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture)
-                + "  " + message;
-            var directory = DiagnosticSession.ResidentLogDirectory;
-            // アプリ起動ごとに別ファイル。追記だとどの回の記録か切り分けられない。
-            var path = Path.Combine(directory, $"{LogNamePrefix}_{DiagnosticSession.Stamp}.txt");
-
-            lock (Sync)
-            {
-                Directory.CreateDirectory(directory);
-                DiagnosticSession.EnsureHeader(path);
-                File.AppendAllText(path, line + Environment.NewLine, System.Text.Encoding.UTF8);
-            }
-        }
-        catch
-        {
-            // 診断のみ。本来の処理へは伝播させない。
+            return SeenIds.Add((kind, id));
         }
     }
 }

@@ -127,7 +127,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
         registry.GroupRemoved += Registry_GroupRemoved;
     }
 
-    /// <summary>一覧の項目。本体の項目(並びは <see cref="NotificationKind"/> の並び)の後ろに、プラグインの項目(プラグインの鍵の順)。</summary>
+    /// <summary>一覧の項目。本体の項目(並びは <see cref="NotificationKind"/> の並び)の後ろに、プラグインの項目(プラグインを入れた順、プラグインの中は定義の順)。</summary>
     public ReadOnlyObservableCollection<NotificationItemViewModel> Items { get; }
 
     /// <summary>読み上げの声を確かめる時機。画面が確かめてメッセージを出す(引数は確かめる項目)。</summary>

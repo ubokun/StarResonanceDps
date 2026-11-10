@@ -13,27 +13,11 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
     public const string SdkAssemblyName = "StarResonanceDps.PluginSdk";
 
     private readonly AssemblyDependencyResolver _resolver;
-    private readonly bool _readsFromMemory;
 
-    /// <param name="readsFromMemory">
-    /// 真なら捨てられる読み込み先にし、ファイルを中身から読む(ファイルを掴まない)。「＋」で写す前に確かめるときに使う。
-    /// </param>
-    public PluginLoadContext(string mainAssemblyPath, bool readsFromMemory)
-        : base(Path.GetFileNameWithoutExtension(mainAssemblyPath), isCollectible: readsFromMemory)
+    public PluginLoadContext(string mainAssemblyPath)
+        : base(Path.GetFileNameWithoutExtension(mainAssemblyPath))
     {
         _resolver = new AssemblyDependencyResolver(mainAssemblyPath);
-        _readsFromMemory = readsFromMemory;
-    }
-
-    public Assembly LoadPluginAssembly(string path)
-    {
-        if (!_readsFromMemory)
-        {
-            return LoadFromAssemblyPath(path);
-        }
-
-        using var stream = new MemoryStream(File.ReadAllBytes(path));
-        return LoadFromStream(stream);
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)
@@ -44,7 +28,7 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
         }
 
         var path = _resolver.ResolveAssemblyToPath(assemblyName);
-        return path is null ? null : LoadPluginAssembly(path);
+        return path is null ? null : LoadFromAssemblyPath(path);
     }
 
     protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)

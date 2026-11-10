@@ -35,7 +35,7 @@ internal static class PluginSettingValidator
                 return false;
             }
 
-            var id = setting.Id.Trim();
+            var id = setting.Id;
             if (!usedIds.Add(id))
             {
                 error = $"the setting ID '{id}' is defined more than once.";
@@ -100,7 +100,7 @@ internal static class PluginSettingValidator
                 }
 
                 var defaultOption = options.FirstOrDefault(option =>
-                    string.Equals(option.Id, choiceSetting.DefaultOptionId?.Trim(), StringComparison.OrdinalIgnoreCase));
+                    string.Equals(option.Id, choiceSetting.DefaultOptionId, StringComparison.OrdinalIgnoreCase));
                 if (defaultOption is null)
                 {
                     error = $"the setting '{id}' has the default option '{choiceSetting.DefaultOptionId}' that is not one of its options.";
@@ -215,7 +215,7 @@ internal static class PluginSettingValidator
                 return false;
             }
 
-            var id = option.Id.Trim();
+            var id = option.Id;
             if (!ids.Add(id))
             {
                 error = $"the option ID '{id}' is defined more than once.";

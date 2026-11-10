@@ -47,7 +47,7 @@ public static partial class DamageTakenLogHitInfoFormatter
     }
 
     /// <summary>
-    /// 技(またはバフ)の名前。タイムラインの技の行と同じで、落下は「落下」、名前が無ければ「攻撃」、内部ID注記は全体設定に従う。
+    /// 技(またはバフ)の名前。落下は「落下」、名前が無ければ「攻撃」(タイムラインのダメージの技の行と同じ)、内部ID注記は全体設定に従う。
     /// </summary>
     private static string FormatSourceName(DamageTakenLogHit hit)
     {

@@ -125,11 +125,16 @@
 
             <TextBlock Style="{StaticResource SectionTitle}" Text="Tooltips" />
             <StackPanel Orientation="Horizontal">
-                <Button Style="{StaticResource Button.Text}" Width="160" Content="ToolTipOwner.Default">
-                    <Button.ToolTip>
-                        <ToolTip Style="{StaticResource ToolTip.Info}" Content="Clicking closes this tooltip, because the click does something." />
-                    </Button.ToolTip>
-                </Button>
+                <TextBlock x:Name="ClickCountText"
+                           Style="{StaticResource ToolTipOwner.Default}"
+                           VerticalAlignment="Center"
+                           Cursor="Hand"
+                           Text="ToolTipOwner.Default"
+                           MouseLeftButtonUp="ClickCountText_MouseLeftButtonUp">
+                    <TextBlock.ToolTip>
+                        <ToolTip Style="{StaticResource ToolTip.Info}" Content="Clicking closes this tooltip, because the click does something (it counts the clicks)." />
+                    </TextBlock.ToolTip>
+                </TextBlock>
                 <TextBlock Style="{StaticResource ToolTipOwner.KeepsOnClick}"
                            Margin="16,0,0,0"
                            VerticalAlignment="Center"

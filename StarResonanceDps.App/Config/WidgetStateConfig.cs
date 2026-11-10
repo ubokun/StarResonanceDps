@@ -1632,7 +1632,7 @@ public static class WidgetConfigDefaults
     };
 
     /// <summary>
-    /// スキル詳細の属性カラーの既定色(2枠)。
+    /// 属性カラーの既定色(2枠)。属性カラーの節を持つウィジェット(<see cref="SupportsElementColorSettings"/>)で共通。
     /// </summary>
     private static readonly Dictionary<string, string[]> ElementDefaultColorHexes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -3082,7 +3082,7 @@ public static class WidgetConfigDefaults
         return config;
     }
 
-    /// <summary>属性カラーで最初に選ばれている枠。9属性とも1枠目(白)。</summary>
+    /// <summary>属性カラーで最初に選ばれている枠。9属性とも1枠目。</summary>
     public static Dictionary<string, int> CreateDefaultElementColorIndexes()
     {
         return DamagePropertyKeys

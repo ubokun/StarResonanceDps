@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Serilog;
+using StarResonanceDps.App.Localization;
 using StarResonanceDps.App.Models.Widgets;
 using StarResonanceDps.Core.CombatRuntime;
 
@@ -34,6 +35,11 @@ namespace StarResonanceDps.App.Controls;
 ///
 /// <para>
 /// 大きさと位置(軸の数字の大きさ・間、線の太さ、アイコンの行)はどれも XAML から渡す。既定値は 0(軸の数字の大きさは文字のスタイルのまま)。
+/// </para>
+///
+/// <para>
+/// 縦軸の数字は全体設定「数値」の表記で縮める(<see cref="NumberDisplayFormatIndex"/>、<see cref="MeterNumberFormatter"/>)。
+/// 単位の字は表示言語の文言なので、表示している間は言語が変わったら作り直す。
 /// </para>
 /// </summary>
 public sealed class MetricGraphChart : FrameworkElement
@@ -156,6 +162,13 @@ public sealed class MetricGraphChart : FrameworkElement
         typeof(MetricGraphChart),
         new FrameworkPropertyMetadata(0d, OnLineBrushChanged));
 
+    /// <summary>縦軸の数字の縮め方。全体設定「数値」の番号(<see cref="MeterNumberFormatter"/>)。</summary>
+    public static readonly DependencyProperty NumberDisplayFormatIndexProperty = DependencyProperty.Register(
+        nameof(NumberDisplayFormatIndex),
+        typeof(int),
+        typeof(MetricGraphChart),
+        new FrameworkPropertyMetadata(0, OnLayoutValueChanged));
+
     private readonly VisualCollection _children;
     private readonly LineLayer _lineLayer;
     private readonly TextBlock[] _valueLabels;
@@ -171,6 +184,7 @@ public sealed class MetricGraphChart : FrameworkElement
     private int _lastPointCount;
     private bool _isFollowingEnd = true;
     private bool _isSettingOffset;
+    private bool _isSubscribedToCulture;
 
     public MetricGraphChart()
     {
@@ -184,6 +198,9 @@ public sealed class MetricGraphChart : FrameworkElement
         _skillMarkerLayer = new Canvas();
         _children.Add(_skillMarkerLayer);
         UpdateLabels();
+
+        Loaded += MetricGraphChart_Loaded;
+        Unloaded += MetricGraphChart_Unloaded;
     }
 
     public IReadOnlyList<MetricGraphPoint> Points
@@ -268,6 +285,12 @@ public sealed class MetricGraphChart : FrameworkElement
     {
         get => (double)GetValue(LineThicknessProperty);
         set => SetValue(LineThicknessProperty, value);
+    }
+
+    public int NumberDisplayFormatIndex
+    {
+        get => (int)GetValue(NumberDisplayFormatIndexProperty);
+        set => SetValue(NumberDisplayFormatIndexProperty, value);
     }
 
     /// <summary>横軸の数字の間隔。戦闘の秒に結び付けるので、スクロールすると数字も動く。スクロールバーの1段の移動もこれ。</summary>
@@ -383,6 +406,35 @@ public sealed class MetricGraphChart : FrameworkElement
         }
 
         return labels;
+    }
+
+    /// <summary>表示している間だけ言語の変化を受ける(二重に購読しない)。外れていた間に言語が変わっていても、ここで作り直す。</summary>
+    private void MetricGraphChart_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (_isSubscribedToCulture)
+        {
+            return;
+        }
+
+        LocalizationManager.Instance.CultureChanged += LocalizationManager_CultureChanged;
+        _isSubscribedToCulture = true;
+        Refresh();
+    }
+
+    private void MetricGraphChart_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (!_isSubscribedToCulture)
+        {
+            return;
+        }
+
+        LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
+        _isSubscribedToCulture = false;
+    }
+
+    private void LocalizationManager_CultureChanged(object? sender, EventArgs e)
+    {
+        Refresh();
     }
 
     private static void OnPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -648,7 +700,9 @@ public sealed class MetricGraphChart : FrameworkElement
         for (var index = 0; index < _valueLabels.Length; index++)
         {
             _valueLabels[index].Text = _maxValuePerSecond > 0d || index == lastValueLabelIndex
-                ? FormatNumber(_maxValuePerSecond * (1d - index / (double)HorizontalGridCount))
+                ? MeterNumberFormatter.FormatCompact(
+                    _maxValuePerSecond * (1d - index / (double)HorizontalGridCount),
+                    NumberDisplayFormatIndex)
                 : string.Empty;
         }
 
@@ -852,17 +906,6 @@ public sealed class MetricGraphChart : FrameworkElement
         }
 
         return pen;
-    }
-
-    private static string FormatNumber(double value)
-    {
-        return value switch
-        {
-            >= 1_000_000_000d => $"{value / 1_000_000_000d:0.##}B",
-            >= 1_000_000d => $"{value / 1_000_000d:0.##}M",
-            >= 1_000d => $"{value / 1_000d:0.##}K",
-            _ => $"{value:0}"
-        };
     }
 
     /// <summary>グラフの線の層。影を軸の数字と別に掛けるために、文字とは別の要素にしてある。</summary>

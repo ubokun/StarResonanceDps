@@ -924,7 +924,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         private long _combatEventLogSequence;
 
         // 着地先が決まらなかった行の控え。鍵は(記録先の UUID, 行代表キー)、値は最初に着かなかった記録。
-        // 後の記録で着けば消え、保存の直後に残りを検知ログへ送る(ReportUnresolvedBlankSources)。DB には入れない。
+        // 後の記録で着けば消え、保存の直後に残りを検出された問題の一覧へ送る(ReportUnresolvedBlankSources)。DB には入れない。
         private readonly object _unresolvedBlankSourcesGate = new();
         private readonly Dictionary<(long EntityUuid, long RowKey), UnresolvedBlankSource> _unresolvedBlankSources = [];
 
@@ -932,11 +932,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             string KeyText,
             bool IsBuffSource,
             bool IsHealing,
-            ulong ValueTotal,
-            ulong HitsCount,
-            long CharacterId,
-            string Trace,
-            DateTime FirstBlankAt);
+            string Trace);
 
         public Encounter()
         {
@@ -1691,7 +1687,7 @@ namespace StarResonanceDps.Core.CombatRuntime
 
         /// <summary>
         /// 着地先より前に名前が決まらない行(見出し表にも料理の表にも名前が無い行)の出どころ(着地先)を決めて控える。
-        /// 技に着いたもの・着地先が食い違ったものは常設の検知ログ(<c>BlankSourceNameProbe</c>)へすぐ送る。オプションに着いたものは送らない。
+        /// 技に着いたもの・着地先が食い違ったものは検出された問題の一覧(<c>BlankSourceNameProbe</c>)へすぐ送る。オプションに着いたものは送らない。
         /// 着かなかったものは送らずにこのエンカウンターに控え、後の記録で着けば控えを消す。後で着けば DB に空欄は残らないので、
         /// 残ったものだけを保存の直後に <see cref="ReportUnresolvedBlankSources"/> が送る。
         /// 記録(<c>AddDamage</c> 等)と <see cref="MarkBuffSourcedSkill"/> の後に、プレイヤーの記録にだけ呼ぶこと。
@@ -1737,7 +1733,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 if (landing.Kind != SourceLandingKind.None && landing != container.Landing)
                 {
                     Diagnostics.BlankSourceNameProbe.CaptureConflict(
-                        skillId, keyText, isHealing, entity.UID, container.Landing, landing, trace);
+                        skillId, keyText, isHealing, container.Landing, landing, SceneId, trace);
                 }
 
                 return;
@@ -1749,15 +1745,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 {
                     _unresolvedBlankSources.TryAdd(
                         (entityUuid, skillId),
-                        new UnresolvedBlankSource(
-                            keyText,
-                            container.IsBuffSource,
-                            isHealing,
-                            stats.ValueTotal,
-                            stats.HitsCount,
-                            entity.UID,
-                            trace,
-                            arrivalTime));
+                        new UnresolvedBlankSource(keyText, container.IsBuffSource, isHealing, trace));
                 }
 
                 return;
@@ -1777,16 +1765,14 @@ namespace StarResonanceDps.Core.CombatRuntime
                     keyText,
                     container.IsBuffSource,
                     isHealing,
-                    stats.ValueTotal,
-                    stats.HitsCount,
-                    entity.UID,
                     landing,
+                    SceneId,
                     trace);
             }
         }
 
         /// <summary>
-        /// 着地先が決まらないまま残った行(<see cref="ResolveSourceLanding"/> の控え)を常設の検知ログ(<c>BlankSourceNameProbe</c>)へ送り、控えを空にする。
+        /// 着地先が決まらないまま残った行(<see cref="ResolveSourceLanding"/> の控え)を検出された問題の一覧(<c>BlankSourceNameProbe</c>)へ送り、控えを空にする。
         /// <b>DB へ保存した直後に呼ぶ。</b> 保存しないエンカウンターでは呼ばない(DB に空欄が残らない)。
         /// </summary>
         public void ReportUnresolvedBlankSources()
@@ -1805,12 +1791,9 @@ namespace StarResonanceDps.Core.CombatRuntime
                     blank.KeyText,
                     blank.IsBuffSource,
                     blank.IsHealing,
-                    blank.ValueTotal,
-                    blank.HitsCount,
-                    blank.CharacterId,
                     SourceLanding.None,
-                    blank.Trace,
-                    blank.FirstBlankAt);
+                    SceneId,
+                    blank.Trace);
             }
         }
 
@@ -2879,7 +2862,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
             else if (baseId > 0)
             {
-                ApplySpecFromTalentBuff(baseId, buffUuid, fireUuid, fightSourceType ?? -1, entityUuid, sourceConfigId);
+                ApplySpecFromTalentBuff(baseId, buffUuid, fireUuid, fightSourceType ?? -1, sourceConfigId);
                 ApplySeasonTalentFromRootBuff(baseId, buffUuid, fireUuid);
             }
         }
@@ -2939,14 +2922,14 @@ namespace StarResonanceDps.Core.CombatRuntime
         ///
         /// <para>
         /// <b><c>FightSourceType</c> を採用条件にしない。</b><c>srcType==6</c> を必須にすると
-        /// 強化側のツリー副産物が全部落ちる。観測のためログには残す。
+        /// 強化側のツリー副産物が全部落ちる。観測のため、食い違いの検知の詳細には残す。
         /// </para>
         ///
         /// <para>あることしか示さない。除去は見ない。</para>
         ///
         /// <para>術者の今の職の特化でなければ何も書かない(<see cref="Entity.AcceptsSubProfessionId"/>)。</para>
         /// </summary>
-        public void ApplySpecFromTalentBuff(int observedBuffId, int buffUuid, long fireUuid, int fightSourceType, long holderUuid = 0, int sourceConfigId = 0)
+        public void ApplySpecFromTalentBuff(int observedBuffId, int buffUuid, long fireUuid, int fightSourceType, int sourceConfigId = 0)
         {
             if (!DataTypes.SpecDetectionTables.TryResolveSpecTalentBuff(
                     observedBuffId, out var grantedBuffId, out var spec, out var distanceFromRoot))
@@ -3006,9 +2989,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     fightSourceType,
                     sourceConfigId,
                     target.SpecMarkerBuffId,
-                    markerSpec.ToString(),
-                    fireUuid,
-                    holderUuid);
+                    markerSpec.ToString());
             }
 
             target.UpdateSubProfessionFromTalentBuff(
@@ -4193,7 +4174,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 && markerSpec != resolved)
             {
                 Diagnostics.SpecConflictProbe.CaptureReplacedSkillConflict(
-                    skillId, resolved.ToString(), SpecMarkerBuffId, markerSpec.ToString(), UUID);
+                    skillId, resolved.ToString(), SpecMarkerBuffId, markerSpec.ToString());
             }
 
             SetSubProfessionId(subProfessionId);
@@ -4331,7 +4312,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             {
                 manager?.ApplySpecFromTalentBuff(
                     buffs[index].BaseId, buffs[index].BuffUuid, buffs[index].FireUuid, buffs[index].FightSourceType,
-                    UUID, buffs[index].SourceConfigId);
+                    buffs[index].SourceConfigId);
                 manager?.ApplySeasonTalentFromRootBuff(buffs[index].BaseId, buffs[index].BuffUuid, buffs[index].FireUuid);
             }
 

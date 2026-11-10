@@ -5,9 +5,9 @@ namespace StarResonanceDps.PluginSdk;
 /// The entry type implements this interface next to <see cref="IStarResonancePlugin"/>.
 ///
 /// <para>
-/// The host calls <see cref="GetNotificationDefinitions"/> once, right after <see cref="IStarResonancePlugin.Initialize"/> returns,
-/// and shows the items after the host's own items, under the plugin's name.
-/// The host owns the row, the on/off switch, the text box and its preview, and how the notification is delivered
+/// The host calls <see cref="GetNotificationDefinitions"/> once after <see cref="IStarResonancePlugin.Initialize"/> returns
+/// (after the widget definitions when the plugin also adds widgets), and shows the items after the host's own items, under the plugin's name.
+/// The items are off until the user checks them. The host owns the row with its check box, the text box and its preview, and how the notification is delivered
 /// (Windows notification or speech, volume, voice). The plugin decides when to notify and asks the host through
 /// <see cref="IPluginContext.Notifications"/>.
 /// </para>

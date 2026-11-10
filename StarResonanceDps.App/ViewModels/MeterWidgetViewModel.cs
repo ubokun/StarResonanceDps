@@ -173,7 +173,7 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
             benchmarkState.IsActive
                 ? "Meter_StopBenchmark"
                 : "Meter_Benchmark");
-        PartyMetricLabel = _kind == MeterSnapshotKind.Damage ? "DPS:" : "HPS:";
+        PartyMetricLabel = $"{LocalizationManager.Instance.GetString(_kind == MeterSnapshotKind.Damage ? "Metric_EncounterDps" : "Metric_EncounterHps")}:";
         PartyMetricValueText = MeterNumberFormatter.Format(snapshot.ValuePerSecond, numberDisplayFormatIndex);
         TotalLabel = $"{LocalizationManager.Instance.GetString("Meter_Total")}:";
         TotalValueText = MeterNumberFormatter.Format(snapshot.TotalValue, numberDisplayFormatIndex);

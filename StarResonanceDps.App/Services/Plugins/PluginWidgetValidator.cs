@@ -48,7 +48,7 @@ internal static class PluginWidgetValidator
                 return false;
             }
 
-            var id = definition.Id.Trim();
+            var id = definition.Id;
             if (!ids.Add(id))
             {
                 error = $"The widget ID '{id}' is defined more than once.";
@@ -119,7 +119,7 @@ internal static class PluginWidgetValidator
                 return false;
             }
 
-            var id = target.Id.Trim();
+            var id = target.Id;
             if (!ids.Add(id))
             {
                 error = $"The target ID '{id}' is returned more than once.";

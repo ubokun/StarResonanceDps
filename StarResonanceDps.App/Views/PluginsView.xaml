@@ -135,6 +135,25 @@
             </Button>
         </Grid>
 
+        <TextBlock Grid.Row="1"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"
+                   FontSize="16"
+                   Foreground="{DynamicResource Brush.TextMuted}"
+                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Plugins_Empty]}">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding PluginItems.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
         <ScrollViewer x:Name="PluginScrollViewer"
                       Grid.Row="1"
                       Style="{StaticResource ScrollViewer.WidgetList}"

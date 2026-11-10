@@ -26,7 +26,7 @@ public sealed partial class DamageTakenLogEntry : ObservableObject
     [ObservableProperty]
     private bool _isPlayerSelectionMenuOpen;
 
-    /// <summary>時刻(戦闘の経過「0:00」、タイムラインの行と同じ)。戦闘の時計の起点がまだ無ければ空欄。</summary>
+    /// <summary>時刻(戦闘の経過「00:00:00」、タイムラインの行と同じ)。戦闘の時計の起点がまだ無ければ空欄。</summary>
     [ObservableProperty]
     private string _timeText = string.Empty;
 
@@ -50,7 +50,7 @@ public sealed partial class DamageTakenLogEntry : ObservableObject
     [ObservableProperty]
     private string _hitInfoText = string.Empty;
 
-    /// <summary>被ダメ値(タイムラインの被弾の行と同じ数字の書き方)。</summary>
+    /// <summary>被ダメ値(タイムラインの回復・ダメージの行と同じ数字の書き方)。</summary>
     [ObservableProperty]
     private string _valueText = string.Empty;
 

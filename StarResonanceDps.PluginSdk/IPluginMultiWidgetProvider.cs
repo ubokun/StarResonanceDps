@@ -35,9 +35,11 @@ public interface IPluginMultiWidgetProvider
     IReadOnlyList<PluginWidgetDefinition> GetMultiWidgetDefinitions();
 
     /// <summary>
-    /// The targets of a widget, in list order. Called on the UI thread when the user opens the drop-down list,
-    /// and once per second while the user has not chosen a target and the card has not selected one with <see cref="PluginWidgetTarget.IsDefault"/>,
-    /// or while an empty window is open, so keep it light. It may return an empty list for the moment, such as while no player is nearby; a method that always returns an empty list is a build error.
+    /// The targets of a widget, in list order. Called on the UI thread when the user opens the drop-down list, and,
+    /// while the user has not chosen a target and the card has not selected one with <see cref="PluginWidgetTarget.IsDefault"/> or while an empty window is open,
+    /// every second and whenever the host updates the cards (for example when the player list, the nearby entities or the open windows change).
+    /// It can be called several times a second, so keep it light.
+    /// It may return an empty list for the moment, such as while no player is nearby; a method that always returns an empty list is a build error.
     /// </summary>
     IReadOnlyList<PluginWidgetTarget> GetWidgetTargets(string widgetId);
 

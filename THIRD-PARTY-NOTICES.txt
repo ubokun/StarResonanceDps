@@ -1,6 +1,6 @@
 THIRD-PARTY SOFTWARE NOTICES
 
-StarResonanceDps includes the third-party components listed below. Each component is
+Don't Check My DPS includes the third-party components listed below. Each component is
 licensed under its own terms. The license texts are reproduced after the list.
 
 ================================================================================
@@ -278,6 +278,12 @@ SQLitePCLRaw.provider.e_sqlite3 3.0.3
   License text: [Apache-2.0]
 
 System.IO.Hashing 10.0.0
+  License: MIT
+  © Microsoft Corporation. All rights reserved.
+  Source: https://github.com/dotnet/runtime
+  License text: [MIT-dotnet-runtime], [TPN-dotnet-runtime]
+
+System.Reflection.MetadataLoadContext 10.0.9
   License: MIT
   © Microsoft Corporation. All rights reserved.
   Source: https://github.com/dotnet/runtime
@@ -772,7 +778,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-[TPN-dotnet-runtime] Third-party notices included in the Microsoft.Extensions packages (except ObjectPool) and System.IO.Hashing
+[TPN-dotnet-runtime] Third-party notices included in the Microsoft.Extensions packages (except ObjectPool), System.IO.Hashing and System.Reflection.MetadataLoadContext
 ================================================================================
 
 .NET Runtime uses third-party libraries or other resources that may be

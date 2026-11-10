@@ -148,16 +148,21 @@ internal static class PluginDependencyScanner
             .ToArray();
     }
 
+    /// <summary>.NET・WPF・本体と本体の部品のアセンブリのパス。</summary>
+    public static IReadOnlyList<string> GetHostAssemblyPaths()
+    {
+        return AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") is string trustedAssemblies
+            ? trustedAssemblies.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            : [];
+    }
+
     /// <summary>本体の読み込み先が持つアセンブリ(.NET・WPF・本体の部品)の名前。</summary>
     private static HashSet<string> ReadHostAssemblyNames()
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") is string trustedAssemblies)
+        foreach (var path in GetHostAssemblyPaths())
         {
-            foreach (var path in trustedAssemblies.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-            {
-                names.Add(Path.GetFileNameWithoutExtension(path));
-            }
+            names.Add(Path.GetFileNameWithoutExtension(path));
         }
 
         foreach (var assembly in AssemblyLoadContext.Default.Assemblies)

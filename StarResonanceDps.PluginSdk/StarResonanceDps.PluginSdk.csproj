@@ -4,6 +4,8 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- 公開の型とメンバーの説明(英語)を XML にしてパッケージに入れる。説明の無い公開の宣言はビルドの警告になる。 -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <!-- パッケージの版は、大きな番号が PluginSdkVersion.Current、足すだけの変更は中の番号。 -->
@@ -12,7 +14,7 @@
     <Version>0.1.0</Version>
     <Authors>kokoukohiro</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>SDK for StarResonanceDps plugins: the plugin interfaces and attributes, and an analyzer that checks the plugin attributes at build time.</Description>
+    <Description>SDK for StarResonanceDps plugins: the plugin interfaces and attributes, and an analyzer that checks the plugin attributes and definitions at build time.</Description>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddPluginSdkAnalyzerToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 

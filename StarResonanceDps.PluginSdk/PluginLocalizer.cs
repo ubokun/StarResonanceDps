@@ -54,14 +54,22 @@ public sealed class PluginLocalizer : INotifyPropertyChanged, IDisposable
         _localization.CultureChanged += Localization_CultureChanged;
     }
 
+    /// <summary>Raised for <see cref="CurrentCulture"/> and the indexer when the UI culture changes, so bindings to the indexer update.</summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    /// <summary>Raised on the UI thread after the host's UI culture has changed.</summary>
     public event EventHandler? CultureChanged;
 
+    /// <summary>The host's current UI culture.</summary>
     public CultureInfo CurrentCulture => _localization.CurrentCulture;
 
+    /// <summary>The same as <see cref="GetString"/>. Bind it from XAML with an indexer path such as <c>[WindowTitle]</c>.</summary>
     public string this[string key] => GetString(key);
 
+    /// <summary>
+    /// The text of <paramref name="key"/> in the resources of the current UI culture, then in the <c>en-US</c> resources, then the key itself.
+    /// A blank key returns an empty string. Throws <see cref="MissingManifestResourceException"/> when the resources of the culture are not embedded.
+    /// </summary>
     public string GetString(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
@@ -87,11 +95,13 @@ public sealed class PluginLocalizer : INotifyPropertyChanged, IDisposable
         return key;
     }
 
+    /// <summary>Formats the text of <paramref name="key"/> with <paramref name="arguments"/> in the current UI culture.</summary>
     public string Format(string key, params object?[] arguments)
     {
         return string.Format(CurrentCulture, GetString(key), arguments);
     }
 
+    /// <summary>Stops following the host's culture changes. Call it when the localizer is no longer used.</summary>
     public void Dispose()
     {
         if (_isDisposed)

@@ -11,17 +11,22 @@ internal static class PluginUpdateFiles
 {
     private const string PendingFolderName = "update.pending";
     private const string StagingFolderName = "update.pending.tmp";
+    private const string DiscardedFolderName = "update.pending.old";
 
     public static bool HasPending(string pluginFolder)
     {
         return Directory.Exists(Path.Combine(pluginFolder, PendingFolderName));
     }
 
-    /// <summary>新しい版のファイルを写す。全部写してから名前を変えるので、途中で失敗しても半端なものは残らない。待っている更新があれば入れ替える。</summary>
+    /// <summary>
+    /// 新しい版のファイルを写す。全部写してから名前を変えるので、途中で失敗しても半端なものは残らない。
+    /// 待っている更新があれば、消さずに名前を変えて入れ替える。消す途中で失敗すると欠けた更新が残り、次の起動で置き換えるとそこに無いファイルを今の版から消してしまう。
+    /// </summary>
     public static bool TryStage(string pluginFolder, PluginDependencyScan scan)
     {
         var stagingFolder = Path.Combine(pluginFolder, StagingFolderName);
         var pendingFolder = Path.Combine(pluginFolder, PendingFolderName);
+        var discardedFolder = Path.Combine(pluginFolder, DiscardedFolderName);
         try
         {
             if (Directory.Exists(stagingFolder))
@@ -36,12 +41,28 @@ internal static class PluginUpdateFiles
                 File.Copy(file, targetPath);
             }
 
-            if (Directory.Exists(pendingFolder))
+            var replacesPending = Directory.Exists(pendingFolder);
+            if (replacesPending)
             {
-                Directory.Delete(pendingFolder, recursive: true);
+                if (Directory.Exists(discardedFolder))
+                {
+                    Directory.Delete(discardedFolder, recursive: true);
+                }
+
+                Directory.Move(pendingFolder, discardedFolder);
             }
 
-            Directory.Move(stagingFolder, pendingFolder);
+            try
+            {
+                Directory.Move(stagingFolder, pendingFolder);
+            }
+            catch (Exception exception) when (replacesPending && exception is IOException or UnauthorizedAccessException)
+            {
+                Directory.Move(discardedFolder, pendingFolder);
+                throw;
+            }
+
+            PluginManager.TryDeleteFolder(discardedFolder);
             return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -54,11 +75,12 @@ internal static class PluginUpdateFiles
 
     /// <summary>
     /// 待っている更新があれば、読む前に置き換える。新しい版は入れ直しと同じ扱いなので、アプリを終わらせた印も消す。
-    /// 待っているファイルは最後に消す(途中で失敗しても残り、次の起動でもう一度置き換える)。
+    /// 待っているファイルは最後に片付ける(置き換えの途中で失敗しても残り、次の起動でもう一度置き換える)。
     /// </summary>
     public static bool TryApplyPending(string pluginFolder)
     {
         PluginManager.TryDeleteFolder(Path.Combine(pluginFolder, StagingFolderName));
+        PluginManager.TryDeleteFolder(Path.Combine(pluginFolder, DiscardedFolderName));
 
         var pendingFolder = Path.Combine(pluginFolder, PendingFolderName);
         if (!Directory.Exists(pendingFolder))
@@ -86,15 +108,36 @@ internal static class PluginUpdateFiles
             }
 
             File.Delete(Path.Combine(pluginFolder, PluginManager.TerminatedAppMarkerFileName));
-            Directory.Delete(pendingFolder, recursive: true);
-            Log.Information("Applied the pending plugin update: {Folder}", pluginFolder);
-            return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             Log.Error(exception, "Failed to apply the pending plugin update; it is applied again at the next start: {Folder}", pluginFolder);
             return false;
         }
+
+        Log.Information("Applied the pending plugin update: {Folder}", pluginFolder);
+        DiscardAppliedPending(pluginFolder);
+        return true;
+    }
+
+    /// <summary>
+    /// 置き換え終わった更新のファイルを片付ける。消す前に名前を変えるので、消す途中で失敗しても欠けた更新は残らない。
+    /// 名前を変えられなければそのまま残す。次の起動で同じ版をもう一度置き換えるだけなので、プラグインは今の起動でも動かす。
+    /// </summary>
+    private static void DiscardAppliedPending(string pluginFolder)
+    {
+        var discardedFolder = Path.Combine(pluginFolder, DiscardedFolderName);
+        try
+        {
+            Directory.Move(Path.Combine(pluginFolder, PendingFolderName), discardedFolder);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            Log.Warning(exception, "Could not clean up the applied plugin update; it is applied again at the next start: {Folder}", pluginFolder);
+            return;
+        }
+
+        PluginManager.TryDeleteFolder(discardedFolder);
     }
 
     /// <summary>今の版が使うファイル(フォルダからの相対パス)。読めなければ空で、新しい版の上書きだけをする(残った古い部品は読まれない)。</summary>

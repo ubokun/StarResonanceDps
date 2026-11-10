@@ -178,7 +178,7 @@ public static partial class PlayerInfoFormatFormatter
         }
 
         return string.IsNullOrWhiteSpace(name)
-            ? $"UID:{userId}"
+            ? LocalizationManager.Instance.Format("PlayerName_UidFormat", userId)
             : name;
     }
 

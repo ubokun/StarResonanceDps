@@ -213,7 +213,7 @@ internal static class AppUpdateApplier
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException)
         {
-            UpdateFailureMessage.ShowRestartFailed(null);
+            UpdateFailureMessage.ShowRestartFailed(null, isUpdated);
         }
     }
 

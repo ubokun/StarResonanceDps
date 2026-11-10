@@ -29,9 +29,9 @@ public readonly record struct SourceLanding(SourceLandingKind Kind, int Id)
 
     public override string ToString() => Kind switch
     {
-        SourceLandingKind.RogueEntry => $"オプション {Id}",
-        SourceLandingKind.Skill => $"技 {Id}",
-        SourceLandingKind.Module => $"モジュールの根 {Id}",
-        _ => "なし"
+        SourceLandingKind.RogueEntry => $"option {Id}",
+        SourceLandingKind.Skill => $"skill {Id}",
+        SourceLandingKind.Module => $"module root {Id}",
+        _ => "none"
     };
 }

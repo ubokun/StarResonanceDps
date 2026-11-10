@@ -24,7 +24,7 @@ public sealed partial class MetricSkillTableEntry(long skillId) : ObservableObje
     [ObservableProperty]
     private Brush? _barBrush;
 
-    /// <summary>バーの長さ(0〜1)。与ダメ%/ヒール% と同じ値。</summary>
+    /// <summary>バーの長さ(0〜1)。一覧の1位の総量に対する比(メーターと同じ)。</summary>
     [ObservableProperty]
     private double _barRatio;
 
@@ -37,7 +37,7 @@ public sealed partial class MetricSkillTableEntry(long skillId) : ObservableObje
     private string _noText = string.Empty;
 
     /// <summary>
-    /// 属性の内訳。アイコンを「/」で並べる。
+    /// 属性の内訳のアイコン。量の多い上位2つを1つの枠に左右半分ずつ重ねる(<see cref="ViewModels.MetricElementIconSegment"/>)。
     /// 組み立ては <c>TextSegmentsBehavior</c> で、タイムラインの行と同じ仕組み。
     /// </summary>
     [ObservableProperty]

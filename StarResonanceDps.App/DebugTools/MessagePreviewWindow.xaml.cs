@@ -32,6 +32,9 @@ public partial class MessagePreviewWindow : Window
     // プラグインの更新の窓を出すための試しの値。
     private const string SamplePluginVersion = "2.0.1";
 
+    // 検出された項目の報告の窓を出すための試しの値。
+    private const int SampleOpenedPageCount = 3;
+
     private const string ModuleAssemblyName = "ModuleTool";
     private const string ModuleResourceBaseName = "StarResonanceDps.Plugins.ModuleTool.Properties.Resources";
     private const string ModuleConfigFileName = "module_config.json";
@@ -122,7 +125,37 @@ public partial class MessagePreviewWindow : Window
     // 本物: 更新のモード(置き換えは済んだが起動し直せなかったとき)
     private void UpdateRestartFailed_Click(object sender, RoutedEventArgs e)
     {
-        UpdateFailureMessage.ShowRestartFailed(this);
+        UpdateFailureMessage.ShowRestartFailed(this, isUpdated: true);
+    }
+
+    // 本物: 更新のモード(置き換えなかった元のバージョンを起動し直せなかったとき)
+    private void UpdateRestartFailedNotUpdated_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateFailureMessage.ShowRestartFailed(this, isUpdated: false);
+    }
+
+    // 本物: フィードバックタブの「選んだ項目を報告」で、投稿画面を1つ開いたとき
+    private void FeedbackOpened_Click(object sender, RoutedEventArgs e)
+    {
+        DetectionReportMessage.ShowOpened(this, 1);
+    }
+
+    // 本物: フィードバックタブの「選んだ項目を報告」で、1つの画面に入りきらず投稿画面を分けて開いたとき
+    private void FeedbackOpenedMany_Click(object sender, RoutedEventArgs e)
+    {
+        DetectionReportMessage.ShowOpened(this, SampleOpenedPageCount);
+    }
+
+    // 本物: フィードバックタブの「選んだ項目を報告」で、選んだ項目が全部Issueにあったとき
+    private void FeedbackAlreadyReported_Click(object sender, RoutedEventArgs e)
+    {
+        DetectionReportMessage.ShowAlreadyReported(this);
+    }
+
+    // 本物: フィードバックタブの「選んだ項目を報告」で、Issueを確認できなかったとき
+    private void FeedbackCheckError_Click(object sender, RoutedEventArgs e)
+    {
+        DetectionReportMessage.ShowCheckFailed(this, (FeedbackIssueLookupFailure)((FrameworkElement)sender).Tag);
     }
 
     // 本物: メイン画面のプラグインの一覧の「＋」(選んだファイルがプラグインでない・版が合わないとき)

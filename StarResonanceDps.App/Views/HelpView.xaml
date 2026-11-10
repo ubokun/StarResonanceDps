@@ -14,53 +14,6 @@
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
-        <Style x:Key="Help.LinkTitle" TargetType="{x:Type TextBlock}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        </Style>
-
-        <Style x:Key="Help.LinkDescription" TargetType="{x:Type TextBlock}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Margin" Value="0,2,0,0" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        </Style>
-
-        <!--
-            「更新を確認」。大きさと中身の並べ方は「プラグインを追加」(Button.AggregationAction)、
-            色はウィジェットタブの三点ボタン(Input.IconOnlySelectBox)と同じ。乗せたときの地の色はもとのスタイルが持つ。
-        -->
-        <Style x:Key="Help.UpdateButton" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.AggregationAction}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Background" Value="{DynamicResource Brush.InputBackground}" />
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- リンクの欄。高さはプラグインの行の枠と同じ60(行の68は下の間隔8を含む)。 -->
-        <Style x:Key="Help.LinkCard" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.AggregationRow}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Height" Value="60" />
-            <Setter Property="Padding" Value="14,0,20,0" />
-        </Style>
-
-        <!-- リンクの欄の右の、外部のページを開く印。 -->
-        <Style x:Key="Help.ExternalLinkMark" TargetType="{x:Type Path}" BasedOn="{StaticResource Icon.Stroke}">
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Width" Value="16" />
-            <Setter Property="Height" Value="16" />
-            <Setter Property="Margin" Value="12,0,0,0" />
-            <Setter Property="Stroke" Value="{DynamicResource Brush.TextSecondary}" />
-            <Setter Property="Data" Value="{DynamicResource Icon.ExternalLink}" />
-        </Style>
-
         <!--
             いちばん下の「ライセンス情報」。地も下線も無く、乗せると文字と右の印が明るくなる。
             地(透明)は、文字と印のあいだも押せるように置く。
@@ -135,7 +88,7 @@
                             <Button Grid.Column="2"
                                     Margin="16,0,0,0"
                                     VerticalAlignment="Center"
-                                    Style="{StaticResource Help.UpdateButton}"
+                                    Style="{StaticResource Button.InputAction}"
                                     Command="{Binding CheckForUpdatesCommand}">
                                 <StackPanel Orientation="Horizontal">
                                     <Path Width="14"
@@ -183,9 +136,9 @@
 
                     <Button Grid.Row="0"
                             Grid.Column="0"
-                            Style="{StaticResource Help.LinkCard}"
-                            Command="{Binding OpenLinkCommand}"
-                            CommandParameter="{x:Static services:ProjectLinks.WikiUrl}">
+                            Style="{StaticResource Button.LinkCard}"
+                            Command="{Binding OpenLocalizedLinkCommand}"
+                            CommandParameter="{x:Static services:LocalizedProjectPage.WikiHome}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -201,21 +154,21 @@
                                   Data="{DynamicResource Icon.Book}" />
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource Help.LinkTitle}"
+                                <TextBlock Style="{StaticResource Text.LinkCardTitle}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_Usage_Title]}" />
-                                <TextBlock Style="{StaticResource Help.LinkDescription}"
+                                <TextBlock Style="{StaticResource Text.LinkCardDescription}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_Usage_Description]}" />
                             </StackPanel>
 
-                            <Path Grid.Column="2" Style="{StaticResource Help.ExternalLinkMark}" />
+                            <Path Grid.Column="2" Style="{StaticResource Icon.LinkCardExternalMark}" />
                         </Grid>
                     </Button>
 
                     <Button Grid.Row="0"
                             Grid.Column="2"
-                            Style="{StaticResource Help.LinkCard}"
-                            Command="{Binding OpenLinkCommand}"
-                            CommandParameter="{x:Static services:ProjectLinks.PluginDevelopmentUrl}">
+                            Style="{StaticResource Button.LinkCard}"
+                            Command="{Binding OpenLocalizedLinkCommand}"
+                            CommandParameter="{x:Static services:LocalizedProjectPage.PluginDevelopment}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -231,19 +184,19 @@
                                   Data="{DynamicResource Icon.Code}" />
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource Help.LinkTitle}"
+                                <TextBlock Style="{StaticResource Text.LinkCardTitle}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_PluginDevelopment_Title]}" />
-                                <TextBlock Style="{StaticResource Help.LinkDescription}"
+                                <TextBlock Style="{StaticResource Text.LinkCardDescription}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_PluginDevelopment_Description]}" />
                             </StackPanel>
 
-                            <Path Grid.Column="2" Style="{StaticResource Help.ExternalLinkMark}" />
+                            <Path Grid.Column="2" Style="{StaticResource Icon.LinkCardExternalMark}" />
                         </Grid>
                     </Button>
 
                     <Button Grid.Row="1"
                             Grid.Column="0"
-                            Style="{StaticResource Help.LinkCard}"
+                            Style="{StaticResource Button.LinkCard}"
                             Command="{Binding OpenLinkCommand}"
                             CommandParameter="{x:Static services:ProjectLinks.RepositoryUrl}">
                         <Grid>
@@ -261,19 +214,19 @@
                                   Data="{DynamicResource Icon.GitHub}" />
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource Help.LinkTitle}"
+                                <TextBlock Style="{StaticResource Text.LinkCardTitle}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_GitHub_Title]}" />
-                                <TextBlock Style="{StaticResource Help.LinkDescription}"
+                                <TextBlock Style="{StaticResource Text.LinkCardDescription}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_GitHub_Description]}" />
                             </StackPanel>
 
-                            <Path Grid.Column="2" Style="{StaticResource Help.ExternalLinkMark}" />
+                            <Path Grid.Column="2" Style="{StaticResource Icon.LinkCardExternalMark}" />
                         </Grid>
                     </Button>
 
                     <Button Grid.Row="1"
                             Grid.Column="2"
-                            Style="{StaticResource Help.LinkCard}"
+                            Style="{StaticResource Button.LinkCard}"
                             Command="{Binding OpenLinkCommand}"
                             CommandParameter="{x:Static services:ProjectLinks.ReleasesUrl}">
                         <Grid>
@@ -291,13 +244,13 @@
                                   Data="{DynamicResource Icon.Document}" />
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Style="{StaticResource Help.LinkTitle}"
+                                <TextBlock Style="{StaticResource Text.LinkCardTitle}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_ReleaseNotes_Title]}" />
-                                <TextBlock Style="{StaticResource Help.LinkDescription}"
+                                <TextBlock Style="{StaticResource Text.LinkCardDescription}"
                                            Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Help_ReleaseNotes_Description]}" />
                             </StackPanel>
 
-                            <Path Grid.Column="2" Style="{StaticResource Help.ExternalLinkMark}" />
+                            <Path Grid.Column="2" Style="{StaticResource Icon.LinkCardExternalMark}" />
                         </Grid>
                     </Button>
                 </Grid>

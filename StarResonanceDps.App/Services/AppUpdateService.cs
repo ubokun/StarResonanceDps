@@ -65,9 +65,6 @@ public static class AppUpdateService
     /// <summary>今のバージョン。実行ファイルの版(csprojのVersion)の先頭3つの数字。</summary>
     public static Version CurrentVersion { get; } = ReadCurrentVersion();
 
-    /// <summary>確認にも取得にも使う。止めるのはキャンセルで、時間では打ち切らない(接続そのものができなければ Windows が失敗を返す)。</summary>
-    private static readonly HttpClient Client = CreateClient();
-
     /// <summary>最後の確認の結果。</summary>
     public static AppUpdateStatus Status { get; private set; } = AppUpdateStatus.NotChecked;
 
@@ -114,7 +111,7 @@ public static class AppUpdateService
         return CheckAsync(owner, isManual: true);
     }
 
-    /// <summary>確認をやめる。ヘルプタブの行は確認する前の表示に戻る。</summary>
+    /// <summary>確認をやめる。ヘルプタブの行は確認していない表示に戻る。</summary>
     public static void CancelCheck()
     {
         _checkCancellation?.Cancel();
@@ -189,23 +186,14 @@ public static class AppUpdateService
         return new Version(version.Major, version.Minor, version.Build);
     }
 
-    private static HttpClient CreateClient()
-    {
-        var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd($"StarResonanceDps/{CurrentVersion.ToString(3)}");
-        return client;
-    }
-
     private static async Task<ReleaseCheck> FetchLatestReleaseAsync()
     {
         using var cancellation = new CancellationTokenSource();
         _checkCancellation = cancellation;
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, ProjectLinks.LatestReleaseApiUrl);
-            request.Headers.Accept.ParseAdd("application/vnd.github+json");
-            request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-            using var response = await Client.SendAsync(request, cancellation.Token);
+            using var request = GitHubHttp.CreateApiRequest(ProjectLinks.LatestReleaseApiUrl);
+            using var response = await GitHubHttp.Client.SendAsync(request, cancellation.Token);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -438,7 +426,7 @@ public static class AppUpdateService
         IProgress<(long Done, long Total)> progress,
         CancellationToken cancellationToken)
     {
-        using var response = await Client.GetAsync(release.PackageUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        using var response = await GitHubHttp.Client.GetAsync(release.PackageUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         var total = response.Content.Headers.ContentLength ?? release.PackageSize;

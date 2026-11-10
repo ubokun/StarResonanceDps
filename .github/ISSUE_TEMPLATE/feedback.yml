@@ -1,0 +1,16 @@
+name: 不具合報告・機能要望 / Bug report or feature request
+description: 不具合の報告と機能の要望 / Report a bug or request a feature
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: 内容 / Details
+      description: 起きたことと再現の手順、またはほしい機能を書いてください。 / What happened and how to reproduce it, or the feature you want.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境 / Environment
+      description: アプリの「フィードバック」から開くと入力済みになります。 / Filled in when opened from "Feedback" in the app.
+      render: text

@@ -356,13 +356,13 @@ Restart VOICEVOX.</value>
     <value>Immediately</value>
   </data>
   <data name="TargetedCondition_1" xml:space="preserve">
-    <value>Targeted for 1 s or more</value>
+    <value>Targeted for 1s or more</value>
   </data>
   <data name="TargetedCondition_2" xml:space="preserve">
-    <value>Targeted for 2 s or more</value>
+    <value>Targeted for 2s or more</value>
   </data>
   <data name="TargetedCondition_3" xml:space="preserve">
-    <value>Targeted for 3 s or more</value>
+    <value>Targeted for 3s or more</value>
   </data>
   <data name="TargetedPlayer_PartyMembers" xml:space="preserve">
     <value>Party members</value>
@@ -394,13 +394,13 @@ Restart VOICEVOX.</value>
     <value>On activation</value>
   </data>
   <data name="TelegraphedSkillCondition_1" xml:space="preserve">
-    <value>1 s before activation</value>
+    <value>1s before activation</value>
   </data>
   <data name="TelegraphedSkillCondition_2" xml:space="preserve">
-    <value>2 s before activation</value>
+    <value>2s before activation</value>
   </data>
   <data name="TelegraphedSkillCondition_3" xml:space="preserve">
-    <value>3 s before activation</value>
+    <value>3s before activation</value>
   </data>
   <data name="Settings_Section_Basic_Title" xml:space="preserve">
     <value>General</value>
@@ -639,7 +639,7 @@ Its settings will also be deleted.</value>
     <value>{0} ({1})</value>
   </data>
   <data name="Update_Status_Checking" xml:space="preserve">
-    <value>checking</value>
+    <value>checking for updates</value>
   </data>
   <data name="Update_Status_UpToDate" xml:space="preserve">
     <value>latest</value>
@@ -651,7 +651,7 @@ Its settings will also be deleted.</value>
     <value>no published version</value>
   </data>
   <data name="Update_Status_Failed" xml:space="preserve">
-    <value>could not check</value>
+    <value>could not check for updates</value>
   </data>
   <data name="Update_Title" xml:space="preserve">
     <value>Update</value>
@@ -696,24 +696,24 @@ Your settings and history are kept.</value>
   <data name="Update_Error_Message" xml:space="preserve">
     <value>Could not update.</value>
   </data>
-  <data name="Update_Error_Network" xml:space="preserve">
+  <data name="GitHub_Error_Network" xml:space="preserve">
     <value>Check your internet connection and try again.</value>
   </data>
-  <data name="Update_Error_Server" xml:space="preserve">
+  <data name="GitHub_Error_Server" xml:space="preserve">
     <value>GitHub's server did not respond.
 Try again later.</value>
   </data>
-  <data name="Update_Error_RateLimit" xml:space="preserve">
+  <data name="GitHub_Error_RateLimit" xml:space="preserve">
     <value>Access to GitHub is temporarily limited.
 Try again later.</value>
   </data>
   <data name="Update_Error_InvalidRelease" xml:space="preserve">
     <value>Could not read the release information.
-Download the zip from the release notes and overwrite the app folder.</value>
+Download the zip from the {0} and overwrite the app folder.</value>
   </data>
   <data name="Update_Error_NotFromZip" xml:space="preserve">
     <value>This copy was not installed from a release zip, so it cannot update itself.
-Download the zip from the release notes.</value>
+Download the zip from the {0}.</value>
   </data>
   <data name="Update_Error_Corrupt" xml:space="preserve">
     <value>The downloaded file was corrupted.
@@ -732,13 +732,16 @@ Close other apps using the app folder and try again.</value>
   </data>
   <data name="Update_Error_RestoreFailed" xml:space="preserve">
     <value>The previous version could not be restored.
-Download the zip from the release notes and overwrite the app folder.</value>
+Download the zip from the {0} and overwrite the app folder.</value>
   </data>
-  <data name="Update_OpenReleaseNotes" xml:space="preserve">
-    <value>Open the release notes</value>
+  <data name="Update_ReleaseNotesLink" xml:space="preserve">
+    <value>release notes</value>
   </data>
   <data name="Update_RestartFailed_Message" xml:space="preserve">
     <value>Updated, but the app could not restart.</value>
+  </data>
+  <data name="Update_RestartFailedNotUpdated_Message" xml:space="preserve">
+    <value>The previous version could not restart.</value>
   </data>
   <data name="Update_RestartFailed_Detail" xml:space="preserve">
     <value>Start StarResonanceDps.exe in the app folder.</value>
@@ -899,6 +902,27 @@ Download the zip from the release notes and overwrite the app folder.</value>
   <data name="NumberDisplay_Wan" xml:space="preserve">
     <value>Wan (East Asian)</value>
   </data>
+  <data name="NumberUnit_Kmbt_Thousand" xml:space="preserve">
+    <value>K</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Million" xml:space="preserve">
+    <value>M</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Billion" xml:space="preserve">
+    <value>B</value>
+  </data>
+  <data name="NumberUnit_Kmbt_Trillion" xml:space="preserve">
+    <value>T</value>
+  </data>
+  <data name="NumberUnit_Wan_TenThousand" xml:space="preserve">
+    <value>万</value>
+  </data>
+  <data name="NumberUnit_Wan_HundredMillion" xml:space="preserve">
+    <value>億</value>
+  </data>
+  <data name="NumberUnit_Wan_Trillion" xml:space="preserve">
+    <value>兆</value>
+  </data>
   <data name="Settings_Display_PlayerName" xml:space="preserve">
     <value>Player name</value>
   </data>
@@ -910,6 +934,9 @@ Download the zip from the release notes and overwrite the app folder.</value>
   </data>
   <data name="PlayerNameDisplay_HideOthers" xml:space="preserve">
     <value>Hide others</value>
+  </data>
+  <data name="PlayerName_UidFormat" xml:space="preserve">
+    <value>UID:{0}</value>
   </data>
   <data name="Hotkey_PlayerNameShowOrHide" xml:space="preserve">
     <value>Show/Hide Player Names</value>
@@ -1053,13 +1080,13 @@ Wait a moment and copy again.</value>
     <value>Auto</value>
   </data>
   <data name="GaugeLength_10" xml:space="preserve">
-    <value>10 s</value>
+    <value>10s</value>
   </data>
   <data name="GaugeLength_20" xml:space="preserve">
-    <value>20 s</value>
+    <value>20s</value>
   </data>
   <data name="GaugeLength_30" xml:space="preserve">
-    <value>30 s</value>
+    <value>30s</value>
   </data>
   <data name="Settings_Display_SameBuffs" xml:space="preserve">
     <value>Same Buffs</value>
@@ -1247,6 +1274,9 @@ Wait a moment and copy again.</value>
   <data name="Widget_PlayerModule" xml:space="preserve">
     <value>Module Info</value>
   </data>
+  <data name="PlayerModule_LevelFormat" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="PlayerInfo_Uid" xml:space="preserve">
     <value>UID</value>
   </data>
@@ -1359,7 +1389,7 @@ Wait a moment and copy again.</value>
     <value>Entity1</value>
   </data>
   <data name="Settings_PlayerInfo_Field_Name" xml:space="preserve">
-    <value>PlayerName</value>
+    <value>Player Name</value>
   </data>
   <data name="Settings_EntityInfo_Field_Name" xml:space="preserve">
     <value>Entity Name</value>
@@ -1374,7 +1404,7 @@ Wait a moment and copy again.</value>
     <value>Deep-Slumber Psychoscope</value>
   </data>
   <data name="Settings_PlayerInfo_Field_AbilityScore" xml:space="preserve">
-    <value>Power</value>
+    <value>Ability Score</value>
   </data>
   <data name="Settings_PlayerInfo_Field_SeasonStrength" xml:space="preserve">
     <value>Season Strength</value>
@@ -1384,9 +1414,6 @@ Wait a moment and copy again.</value>
   </data>
   <data name="Settings_PlayerInfo_Field_PlayerUid" xml:space="preserve">
     <value>Player UID</value>
-  </data>
-  <data name="Metric_No" xml:space="preserve">
-    <value>No.</value>
   </data>
   <data name="Metric_Element" xml:space="preserve">
     <value>Element</value>
@@ -1409,20 +1436,8 @@ Wait a moment and copy again.</value>
   <data name="Metric_SkillName" xml:space="preserve">
     <value>Skill Name</value>
   </data>
-  <data name="Metric_Damage" xml:space="preserve">
-    <value>Damage</value>
-  </data>
-  <data name="Metric_Healing" xml:space="preserve">
-    <value>Healing</value>
-  </data>
-  <data name="Metric_ActiveDps" xml:space="preserve">
-    <value>aDPS</value>
-  </data>
   <data name="Metric_EncounterDps" xml:space="preserve">
     <value>DPS</value>
-  </data>
-  <data name="Metric_ActiveHps" xml:space="preserve">
-    <value>aHPS</value>
   </data>
   <data name="Metric_EncounterHps" xml:space="preserve">
     <value>HPS</value>
@@ -1432,15 +1447,6 @@ Wait a moment and copy again.</value>
   </data>
   <data name="Metric_CritRate" xml:space="preserve">
     <value>Crit Rate</value>
-  </data>
-  <data name="Metric_AveragePerHit" xml:space="preserve">
-    <value>Avg Per Hit</value>
-  </data>
-  <data name="Metric_DamageShare" xml:space="preserve">
-    <value>DMG %</value>
-  </data>
-  <data name="Metric_HealingShare" xml:space="preserve">
-    <value>HEAL %</value>
   </data>
   <data name="Confirm_NpcapUpdate_Title" xml:space="preserve">
     <value>Npcap update</value>
@@ -1478,13 +1484,13 @@ It is strongly recommended to update to this version, or higher, to avoid proble
     <value>Drawing interval</value>
   </data>
   <data name="Settings_Graph_AggregationInterval_Option" xml:space="preserve">
-    <value>{0} seconds</value>
+    <value>{0}s</value>
   </data>
   <data name="Settings_Graph_VisibleSeconds" xml:space="preserve">
     <value>X-axis length</value>
   </data>
   <data name="Settings_Graph_VisibleSeconds_Option" xml:space="preserve">
-    <value>{0} seconds</value>
+    <value>{0}s</value>
   </data>
   <data name="Settings_Graph_ShowSkillLog" xml:space="preserve">
     <value>Show Skill Log</value>
@@ -1754,10 +1760,10 @@ It is strongly recommended to update to this version, or higher, to avoid proble
     <value>[Image]</value>
   </data>
   <data name="Chat_Voice" xml:space="preserve">
-    <value>[Voice]</value>
+    <value>[Voice Message]</value>
   </data>
   <data name="Chat_VoiceTextFormat" xml:space="preserve">
-    <value>[Voice] {0}</value>
+    <value>[Voice Message] {0}</value>
   </data>
   <data name="Settings_Section_ChatTextColors_Title" xml:space="preserve">
     <value>Text Colors</value>
@@ -1884,7 +1890,7 @@ It is strongly recommended to update to this version, or higher, to avoid proble
     <value>Benchmark Duration</value>
   </data>
   <data name="Settings_Aggregation_BenchmarkDuration_Unit" xml:space="preserve">
-    <value>sec</value>
+    <value>s</value>
   </data>
   <data name="Settings_Aggregation_BenchmarkFirstTargetOnly" xml:space="preserve">
     <value>Measure Only the First Enemy Attacked</value>
@@ -1899,7 +1905,7 @@ It is strongly recommended to update to this version, or higher, to avoid proble
     <value>Note: Seconds after combat stops</value>
   </data>
   <data name="Settings_Aggregation_CombatExit_Value" xml:space="preserve">
-    <value>{0} sec</value>
+    <value>{0}s</value>
   </data>
   <data name="Settings_Aggregation_CombatExit_None" xml:space="preserve">
     <value>Don't pause</value>
@@ -1941,13 +1947,13 @@ It is strongly recommended to update to this version, or higher, to avoid proble
     <value>Immediately</value>
   </data>
   <data name="HealthLowCondition_1" xml:space="preserve">
-    <value>Low HP for 1 s or more</value>
+    <value>Low HP for 1s or more</value>
   </data>
   <data name="HealthLowCondition_2" xml:space="preserve">
-    <value>Low HP for 2 s or more</value>
+    <value>Low HP for 2s or more</value>
   </data>
   <data name="HealthLowCondition_3" xml:space="preserve">
-    <value>Low HP for 3 s or more</value>
+    <value>Low HP for 3s or more</value>
   </data>
   <data name="CuisinePotionCondition_1" xml:space="preserve">
     <value>1 min or less left</value>
@@ -2517,5 +2523,79 @@ Reinstall the app, then start it again.</value>
 {0}
 This file will be overwritten the next time the app saves the settings.
 Change the settings again if needed.</value>
+  </data>
+  <data name="Navigation_Feedback" xml:space="preserve">
+    <value>Feedback</value>
+  </data>
+  <data name="Feedback_Issue_Title" xml:space="preserve">
+    <value>Bug reports and feature requests</value>
+  </data>
+  <data name="Feedback_Issue_Description" xml:space="preserve">
+    <value>Opens the submission page on GitHub</value>
+  </data>
+  <data name="Feedback_Issue_Note" xml:space="preserve">
+    <value>Note: Reports are public on GitHub, and posting requires an account.</value>
+  </data>
+  <data name="Feedback_Detections_Title" xml:space="preserve">
+    <value>Detected issues</value>
+  </data>
+  <data name="Feedback_Detections_Check" xml:space="preserve">
+    <value>Check report status</value>
+  </data>
+  <data name="Feedback_Detections_CancelCheck" xml:space="preserve">
+    <value>Cancel check</value>
+  </data>
+  <data name="Feedback_Detections_Report" xml:space="preserve">
+    <value>Report selected</value>
+  </data>
+  <data name="Feedback_Detections_Empty" xml:space="preserve">
+    <value>No issues detected</value>
+  </data>
+  <data name="Feedback_Detection_BlankSourceName" xml:space="preserve">
+    <value>Unnamed skill</value>
+  </data>
+  <data name="Feedback_Detection_SourceLandingConflict" xml:space="preserve">
+    <value>Skill name mismatch</value>
+  </data>
+  <data name="Feedback_Detection_SpecConflict" xml:space="preserve">
+    <value>Class detection mismatch</value>
+  </data>
+  <data name="Feedback_Detection_ItemFormat" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="Plugins_Empty" xml:space="preserve">
+    <value>No installed plugins</value>
+  </data>
+  <data name="Feedback_Detection_Reported" xml:space="preserve">
+    <value>Reported</value>
+  </data>
+  <data name="Feedback_AlreadyReported_Message" xml:space="preserve">
+    <value>The selected items have already been reported.</value>
+  </data>
+  <data name="Feedback_CheckError_Title" xml:space="preserve">
+    <value>Report Status Check Error</value>
+  </data>
+  <data name="Feedback_CheckError_Message" xml:space="preserve">
+    <value>Could not check whether the items were reported.</value>
+  </data>
+  <data name="Feedback_Report_Title" xml:space="preserve">
+    <value>Detected item report</value>
+  </data>
+  <data name="Feedback_Report_IssueTitle" xml:space="preserve">
+    <value>[Version {0}] Detected items: {1}</value>
+  </data>
+  <data name="Feedback_Opened_Message" xml:space="preserve">
+    <value>The submission page on GitHub has been opened.</value>
+  </data>
+  <data name="Feedback_Opened_Detail" xml:space="preserve">
+    <value>Press "Create" to complete the report.
+Press "Check report status" to see the result of the submission.</value>
+  </data>
+  <data name="Feedback_OpenedMany_Message" xml:space="preserve">
+    <value>{0} submission pages on GitHub have been opened.</value>
+  </data>
+  <data name="Feedback_OpenedMany_Detail" xml:space="preserve">
+    <value>Press "Create" on each page to complete the report.
+Press "Check report status" to see the result of the submission.</value>
   </data>
 </root>

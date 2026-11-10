@@ -288,7 +288,10 @@ public sealed partial class PluginTextSettingViewModel : PluginSettingViewModel
     }
 }
 
-/// <summary>スライドバー。値を受けるのは、つまみを手放したときと、ドラッグ以外の操作のときだけ(通知音量と同じ、画面のコード)。</summary>
+/// <summary>
+/// スライドバー。「通知」では、値を受けるのはつまみを手放したときと、ドラッグ以外の操作のときだけ(通知音量と同じ、画面のコード)。
+/// ウィジェットの設定の窓では、動かしている間も受ける(保存前のプレビュー)。
+/// </summary>
 public sealed partial class PluginSliderSettingViewModel : PluginSettingViewModel
 {
     private readonly PluginSliderSetting _definition;

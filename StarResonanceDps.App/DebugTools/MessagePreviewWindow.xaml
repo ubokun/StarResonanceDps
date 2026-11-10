@@ -66,7 +66,14 @@
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_Error_Start" Tag="{x:Static services:AppUpdateFailure.Start}" Click="UpdateError_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_Error_Replace" Tag="{x:Static services:AppUpdateFailure.Replace}" Click="UpdateError_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_Error_RestoreFailed" Tag="{x:Static services:AppUpdateFailure.RestoreFailed}" Click="UpdateError_Click" />
-                        <Button Style="{StaticResource Button.Text}" Width="Auto" Content="Update_RestartFailed" Click="UpdateRestartFailed_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_RestartFailed" Click="UpdateRestartFailed_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_RestartFailedNotUpdated" Click="UpdateRestartFailedNotUpdated_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_Opened" Click="FeedbackOpened_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_OpenedMany" Click="FeedbackOpenedMany_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_AlreadyReported" Click="FeedbackAlreadyReported_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_CheckError_Network" Tag="{x:Static services:FeedbackIssueLookupFailure.Network}" Click="FeedbackCheckError_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_CheckError_Server" Tag="{x:Static services:FeedbackIssueLookupFailure.Server}" Click="FeedbackCheckError_Click" />
+                        <Button Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_CheckError_RateLimit" Tag="{x:Static services:FeedbackIssueLookupFailure.RateLimit}" Click="FeedbackCheckError_Click" />
                     </StackPanel>
 
                     <!-- 本体の窓 -->

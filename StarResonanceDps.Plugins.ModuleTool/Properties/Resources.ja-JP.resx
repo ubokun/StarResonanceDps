@@ -110,6 +110,9 @@
   <data name="Module.Inventory.UnknownModules" xml:space="preserve">
     <value>対応していないモジュール{0}個は検索に入れていません</value>
   </data>
+  <data name="Module.Level" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="Module.Message.SaveError.Message" xml:space="preserve">
     <value>モジュールツールの設定を保存できませんでした。</value>
   </data>

@@ -110,6 +110,9 @@
   <data name="Module.Inventory.UnknownModules" xml:space="preserve">
     <value>{0} unsupported modules are excluded from the search</value>
   </data>
+  <data name="Module.Level" xml:space="preserve">
+    <value>Lv{0}</value>
+  </data>
   <data name="Module.Message.SaveError.Message" xml:space="preserve">
     <value>Could not save the Module Tool settings.</value>
   </data>

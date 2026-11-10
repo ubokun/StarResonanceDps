@@ -88,6 +88,20 @@
                                 Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Navigation_Logs]}" />
                         </StackPanel>
                     </RadioButton>
+                    <RadioButton x:Name="FeedbackNavigationButton"
+                                 GroupName="ManagerNavigation"
+                                 Style="{DynamicResource RadioButton.SidebarNavigation}"
+                                 Checked="FeedbackNavigationButton_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path
+                                Style="{DynamicResource Icon.Stroke}"
+                                Data="{DynamicResource Icon.Feedback}" />
+                            <TextBlock
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Navigation_Feedback]}" />
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="HelpNavigationButton"
                                  GroupName="ManagerNavigation"
                                  Style="{DynamicResource RadioButton.SidebarNavigation}"
@@ -196,6 +210,7 @@
                 <views:AggregationView x:Name="AggregationContent" Visibility="Collapsed" />
                 <views:PluginsView x:Name="PluginsContent" Visibility="Collapsed" />
                 <views:LogsView x:Name="LogsContent" Visibility="Collapsed" />
+                <views:FeedbackView x:Name="FeedbackContent" Visibility="Collapsed" />
                 <views:HelpView x:Name="HelpContent" Visibility="Collapsed" />
             </Grid>
         </ContentControl>

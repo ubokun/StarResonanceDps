@@ -5,6 +5,7 @@
     <SolidColorBrush x:Key="Brush.PanelBackground" Color="#121D2B" />
     <SolidColorBrush x:Key="Brush.Border" Color="#323B47" />
     <SolidColorBrush x:Key="Brush.BorderSoft" Color="#212B38" />
+    <SolidColorBrush x:Key="Brush.BorderStrong" Color="#434B56" />
     <SolidColorBrush x:Key="Brush.ControlBackground" Color="#232D3A" />
     <SolidColorBrush x:Key="Brush.ControlActiveBackground" Color="#303945" />
     <SolidColorBrush x:Key="Brush.WidgetCardImageButtonBackground" Color="#80232D3A" />

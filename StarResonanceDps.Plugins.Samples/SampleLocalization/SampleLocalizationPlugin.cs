@@ -2,6 +2,7 @@ using System.Windows;
 using StarResonanceDps.PluginSdk;
 
 [assembly: PluginRegistration(typeof(SampleLocalization.SampleLocalizationPlugin), PluginSdkVersion.Current)]
+// Attribute arguments must be constants, so the name and genre are written here instead of in Resources.
 [assembly: PluginDisplayName("en-US", "Sample: Languages")]
 [assembly: PluginDisplayName("ja-JP", "サンプル: 多言語")]
 [assembly: PluginDisplayName("ko-KR", "샘플: 다국어")]

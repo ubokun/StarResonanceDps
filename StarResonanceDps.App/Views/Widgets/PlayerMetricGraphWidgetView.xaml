@@ -151,6 +151,7 @@
                                       Points="{Binding GraphPoints}"
                                       VisibleSeconds="{Binding GraphVisibleSeconds}"
                                       LineBrush="{Binding GraphLineBrush}"
+                                      NumberDisplayFormatIndex="{Binding GraphNumberDisplayFormatIndex}"
                                       SkillMarkers="{Binding GraphSkillMarkers}"
                                       ShowSkillMarkers="{Binding GraphShowsSkillLog}"
                                       SkillMarkerToolTipTag="{Binding PlayerWidget}"

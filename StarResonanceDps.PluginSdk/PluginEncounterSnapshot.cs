@@ -7,7 +7,7 @@ namespace StarResonanceDps.PluginSdk;
 /// <param name="StartUtc">When the combat clock started, or <c>null</c> before the first combat event.</param>
 /// <param name="Elapsed">The combat time (paused intervals excluded).</param>
 /// <param name="IsClosed">The encounter has ended.</param>
-/// <param name="Players">Players with any total above 0. Not filtered by party.</param>
+/// <param name="Players">Players with any total above 0, in no particular order. Not filtered by party.</param>
 public sealed record PluginEncounterSnapshot(
     bool IsHistory,
     DateTime? StartUtc,
@@ -19,6 +19,9 @@ public sealed record PluginEncounterSnapshot(
 /// One player's totals in an encounter.
 /// </summary>
 /// <param name="CharacterId">The character ID (the same as <see cref="PluginPlayer.CharacterId"/>).</param>
+/// <param name="Damage">Damage dealt.</param>
+/// <param name="Healing">Healing done.</param>
+/// <param name="DamageTaken">Damage taken.</param>
 public sealed record PluginEncounterPlayer(
     long CharacterId,
     PluginCombatTotals Damage,
@@ -32,6 +35,10 @@ public sealed record PluginEncounterPlayer(
 /// <param name="PerSecond">The total per second of the encounter's combat time (the host's meters).</param>
 /// <param name="ActivePerSecond">The total per second of the player's active time (the host's skill detail).</param>
 /// <param name="Hits">The number of hits.</param>
+/// <param name="CritTotal">The total of critical hits.</param>
+/// <param name="CritCount">The number of critical hits.</param>
+/// <param name="LuckyTotal">The total of lucky hits.</param>
+/// <param name="LuckyCount">The number of lucky hits.</param>
 public sealed record PluginCombatTotals(
     ulong Total,
     double PerSecond,
@@ -47,8 +54,10 @@ public sealed record PluginCombatTotals(
 /// </summary>
 public enum PluginCombatKind
 {
+    /// <summary>Damage dealt.</summary>
     Damage = 0,
 
+    /// <summary>Healing done.</summary>
     Healing
 }
 
@@ -60,6 +69,10 @@ public enum PluginCombatKind
 /// The row name in the current language, without internal names or IDs, or <c>null</c> when the row has no name.
 /// The name depends on how the host grouped the row, so it cannot be looked up from the key alone.
 /// </param>
+/// <param name="Total">The total.</param>
+/// <param name="PerSecond">The total per second of the encounter's combat time (the host's meters).</param>
+/// <param name="ActivePerSecond">The total per second of the player's active time (the host's skill detail).</param>
+/// <param name="Hits">The number of hits.</param>
 /// <param name="CritRate">The critical rate, in percent.</param>
 /// <param name="Share">The share of the player's total, in percent.</param>
 public sealed record PluginSkillTotals(
@@ -75,6 +88,7 @@ public sealed record PluginSkillTotals(
 /// <summary>
 /// The result of an encounter that has just closed: the totals and every player's skill breakdown.
 /// </summary>
+/// <param name="Totals">The totals of the closed encounter (<see cref="PluginEncounterSnapshot.IsHistory"/> is <c>false</c>).</param>
 /// <param name="Skills">Character ID to the player's skill breakdown, for every player in <see cref="PluginEncounterSnapshot.Players"/>.</param>
 public sealed record PluginEncounterResult(
     PluginEncounterSnapshot Totals,
@@ -83,6 +97,8 @@ public sealed record PluginEncounterResult(
 /// <summary>
 /// One player's skill breakdown.
 /// </summary>
+/// <param name="Damage">The damage rows, largest first.</param>
+/// <param name="Healing">The healing rows, largest first.</param>
 public sealed record PluginPlayerSkills(
     IReadOnlyList<PluginSkillTotals> Damage,
     IReadOnlyList<PluginSkillTotals> Healing);
