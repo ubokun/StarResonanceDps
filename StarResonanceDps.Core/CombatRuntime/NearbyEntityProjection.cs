@@ -148,7 +148,7 @@ internal static class NearbyEntityProjection
             GetInt(entity, "AttrCombatState") > 0,
             ResolveTargetCharacterId(entity),
             ResolveHateRanking(entity),
-            cast, EntityTargetingPlayers.Get(entityUuid));
+            cast, EntityTargetingPlayers.Get(entityUuid), TargetDamageTotals.Read(EncounterManager.Current,entityUuid));
     }
 
     private static NearbyEntityEntry MergeChangedFields(

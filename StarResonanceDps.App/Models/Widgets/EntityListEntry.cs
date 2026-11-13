@@ -20,6 +20,9 @@ namespace StarResonanceDps.App.Models.Widgets;
 /// </summary>
 public sealed partial class EntityListEntry : ObservableObject
 {
+    public sealed record DamageRow(string Name,string Dps,double Ratio,string Detail);
+    public ObservableCollection<DamageRow> DamageRows {get;}=[];
+    [ObservableProperty] private bool _hasDamageRows;
     [ObservableProperty] private bool _isFirstDefeated;
     [ObservableProperty] private string _targetingPlayerNames = "";
     [ObservableProperty] private string _allTargetingPlayerNames = "";
@@ -188,7 +191,10 @@ public sealed partial class EntityListEntry : ObservableObject
         EntityHatePlayerResolver hatePlayers,
         bool showsScore)
     {
+        _damageRanks=entity.DamageRanking ?? [];
+        _damagePlayers=hatePlayers;
         EntityUuid = entity.EntityUuid;
+        RefreshDamage();
         EntityId = entity.EntityId;
         EntityType = entity.EntityType;
 
@@ -368,8 +374,29 @@ public sealed partial class EntityListEntry : ObservableObject
     /// アニメーションが前に張った割合から始まって文字より遅れるため。
     /// 全体秒数が過ぎた後の1回は満タンと「全体/全体」を出し、その次の更新で詠唱ゲージを外す(最後の表示を更新の当たり方で変えない)。
     /// </summary>
+    private IReadOnlyList<TargetDamageRank> _damageRanks=[];
+    private EntityHatePlayerResolver? _damagePlayers;
+    private void RefreshDamage()
+    {
+        if(_damagePlayers is null)return;
+        DamageRows.Clear();
+        var damageRanks=_damageRanks;
+        var damageEncounter=AppState.OpenedHistoricalEncounter ?? EncounterManager.Current;
+        var damageSeconds=damageEncounter.ReadCombatClock().Elapsed.TotalSeconds;
+        var leadingDamage=damageRanks.FirstOrDefault()?.Damage ?? 0;
+        foreach(var rank in damageRanks.Take(5))
+        {
+            var name=_damagePlayers!.Resolve(rank.CharacterId).DisplayName;
+            var dps=damageSeconds>0?rank.Damage/damageSeconds:0;
+            DamageRows.Add(new(name,$"{MeterNumberFormatter.Format(dps,0)} DPS",leadingDamage>0?(double)rank.Damage/leadingDamage:0,
+                $"{name}\n対象への総ダメージ: {rank.Damage:N0}\nDPS: {dps:N1}（集計時間 {damageSeconds:N1}秒）"));
+        }
+        HasDamageRows=DamageRows.Count>0;
+    }
+
     public void RefreshCast(DateTime utcNow)
     {
+        RefreshDamage();
         if (!IsCasting || _cast is not { } cast)
         {
             return;

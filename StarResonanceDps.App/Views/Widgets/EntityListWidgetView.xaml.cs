@@ -121,14 +121,14 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
         NotifyVerticalScrollMetricsChanged();
     }
 
-    /// <summary>敵の左クリックは、その個体のヘイトPSを開く。ほかの実体は従来の情報画面を開く。</summary>
+    /// <summary>敵の左クリックは、元アプリのヘイトメーター（全敵の集計）を開く。ほかの実体は従来の情報画面を開く。</summary>
     private void EntityListItem_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: EntityListEntry entry }
             && DataContext is WidgetListItemViewModel viewModel)
         {
             if (entry.EntityType == Zproto.EEntityType.EntMonster)
-                Services.ExtensionWidgetHost.Open(WidgetKind.HatePs, entry.EntityUuid);
+                Services.ExtensionWidgetHost.Open(WidgetKind.HateMeter);
             else
                 viewModel.RequestEntityInfoCommand.Execute(entry.Target);
         }
@@ -175,7 +175,7 @@ public partial class EntityListWidgetView : UserControl, IWidgetVerticalScrollCo
     private void OpenHateMeter_Click(object sender, RoutedEventArgs e)
     {
         if(sender is MenuItem { CommandParameter: EntityTargetInfo target } && target.EntityType==Zproto.EEntityType.EntMonster)
-            StarResonanceDps.App.Services.ExtensionWidgetHost.Open(WidgetKind.HatePs, target.EntityUuid);
+            StarResonanceDps.App.Services.ExtensionWidgetHost.Open(WidgetKind.HateMeter);
     }
 
     private void EntitySelectionContextMenu_Closed(object sender, RoutedEventArgs e)

@@ -457,9 +457,14 @@ public sealed class WidgetStateManager
     {
         document.Widgets ??= new Dictionary<string, WidgetConfig>(StringComparer.OrdinalIgnoreCase);
 
+        // Migrate the retired custom meter once. An existing native meter wins.
+        if (document.Widgets.Remove("HatePs", out var legacy) && legacy is not null
+            && !document.Widgets.ContainsKey("HateMeter"))
+            document.Widgets["HateMeter"] = legacy;
+
         foreach (WidgetKind kind in Enum.GetValues<WidgetKind>())
         {
-            if (kind == WidgetKind.Plugin)
+            if (kind is WidgetKind.Plugin or WidgetKind.HatePs)
             {
                 continue;
             }

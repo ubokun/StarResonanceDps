@@ -116,6 +116,7 @@ internal static class Program
   WidgetIntegrationChecks.Run(Check);
   RecordedBuildChecks.Run(Check);
   EntityDisplayChecks.Run(Check);
+  TargetDamageChecks.Run(Check);
   var window = new UserBuildWindow();
   var userList = (ListBox)window.FindName("Users"); userList.SelectedItem = userList.Items.Cast<object>().First(x => x.GetType().GetProperty("Label")!.GetValue(x)!.ToString()!.Contains("検証用ユーザー"));
   Check(((ListBox)window.FindName("Builds")).Items.Count > 0, "user to builds navigation");

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -67,14 +67,6 @@ internal static class NewFeatureChecks
         var corrupt=Path.Combine(Path.GetDirectoryName(path)!,"broken.json");File.WriteAllText(corrupt,"{");var broken=new EnemyCatalogStore(corrupt);broken.Save();check(broken.LastIssue is not null && File.ReadAllText(corrupt)=="{","corrupt enemy catalog is preserved");
         EnemyControlRecorder.RecordState(encounter,enemy,utc.AddSeconds(6),0,23456,true,false,false,false);
         check(encounter.ExData.EnemyControlEvents.Any(x=>x.Kind==EnemyControlKind.SkillStarted),"enemy skill attribute start is recorded without inferring damage");
-        var meter=new HateMeterWindow(); typeof(HateMeterWindow).GetMethod("SetSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(meter,[snapshot]);
-        check(((ListBox)meter.FindName("Players")).Items.Count==2 && ((ListBox)meter.FindName("Skills")).Items.Count>0,"hate meter selects a player and shows skill proportions");
-        var enemyCombo=(ComboBox)meter.FindName("Enemy");
-        typeof(HateMeterWindow).GetField("_targetUuid",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.SetValue(meter,enemy);
-        typeof(HateMeterWindow).GetMethod("SetSnapshot",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!.Invoke(meter,[snapshot]);
-        check((enemyCombo.SelectedItem as TimelineActor)?.Uuid==enemy,"changing enemy target refreshes combo selection even when enemy choices are unchanged");
-        ((ListBox)meter.FindName("Players")).SelectedIndex=1;
-        Render(meter,"hate-meter-preview.png");meter.Close();
         EnemyCatalogStore.Current.Observe(encounter,enemy,utc);var catalog=new EnemyCatalogWindow();Render(catalog,"enemy-catalog-preview.png");catalog.Close();
         monster.SetHpValuesNoUpdate(0,1000);DefeatedEnemyRecorder.Observe(encounter,monster,utc.AddSeconds(8));DefeatedEnemyRecorder.Observe(encounter,monster,utc.AddSeconds(9));
         encounter.Entities.Remove(enemy,out _);
@@ -91,7 +83,7 @@ internal static class NewFeatureChecks
         var clickedRow=listVm.EntityListEntries.Last();
         typeof(StarResonanceDps.App.Views.Widgets.EntityListWidgetView).GetMethod("EntityListItem_Click",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!
             .Invoke(clickView,[new Button {DataContext=clickedRow},new RoutedEventArgs()]);
-        check(clickedKind==StarResonanceDps.App.Models.Widgets.WidgetKind.HatePs && clickedEnemy==enemy,"mob row left click opens the selected enemy hate PS widget");
+        check(clickedKind==StarResonanceDps.App.Models.Widgets.WidgetKind.HateMeter && clickedEnemy==0,"mob row left click opens the native global hate meter without pretending to filter an enemy");
         ExtensionWidgetHost.OpenRequested=previousOpen;
 
         check(listVm.EntityListEntries.Last().EntityUuid==enemy && listVm.EntityListEntries.Any(x=>x.IsFirstDefeated),"entity list places defeated history below alive enemies");
@@ -105,10 +97,6 @@ internal static class NewFeatureChecks
         check(revivedEncounter.ExData.DefeatedEnemies.Count==0,"revived enemy is removed from defeated section");
         listVm.UpdateEntityHistory(EntityHistorySnapshot.Empty);
         check(!listVm.EntityListEntries.Any(x=>x.IsFirstDefeated),"switching encounter clears previous defeated section");
-        var targetMeter=new HateMeterWindow(enemy);typeof(HateMeterWindow).GetMethod("SetSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(targetMeter,[HateMeterReader.Build(encounter,enemy)]);
-        check(((TimelineActor)((ComboBox)targetMeter.FindName("Enemy")).SelectedItem).Uuid==enemy,"entity context opens hate meter for selected defeated enemy");targetMeter.Close();
-        var missingMeter=new HateMeterWindow(999999);typeof(HateMeterWindow).GetMethod("SetSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(missingMeter,[HateMeterReader.Build(encounter,999999)]);
-        check(((TimelineActor)((ComboBox)missingMeter.FindName("Enemy")).SelectedItem).Uuid==999999 && ((ListBox)missingMeter.FindName("Players")).Items.Count==0,"missing target never silently switches hate meter to all enemies");missingMeter.Close();
         var savedId=DB.InsertEncounter(encounter);
         var restoredEncounter=DB.LoadEncounter(savedId)!;
         check(restoredEncounter.ExData.DefeatedEnemies.Count==1 && restoredEncounter.ExData.HateObservations.Count>0,"defeated history and hate deltas survive database round trip");

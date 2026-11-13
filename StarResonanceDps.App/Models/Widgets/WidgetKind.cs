@@ -55,6 +55,7 @@ public enum WidgetKind
     Plugin = 29,
     UserBuildLibrary = 30,
     CombatExtensionTimeline = 31,
+    // Retired custom meter: reserve 32 for saved-state compatibility; never register it.
     HatePs = 32,
     PartyDps = 33,
     EnemyCatalog = 34,

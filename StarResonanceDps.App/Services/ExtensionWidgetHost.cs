@@ -34,7 +34,6 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
             WidgetKind.UserBuildLibrary => new UserBuildWindow(),
             WidgetKind.EnemyCatalog => new EnemyCatalogWindow(),
             WidgetKind.CombatExtensionTimeline => new CombatTimelineWindow(),
-            WidgetKind.HatePs => new HateMeterWindow(Targets.GetValueOrDefault(kind)),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)) };
         var frame=(ContentControl)_controller.Content;
         var grid=(Grid)frame.Content;
@@ -56,7 +55,6 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
             {
                 case UserBuildWindow builds: builds.StartWidget(); break;
                 case CombatTimelineWindow timeline: timeline.StartWidget(); break;
-                case HateMeterWindow hate: hate.StartWidget(); break;
                 case PartyDpsWindow graph: graph.StartWidget(); break;
             }
             ApplyTarget(kind);
@@ -71,7 +69,6 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
         {
             case UserBuildWindow builds: builds.StopWidget(); break;
             case CombatTimelineWindow timeline: timeline.StopWidget(); break;
-            case HateMeterWindow hate: hate.StopWidget(); break;
             case PartyDpsWindow graph: graph.StopWidget(); break;
         }
         _controller.Close();
@@ -81,6 +78,5 @@ public sealed class ExtensionWidgetHost : ContentControl, StarResonanceDps.App.V
         if(!Active.TryGetValue(kind,out var host))return;
         var target=Targets.GetValueOrDefault(kind);
         if(host._controller is UserBuildWindow builds && target>0) _=builds.PreviewPlayerAsync(target);
-        if(host._controller is HateMeterWindow hate) hate.SelectEnemy(target);
     }
 }

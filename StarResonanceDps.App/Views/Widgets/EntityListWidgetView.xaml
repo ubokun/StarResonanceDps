@@ -210,7 +210,7 @@
                                     <MenuItem Header="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Widget_DebuffList]}"
                                               Command="{Binding RequestEntityDebuffListCommand}"
                                               CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
-                                    <MenuItem Header="ヘイトPSを開く" Tag="HateMeter" Click="OpenHateMeter_Click"
+                                    <MenuItem Header="ヘイトメーターを開く" ToolTip="全敵のヘイト集計を開く" Tag="HateMeter" Click="OpenHateMeter_Click"
                                               CommandParameter="{Binding Tag, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
                                 </ContextMenu>
                             </Button.ContextMenu>
@@ -268,6 +268,7 @@
                                     <ColumnDefinition Width="128" />
                                     <ColumnDefinition Width="70" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="180" />
                                 </Grid.ColumnDefinitions>
 
                                 <Grid Grid.Column="0">
@@ -732,6 +733,22 @@
                                                       Style="{StaticResource EntityList.HateSlotPresenter}"
                                                       ContentTemplate="{StaticResource EntityList.HateSlotTemplate}" />
                                 </StackPanel>
+
+                                <Grid Grid.Column="4" Width="168" Margin="4,0,0,0" VerticalAlignment="Center" ToolTip="この敵へのDPS上位5人。集計全体と同じ時間で計算します。">
+                                    <TextBlock Text="DPS未記録" FontSize="8" VerticalAlignment="Center">
+                                        <TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Text.WidgetWindow}"><Style.Triggers><DataTrigger Binding="{Binding HasDamageRows}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                    </TextBlock>
+                                    <ItemsControl ItemsSource="{Binding DamageRows}">
+                                        <ItemsControl.ItemTemplate><DataTemplate>
+                                            <Grid Height="8" ToolTip="{Binding Detail}">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="95"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <ProgressBar Grid.ColumnSpan="2" Minimum="0" Maximum="1" Value="{Binding Ratio}" Foreground="{DynamicResource Brush.TextPrimary}" Background="Transparent" BorderThickness="0" Height="5" VerticalAlignment="Center" Opacity="0.28" IsHitTestVisible="False"/>
+                                                <TextBlock Style="{StaticResource Text.WidgetWindow}" Text="{Binding Name}" FontSize="7" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="1" Style="{StaticResource Text.WidgetWindow}" Text="{Binding Dps}" FontSize="7" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
 
                                 <!--
                                     倒すと入る得点。アイコンの中央に重ねる(イマジンの回数と同じ置き方)。

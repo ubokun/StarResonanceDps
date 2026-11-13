@@ -893,7 +893,7 @@ public partial class WidgetListItemViewModel : ViewModelBase, IWidgetDataStatusS
     public void RefreshLocalizedText()
     {
         DisplayName = PluginWidget is null
-            ? (Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.HatePs or WidgetKind.PartyDps or WidgetKind.EnemyCatalog ? DisplayNameResourceKey : LocalizationManager.Instance.GetString(DisplayNameResourceKey))
+            ? (Kind is WidgetKind.UserBuildLibrary or WidgetKind.CombatExtensionTimeline or WidgetKind.PartyDps or WidgetKind.EnemyCatalog ? DisplayNameResourceKey : LocalizationManager.Instance.GetString(DisplayNameResourceKey))
             : PluginWidget.GetDisplayName(LocalizationManager.Instance.CurrentCulture);
         RenderMapName();
         OnPropertyChanged(nameof(StateText));

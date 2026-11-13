@@ -45,7 +45,8 @@ public sealed record NearbyEntityEntry(
     long TargetCharacterId,
     NearbyEntityHateRanking HateRanking,
     NearbyEntityCast? Cast,
-    IReadOnlyList<long>? TargetingCharacterIds = null);
+    IReadOnlyList<long>? TargetingCharacterIds = null,
+    IReadOnlyList<TargetDamageRank>? DamageRanking = null);
 
 /// <summary>
 /// 詠唱1回。技の開始(<c>AttrSkillId</c> に値が入った周りの差分)の到着時刻と、技の表の詠唱バーの全体秒数。

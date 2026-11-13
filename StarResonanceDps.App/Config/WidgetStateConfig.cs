@@ -14,6 +14,7 @@ public sealed class WidgetStateDocument
 
 public sealed class WidgetConfig
 {
+    public bool EntityDamageWidthApplied { get; set; }
     public bool PlayerListInfoActionsWidthApplied { get; set; }
     public bool TimelineIntegratedLayoutApplied { get; set; }
     public bool IsFavorite { get; set; }
@@ -79,6 +80,7 @@ public sealed class WidgetConfig
     {
         return new WidgetConfig
         {
+            EntityDamageWidthApplied = EntityDamageWidthApplied,
             PlayerListInfoActionsWidthApplied = PlayerListInfoActionsWidthApplied,
             TimelineIntegratedLayoutApplied = TimelineIntegratedLayoutApplied,
             IsFavorite = IsFavorite,
@@ -3347,6 +3349,8 @@ public static class WidgetConfigDefaults
     public static void Normalize(WidgetKind kind, WidgetConfig config)
     {
         Normalize(config);
+        if(kind==WidgetKind.EntityList && !config.EntityDamageWidthApplied)
+        {config.Window.Width=(config.Window.Width ?? 457d)+180d;config.EntityDamageWidthApplied=true;}
         // Preserve the user's former skill area, and migrate a saved width only once.
         if (kind == WidgetKind.PlayerList && !config.PlayerListInfoActionsWidthApplied)
         {

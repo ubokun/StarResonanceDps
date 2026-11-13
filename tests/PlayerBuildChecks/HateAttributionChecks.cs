@@ -85,8 +85,10 @@ internal static class HateAttributionChecks
         Damage(default);Damage(EDamageType.Immune);Damage(default,true);
         hooks.AddHealing(player,ally,otherKey,1,50,100,0,0,default,EDamageType.Heal,default,false,false,false,false,false,new ExtraPacketData(t.AddMilliseconds(120)),false,123456);
         hooks.AddHealing(player,ally,otherKey,1,0,100,0,0,default,EDamageType.Heal,default,false,false,false,false,false,new ExtraPacketData(t.AddMilliseconds(140)));
-        check(hooks.ExData.HateCauses.Count==2 && hooks.ExData.HateCauses[0].Kind==HateCauseKind.EffectDamage && hooks.ExData.HateCauses[1].Value==50,
-            "aggregation hooks record accepted hits and actual healing but exclude misses immunity and pure overheal");
+        check(hooks.ExData.HateCauses.Count==0,
+            "retired custom collectors no longer record hits or healing in live aggregation");
+
+        check(hooks.ExData.TargetDamages.Count==1 && hooks.ExData.TargetDamages[0].Damage==100,"live target damage records accepted damage and excludes misses immunity and healing");
 
         HateObservation withCloneEnd(DateTime end)=>new() {PlayerUuid=player,EnemyUuid=enemy,FromUtc=t,Timestamp=end,Change=150};
     }

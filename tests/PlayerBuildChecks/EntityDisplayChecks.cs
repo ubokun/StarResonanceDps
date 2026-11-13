@@ -43,11 +43,12 @@ internal static class EntityDisplayChecks
         names.SetRoster(Enumerable.Range(991,5).Select(id=>new PlayerRosterEntry(id,$"プレイヤー{id-990}",1)).ToArray());
         names.Prepare(EntityRowSettings.FromEntityList(settings),PlayerNameDisplayMode.Show);
         var rendered=nearby with { TargetingCharacterIds=new long[]{991,992,993,994,995},
+            DamageRanking=Enumerable.Range(991,5).Select((id,index)=>new TargetDamageRank(id,(ulong)(500-index*50))).ToArray(),
             HateRanking=NearbyEntityHateRanking.Create(Enumerable.Range(991,5).Select((id,index)=>new NearbyEntityHateRank(id,5-index))) };
         row.Update(rendered,EntityRowSettings.FromEntityList(settings),names,false);
         check(row.TargetingPlayerNames.Contains("+2人") && row.AllTargetingPlayerNames.Contains("プレイヤー5"),"crowded targeting names fit row while preserving full tooltip list");
         var view=new StarResonanceDps.App.Views.Widgets.EntityListWidgetView { DataContext=new {EntityListEntries=new[]{row}} };
-        view.Measure(new System.Windows.Size(457,100)); view.Arrange(new System.Windows.Rect(0,0,457,100)); view.UpdateLayout();
+        view.Measure(new System.Windows.Size(637,100)); view.Arrange(new System.Windows.Rect(0,0,637,100)); view.UpdateLayout();
         IEnumerable<System.Windows.DependencyObject> Descendants(System.Windows.DependencyObject parent)
         {
             for(var i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);i++)
@@ -57,7 +58,9 @@ internal static class EntityDisplayChecks
         var firstHate=Descendants(view).OfType<System.Windows.Controls.ContentPresenter>().First(x=>x.Content is EntityHateSlot);
         var button=Descendants(view).OfType<System.Windows.Controls.Button>().First(x=>x.DataContext==row);
         check(button.ActualHeight==44 && label.TranslatePoint(new(),view).X+label.ActualWidth<=firstHate.TranslatePoint(new(),view).X,"targeting names appear left of hate list within original row height");
-        var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(457,100,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(view);
+        var inlineDps=Descendants(view).OfType<System.Windows.Controls.ItemsControl>().Single(x=>ReferenceEquals(x.ItemsSource,row.DamageRows));
+        check(row.DamageRows.Count==5 && inlineDps.TranslatePoint(new(),view).X>=firstHate.TranslatePoint(new(),view).X+firstHate.ActualWidth && inlineDps.TranslatePoint(new(),view).X+inlineDps.ActualWidth<=view.ActualWidth && button.ActualHeight==44,"top five DPS rows fit to the right of the unchanged hate gauges in a 44px entity row");
+        var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(637,100,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(view);
         var png=new System.Windows.Media.Imaging.PngBitmapEncoder();png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
         using(var file=System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"entity-percent-targets-preview.png")))png.Save(file);
         var oldEncounter=EncounterManager.Current;

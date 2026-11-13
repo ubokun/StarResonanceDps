@@ -1871,9 +1871,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (damage > 0 && damageType != EDamageType.Immune)
             {
                 attacker.DamageStats.AddPerSecondValue(combatOffset, extraPacketData.ArrivalTime, damage);
-                if (!isMiss) HateCauseRecorder.Record(this, new() { PlayerUuid = attackerUuid, TargetUuid = targetUuid,
-                    Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
-                    Kind = isEffectDamage ? HateCauseKind.EffectDamage : HateCauseKind.Hit, Value = damage, OriginSkillId = originSkillId });
+                if (!isMiss) TargetDamageTotals.Record(this,targetUuid,attackerUuid,damage);
             }
         }
 
@@ -1935,9 +1933,6 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (damage > 0)
             {
                 entity.HealingStats.AddPerSecondValue(combatOffset, extraPacketData.ArrivalTime, damage);
-                if (!isMiss) HateCauseRecorder.Record(this, new() { PlayerUuid = attackerUuid, TargetUuid = targetUuid,
-                    Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
-                    Kind = HateCauseKind.Healing, Value = damage, OriginSkillId = originSkillId });
             }
         }
 
@@ -3234,6 +3229,7 @@ namespace StarResonanceDps.Core.CombatRuntime
     [ProtoContract]
     public class EncounterExData
     {
+        [ProtoMember(31)] public List<TargetDamageTotal> TargetDamages { get; set; } = [];
         [ProtoMember(20)] public DateTime? QuestStartUtc { get; set; }
         [ProtoMember(21)] public bool UseQuestClock { get; set; }
         [ProtoMember(22)] public int IdleResetSeconds { get; set; }

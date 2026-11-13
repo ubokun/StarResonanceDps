@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -19,7 +19,7 @@ internal static class WidgetIntegrationChecks
         check(kinds.Distinct().Count()==kinds.Length,"upstream and custom widget kinds have no numeric aliases");
         var legacyKinds=System.Text.Json.JsonSerializer.Deserialize<WidgetKind[]>("[30,31,32,33,34]")!;
         check(legacyKinds.SequenceEqual(new[]{WidgetKind.UserBuildLibrary,WidgetKind.CombatExtensionTimeline,WidgetKind.HatePs,WidgetKind.PartyDps,WidgetKind.EnemyCatalog}),"previous custom widget identifiers keep their meaning after upstream meter integration");
-        foreach (var kind in new[] { WidgetKind.UserBuildLibrary, WidgetKind.CombatExtensionTimeline, WidgetKind.HatePs, WidgetKind.PartyDps, WidgetKind.EnemyCatalog })
+        foreach (var kind in new[] { WidgetKind.UserBuildLibrary, WidgetKind.CombatExtensionTimeline, WidgetKind.PartyDps, WidgetKind.EnemyCatalog })
         {
             var vm = new WidgetListItemViewModel { Kind = kind, DisplayNameResourceKey = kind.ToString() };
             vm.RefreshLocalizedText();
@@ -33,18 +33,11 @@ internal static class WidgetIntegrationChecks
             {
                 WidgetKind.UserBuildLibrary => controller.FindName("Users") as FrameworkElement,
                 WidgetKind.CombatExtensionTimeline => controller.FindName("Actors") as FrameworkElement,
-                WidgetKind.HatePs => controller.FindName("Players") as FrameworkElement,
                 WidgetKind.EnemyCatalog => controller.FindName("Enemies") as FrameworkElement,
                 _ => controller.GetType().GetField("_plot",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(controller) as FrameworkElement
             };
             check(actualControl is not null && body.IsAncestorOf(actualControl) && actualControl.IsVisible && actualControl.ActualHeight>50,
                 $"{kind} displays the actual interactive body instead of extracting AppHeader");
-            if(kind==WidgetKind.HatePs)
-            {
-                var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)window.ActualWidth,(int)window.ActualHeight,96,96,System.Windows.Media.PixelFormats.Pbgra32);
-                bitmap.Render(window); var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
-                using var file=System.IO.File.Create(System.IO.Path.Combine(AppContext.BaseDirectory,"hate-widget-integrated-preview.png")); encoder.Save(file);
-            }
             check(window.Top >= SystemParameters.WorkArea.Top && window.Top + window.Height <= SystemParameters.WorkArea.Bottom + 1,
                 $"{kind} first launch stays inside monitor working area");
             check(body.Resources["Brush.TextPrimary"] is System.Windows.Media.SolidColorBrush,
@@ -53,6 +46,18 @@ internal static class WidgetIntegrationChecks
             var timer = controller.GetType().GetField("_timer", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(controller) as DispatcherTimer;
             check(timer is null || !timer.IsEnabled, $"{kind} stops updates when widget closes");
         }
+        var legacyConfig=new WidgetConfig{IsPinned=true,IsFavorite=true,IsClickThrough=true,State=WidgetState.Running,Window=new(){Width=800,Height=600,X=25,Y=40}};
+        var migratedHateSettings=new WidgetStateDocument();migratedHateSettings.Widgets["HatePs"]=legacyConfig;
+        var normalize=typeof(WidgetStateManager).GetMethod("Normalize",BindingFlags.Static|BindingFlags.NonPublic)!;
+        normalize.Invoke(null,[migratedHateSettings]);
+        var native=migratedHateSettings.Widgets["HateMeter"];
+        check(!migratedHateSettings.Widgets.ContainsKey("HatePs") && native.IsPinned && native.IsFavorite && native.IsClickThrough && native.State==WidgetState.Running && native.Window.X==25 && native.Window.Width==800,"retired hate PS settings migrate to native meter with window and flags intact");
+        var existingNative=new WidgetConfig{Window=new(){Width=500},IsPinned=false};
+        migratedHateSettings.Widgets["HateMeter"]=existingNative;migratedHateSettings.Widgets["HatePs"]=legacyConfig;normalize.Invoke(null,[migratedHateSettings]);normalize.Invoke(null,[migratedHateSettings]);
+        check(!migratedHateSettings.Widgets.ContainsKey("HatePs") && ReferenceEquals(migratedHateSettings.Widgets["HateMeter"],existingNative) && existingNative.Window.Width==500,"native hate meter settings win and migration remains idempotent");
+        var composition=typeof(WidgetWindowManager).GetMethod("CreateWidgetWindowComposition",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(WidgetWindowManager.Instance,[new WidgetListItemViewModel{Kind=WidgetKind.HateMeter}])!;
+        var nativeContent=composition.GetType().GetProperty("Content")!.GetValue(composition);
+        check(nativeContent is MeterWidgetView,"replacement uses the upstream meter view rather than an extension host");
         var oldTimelineConfig = new WidgetConfig { Window=new() { Width=440,Height=460 } };
         WidgetConfigDefaults.Normalize(WidgetKind.Timeline,oldTimelineConfig);
         check(oldTimelineConfig.Window.Width==1100 && oldTimelineConfig.Window.Height==720,"integrated timeline provides room for tracks and original log together");
@@ -84,7 +89,7 @@ internal static class WidgetIntegrationChecks
         check(migrated.Window.Width == 690, "saved player list width is not enlarged repeatedly after clone or normalization");
         var entityWidth = new WidgetConfig { Window = new() { Width = 457 } };
         WidgetConfigDefaults.Normalize(WidgetKind.EntityList, entityWidth);
-        check(entityWidth.Window.Width == 457, "entity list width remains unchanged");
+        check(entityWidth.Window.Width == 637, "entity list reserves width for inline target DPS without shrinking hate gauges");
         var playerWidget = new WidgetListItemViewModel { Kind = WidgetKind.PlayerList };
         var row = PlayerListEntry.Create(new(91234, "検証プレイヤー", 1), new(), StarResonanceDps.Core.Models.PlayerNameDisplayMode.Show, id => new PlayerSkillDisplayState(id));
         var playerRows = (System.Collections.ObjectModel.ObservableCollection<PlayerListEntry>)typeof(WidgetListItemViewModel).GetField("_playerListEntries", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(playerWidget)!;

@@ -69,6 +69,8 @@ public static class EntityHistoryProjection
             alive=alive.Select(x=>x with {TargetingCharacterIds=targets[x.EntityUuid].Distinct().Order().ToArray()}).ToArray();
             dead=dead.Select(x=>x with {TargetingCharacterIds=targets[x.EntityUuid].Distinct().Order().ToArray()}).ToList();
         }
+        alive=alive.Select(x=>x with {DamageRanking=TargetDamageTotals.Read(encounter,x.EntityUuid)}).ToArray();
+        dead=dead.Select(x=>x with {DamageRanking=TargetDamageTotals.Read(encounter,x.EntityUuid)}).ToList();
         return new(encounter.EncounterId,historical,encounter.SceneName??"",alive,dead);
     }
     public static void Publish()
