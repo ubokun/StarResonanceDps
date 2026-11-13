@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using BinaryItem = StarResonanceDps.Core.Protocols.Game.Binary.Item;
 using BinaryItemPackage = StarResonanceDps.Core.Protocols.Game.Binary.ItemPackage;
 using BinaryMod = StarResonanceDps.Core.Protocols.Game.Binary.Mod;

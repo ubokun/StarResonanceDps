@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 from pathlib import Path
 
 from PIL import Image

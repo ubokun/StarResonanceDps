@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 
 /// <summary>1つの型の心相晶の育成データ(<c>CultivateAreaData</c>)の差分。届いた項目だけが値を持つ。</summary>

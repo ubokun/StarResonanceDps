@@ -6,12 +6,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- 公開の型とメンバーの説明(英語)を XML にしてパッケージに入れる。説明の無い公開の宣言はビルドの警告になる。 -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Copyright>Copyright © 2026 kokoukohiro</Copyright>
+  </PropertyGroup>
+
+  <!-- Releaseのpdbは、DLLの中に入れる(例外の行番号を残し、アプリの配布物とパッケージにpdbを並べない)。 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <!-- パッケージの版は、大きな番号が PluginSdkVersion.Current、足すだけの変更は中の番号。 -->
   <PropertyGroup>
     <PackageId>StarResonanceDps.PluginSdk</PackageId>
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <Authors>kokoukohiro</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>SDK for StarResonanceDps plugins: the plugin interfaces and attributes, and an analyzer that checks the plugin attributes and definitions at build time.</Description>

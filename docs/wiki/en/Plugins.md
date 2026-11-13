@@ -11,7 +11,7 @@ This tab lets you add and remove plugins that add features to the app.
 
 | Label | State |
 |---|---|
-| Error | The plugin is not running. Hover over the label to see the reason. |
+| Error | The plugin is not running. The reason is shown in the "Plugin Error" window when the error occurs. |
 | Deleted on restart | The plugin is waiting to be deleted. It is removed when you restart the app. |
 | Updated on restart | The plugin is waiting to be updated. It becomes the new version when you restart the app. |
 

@@ -1,5 +1,8 @@
-﻿using System.Windows.Media;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using StarResonanceDps.Core.CombatRuntime;
 
 namespace StarResonanceDps.App.Models.Widgets;
 
@@ -11,8 +14,11 @@ namespace StarResonanceDps.App.Models.Widgets;
 /// バーのアニメーションが更新のたびに 0 から始まってしまう。
 /// </para>
 /// </summary>
-public sealed partial class MetricSkillTableEntry(long skillId) : ObservableObject
+public sealed partial class MetricSkillTableEntry(MetricSkillTableRowKind kind, long skillId) : ObservableObject
 {
+    /// <summary>行の種類。<see cref="SkillId"/> と組で行の同一性になる(スキルの行でない行は番号が 0)。</summary>
+    public MetricSkillTableRowKind Kind { get; } = kind;
+
     /// <summary>行の同一性。畳んだ発生源の鍵(<c>ownerId:枝番</c>)で、並び替えても行を追える。</summary>
     public long SkillId { get; } = skillId;
 

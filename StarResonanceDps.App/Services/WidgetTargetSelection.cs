@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using StarResonanceDps.App.Config;
 using StarResonanceDps.App.Localization;
 using StarResonanceDps.App.Models.Widgets;
@@ -409,6 +411,10 @@ public sealed class WidgetTargetSelection
                 => MeterSnapshotProvider.HasPlayers(MeterSnapshotKind.Damage, GetPartyDisplayMode(WidgetKind.DpsMeter)),
             WidgetKind.HealingSkillDetail or WidgetKind.HealingSummary or WidgetKind.HpsGraph
                 => MeterSnapshotProvider.HasPlayers(MeterSnapshotKind.Healing, GetPartyDisplayMode(WidgetKind.HpsMeter)),
+            WidgetKind.HateSkillDetail or WidgetKind.HateGraph
+                => MeterSnapshotProvider.HasPlayers(MeterSnapshotKind.Hate, GetPartyDisplayMode(WidgetKind.HateMeter)),
+            WidgetKind.BreakSkillDetail or WidgetKind.BreakGraph
+                => MeterSnapshotProvider.HasPlayers(MeterSnapshotKind.Break, GetPartyDisplayMode(WidgetKind.BreakMeter)),
             WidgetKind.DamageTakenSummary => MeterSnapshotProvider.HasDamageTakenPlayers(),
             WidgetKind.Chat => true,
             _ => PlayerRosterPresentationStore.Instance.Current.Entries.Count > 0
@@ -427,6 +433,8 @@ public sealed class WidgetTargetSelection
                 => CreateMeterOptions(MeterSnapshotKind.Damage, WidgetKind.DpsMeter),
             WidgetKind.HealingSkillDetail or WidgetKind.HealingSummary or WidgetKind.HpsGraph
                 => CreateMeterOptions(MeterSnapshotKind.Healing, WidgetKind.HpsMeter),
+            WidgetKind.HateSkillDetail or WidgetKind.HateGraph => CreateMeterOptions(MeterSnapshotKind.Hate, WidgetKind.HateMeter),
+            WidgetKind.BreakSkillDetail or WidgetKind.BreakGraph => CreateMeterOptions(MeterSnapshotKind.Break, WidgetKind.BreakMeter),
             WidgetKind.DamageTakenSummary => CreateDamageTakenOptions(),
             WidgetKind.EntityInfo => CreateEntityOptions(),
             WidgetKind.Chat => CreateChatOptions(),

@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Globalization;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using StarResonanceDps.App.Localization;

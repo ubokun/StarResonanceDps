@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -49,7 +51,6 @@ public static class VoicevoxClient
     public const string DownloadPageUrl = "https://voicevox.hiroshiba.jp/";
 
     private const string DefaultBaseUrl = "http://127.0.0.1:50021";
-    private const string TalkStyleType = "talk";
 
     private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(5) };
 
@@ -64,8 +65,8 @@ public static class VoicevoxClient
     }
 
     /// <summary>
-    /// 読み上げに使える話者のスタイルの一覧(<c>GET /speakers</c>)。
-    /// 種類が talk のスタイルだけを返す(種類の無い古い版は talk とみなす)。並びはエンジンの順のまま。
+    /// 読み上げに使える話者のスタイルの一覧(<c>GET /speakers</c>)。並びはエンジンの順のまま。
+    /// <c>/speakers</c> はエンジンが喋れるスタイルだけに絞った一覧(歌えるスタイルは <c>/singers</c>)なので、スタイルの種類では絞らない。
     /// </summary>
     public static async Task<VoicevoxResult<IReadOnlyList<VoicevoxStyle>>> GetStylesAsync(CancellationToken cancellationToken = default)
     {
@@ -85,12 +86,6 @@ public static class VoicevoxClient
                 var speakerUuid = speaker.GetProperty("speaker_uuid").GetString() ?? string.Empty;
                 foreach (var style in speaker.GetProperty("styles").EnumerateArray())
                 {
-                    var type = style.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : TalkStyleType;
-                    if (type != TalkStyleType)
-                    {
-                        continue;
-                    }
-
                     styles.Add(new VoicevoxStyle(
                         speakerUuid,
                         speakerName,

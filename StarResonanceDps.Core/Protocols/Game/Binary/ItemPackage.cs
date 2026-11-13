@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 
 /// <summary>持ち物(<c>CharSerialize.itemPackage</c>)の差分。使うのは袋ごとの変化で、ほかの項目は読み進めるためだけに読む。</summary>

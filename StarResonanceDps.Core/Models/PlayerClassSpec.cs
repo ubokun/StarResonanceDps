@@ -1,4 +1,6 @@
-﻿namespace StarResonanceDps.Core.Models;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+namespace StarResonanceDps.Core.Models;
 
 public enum PlayerClassSpec
 {

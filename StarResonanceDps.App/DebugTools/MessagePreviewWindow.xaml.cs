@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -212,10 +214,28 @@ public partial class MessagePreviewWindow : Window
         PluginDeleteFailureMessage.Show(this, PluginManager.Instance.DiscoverPlugins()[0].Key);
     }
 
-    // 本物: 起動時のメイン窓(読めなかった・初期化できなかったプラグインがあるとき)。名前は今の一覧のプラグイン。
+    // 本物: 起動時のメイン窓と、メイン画面のプラグインの一覧の「＋」(読めなかった・初期化できなかった・削除や更新ができなかったプラグインがあるとき)。
+    // 窓に出る8つの理由を順に並べ、名前は今の一覧のプラグインを順に割り当てる。足りないファイルの名前は同梱のプラグインとサンプルのもの。
     private void PluginLoadFailed_Click(object sender, RoutedEventArgs e)
     {
-        PluginLoadFailureMessage.Show(this, PluginNames);
+        var names = PluginNames;
+        PluginErrorReason[] reasons =
+        [
+            PluginErrorReason.MissingFiles,
+            PluginErrorReason.Invalid,
+            PluginErrorReason.Stopped,
+            PluginErrorReason.InvalidNotifications,
+            PluginErrorReason.InvalidWidgets,
+            PluginErrorReason.TerminatedApp,
+            PluginErrorReason.DeletionFailed,
+            PluginErrorReason.UpdateFailed,
+        ];
+        PluginLoadFailureMessage.Show(this, reasons
+            .Select((reason, index) => new PluginLoadFailure(
+                names[index % names.Count],
+                reason,
+                reason == PluginErrorReason.MissingFiles ? [ModuleAssemblyName + ".dll", "SampleDependency.Library.dll"] : []))
+            .ToArray());
     }
 
     // 本物: プラグインの例外で、そのプラグインを止めたとき。名前は今の一覧の最初のプラグイン。

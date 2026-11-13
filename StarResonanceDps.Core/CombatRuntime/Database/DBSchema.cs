@@ -1,4 +1,6 @@
-﻿using Dapper;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using Dapper;
 using System.Data;
 
 namespace StarResonanceDps.Core.CombatRuntime

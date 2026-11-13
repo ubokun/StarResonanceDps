@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 チャットのリンクの発言の文のテンプレートと、ギルドの建物の名前のテーブルを生成する。
 

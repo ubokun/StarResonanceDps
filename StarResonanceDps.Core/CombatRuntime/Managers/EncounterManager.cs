@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime.Protocols;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime.Protocols;
 using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using Newtonsoft.Json;
 using ProtoBuf;
@@ -131,8 +133,11 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// </summary>
         public static bool IsBenchmarkActive { get; private set; }
 
-        /// <summary>計測が始まったか(計測の回に起点が立った)。立つ前は待機中。</summary>
-        public static bool HasBenchmarkBegun => IsBenchmarkActive && Current?.ExData.FirstDamageTimeStamp != null;
+        /// <summary>
+        /// 計測が始まったか(計測の回に起点が立った)。立つ前は待機中。
+        /// 印を立ててから計測の回を作るまでの間は、前の回(戦闘中なら起点がある)が残っているので、今の回が計測の回かも見る。
+        /// </summary>
+        public static bool HasBenchmarkBegun => IsBenchmarkActive && Current is { IsBenchmark: true, ExData.FirstDamageTimeStamp: not null };
 
         static EncounterManager()
         {
@@ -931,7 +936,7 @@ namespace StarResonanceDps.Core.CombatRuntime
         private sealed record UnresolvedBlankSource(
             string KeyText,
             bool IsBuffSource,
-            bool IsHealing,
+            MeterSnapshotKind Table,
             string Trace);
 
         public Encounter()
@@ -1690,10 +1695,10 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 技に着いたもの・着地先が食い違ったものは検出された問題の一覧(<c>BlankSourceNameProbe</c>)へすぐ送る。オプションに着いたものは送らない。
         /// 着かなかったものは送らずにこのエンカウンターに控え、後の記録で着けば控えを消す。後で着けば DB に空欄は残らないので、
         /// 残ったものだけを保存の直後に <see cref="ReportUnresolvedBlankSources"/> が送る。
-        /// 記録(<c>AddDamage</c> 等)と <see cref="MarkBuffSourcedSkill"/> の後に、プレイヤーの記録にだけ呼ぶこと。
+        /// 記録(<c>AddDamage</c>・<c>AddHate</c> 等)と <see cref="MarkBuffSourcedSkill"/> の後に、プレイヤーの記録にだけ呼ぶこと。
         ///
         /// <para>
-        /// 対象はスキル詳細ウィジェットに行が出る条件(その種別の累計が 0 より大きい)の行だけ。
+        /// 対象はスキル詳細ウィジェット(与ダメ・回復・ヘイト値・ブレイク値)に行が出る条件(<paramref name="table"/> の種別の累計が 0 より大きい)の行だけ。
         /// 名前の有無は表示と同じ <see cref="CombatDataCatalog.GetSourceNameBeforeLanding"/>(注記を付ける前の名前)で見る。
         /// 表示名は空欄でも内部ID注記が付いて空文字にならず、注記は表示設定で消えるので、表示名で見ると設定次第で結果が変わる。
         /// </para>
@@ -1702,10 +1707,11 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// 着地先は最初に着いた先で決め、上書きしない。
         /// </para>
         /// </summary>
+        /// <param name="table">記録した種別。行が出るかと、検知の本文の <c>table=</c> に使う。</param>
         public void ResolveSourceLanding(
             long entityUuid,
             long skillId,
-            bool isHealing,
+            MeterSnapshotKind table,
             EDamageSource damageSource,
             int ownerId,
             long attackerRawUuid,
@@ -1717,8 +1723,15 @@ namespace StarResonanceDps.Core.CombatRuntime
                 return;
             }
 
-            var stats = isHealing ? container.Healing : container.Damage;
-            if (stats.ValueTotal == 0UL
+            var total = table switch
+            {
+                MeterSnapshotKind.Damage => container.Damage.ValueTotal,
+                MeterSnapshotKind.Healing => container.Healing.ValueTotal,
+                MeterSnapshotKind.Hate => container.HateTotal,
+                MeterSnapshotKind.Break => container.BreakTotal,
+                _ => throw new ArgumentOutOfRangeException(nameof(table), table, "Unknown skill row table")
+            };
+            if (total == 0UL
                 || !string.IsNullOrEmpty(CombatDataCatalog.GetSourceNameBeforeLanding(skillId, container.IsBuffSource)))
             {
                 return;
@@ -1733,7 +1746,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 if (landing.Kind != SourceLandingKind.None && landing != container.Landing)
                 {
                     Diagnostics.BlankSourceNameProbe.CaptureConflict(
-                        skillId, keyText, isHealing, container.Landing, landing, SceneId, trace);
+                        skillId, keyText, table, container.Landing, landing, SceneId, trace);
                 }
 
                 return;
@@ -1745,7 +1758,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 {
                     _unresolvedBlankSources.TryAdd(
                         (entityUuid, skillId),
-                        new UnresolvedBlankSource(keyText, container.IsBuffSource, isHealing, trace));
+                        new UnresolvedBlankSource(keyText, container.IsBuffSource, table, trace));
                 }
 
                 return;
@@ -1764,7 +1777,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     skillId,
                     keyText,
                     container.IsBuffSource,
-                    isHealing,
+                    table,
                     landing,
                     SceneId,
                     trace);
@@ -1790,7 +1803,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     rowKey,
                     blank.KeyText,
                     blank.IsBuffSource,
-                    blank.IsHealing,
+                    blank.Table,
                     SourceLanding.None,
                     SceneId,
                     blank.Trace);
@@ -1926,6 +1939,111 @@ namespace StarResonanceDps.Core.CombatRuntime
                     Timestamp = extraPacketData.ArrivalTime, SourceKey = skillId, IsBuffSource = isBuffSource,
                     Kind = HateCauseKind.Healing, Value = damage, OriginSkillId = originSkillId });
             }
+        }
+
+        /// <summary>
+        /// 敵のヘイトの一覧で <paramref name="playerUuid"/> の値が増えた分を、その人のヘイトに足す(ヘイトメーター)。
+        /// 増えは <see cref="Services.EnemyContributionBaseline"/> が直前の一覧と比べて出す。数える条件は回復と同じ
+        /// (起点の後・記録する回・計測の回は窓の中の自分だけ)で、「最初に攻撃した敵のみ」なら決まった敵の一覧だけ。
+        /// </summary>
+        /// <param name="amount">増えのうち <paramref name="hit"/> に分けた分。</param>
+        /// <param name="hit">増えを分けた先(スキル詳細(ヘイト値)の行)。被弾か、挑発のバフを付けたもの。</param>
+        public void AddHate(long enemyUuid, long playerUuid, ulong amount, ContributionHit hit, DateTime arrivalUtc)
+        {
+            if (AddHateTotal(enemyUuid, playerUuid, amount, arrivalUtc) is not { } entity)
+            {
+                return;
+            }
+
+            var container = entity.GetOrCreateSkillMetrics(hit.SkillKey, hit.IsBuffSource);
+            container.HateTotal += amount;
+            container.HateHitCount++;
+            if (hit.IsCrit)
+            {
+                container.HateCritCount++;
+            }
+        }
+
+        /// <summary>
+        /// スキルの行に分けられないヘイトの増えを、その人の初期ヘイトかその他に足す(スキル詳細(ヘイト値)の行「初期ヘイト」「その他」)。
+        /// 数える条件は <see cref="AddHate"/> と同じ。
+        /// </summary>
+        /// <param name="isInitialHate">true なら初期ヘイト(その人が敵の一覧に入った増え)、false ならその他。</param>
+        public void AddUnattributedHate(long enemyUuid, long playerUuid, ulong amount, bool isInitialHate, DateTime arrivalUtc)
+        {
+            if (AddHateTotal(enemyUuid, playerUuid, amount, arrivalUtc) is not { } entity)
+            {
+                return;
+            }
+
+            if (isInitialHate)
+            {
+                entity.InitialHateTotal += amount;
+                entity.InitialHateCount++;
+            }
+            else
+            {
+                entity.OtherHateTotal += amount;
+                entity.OtherHateCount++;
+            }
+        }
+
+        /// <summary>数える条件を見て、その人のヘイトの合計と1秒ごとの値に足す。数えないなら null。</summary>
+        private Entity? AddHateTotal(long enemyUuid, long playerUuid, ulong amount, DateTime arrivalUtc)
+        {
+            if (amount == 0
+                || !IsAfterCombatClockStart(arrivalUtc)
+                || !IsRecorded(arrivalUtc, playerUuid)
+                || !IsBenchmarkFirstTargetFixedTo(enemyUuid))
+            {
+                return null;
+            }
+
+            // 一覧の人はプレイヤーの UUID だけ(EnemyContributionBaseline)。与ダメより先にヘイトだけが届いた人もメーターに出す。
+            SetEntityType(playerUuid, EEntityType.EntChar);
+            var entity = GetOrCreateEntity(playerUuid);
+            entity.TotalHate += amount;
+            (entity.HateStats ??= new CombatStats()).AddPerSecondValue(ToCombatOffset(arrivalUtc)!.Value, arrivalUtc, (long)amount);
+            return entity;
+        }
+
+        /// <summary>
+        /// 敵の強靭(ブレイクゲージ)のうち <paramref name="playerUuid"/> が被弾 <paramref name="hit"/> で削った分を、その人のブレイク値と
+        /// スキル詳細(ブレイク値)の行に足す(ブレイクメーター)。削った分は差分の実際の減りを被弾に分けたもの(<c>MessageManager</c>)。
+        /// 数える条件はヘイトと同じ。
+        /// </summary>
+        public void AddBreak(long enemyUuid, long playerUuid, ulong amount, ContributionHit hit, DateTime arrivalUtc)
+        {
+            if (amount == 0
+                || !IsAfterCombatClockStart(arrivalUtc)
+                || !IsRecorded(arrivalUtc, playerUuid)
+                || !IsBenchmarkFirstTargetFixedTo(enemyUuid))
+            {
+                return;
+            }
+
+            SetEntityType(playerUuid, EEntityType.EntChar);
+            var entity = GetOrCreateEntity(playerUuid);
+            entity.TotalBreak += amount;
+            (entity.BreakStats ??= new CombatStats()).AddPerSecondValue(ToCombatOffset(arrivalUtc)!.Value, arrivalUtc, (long)amount);
+            var container = entity.GetOrCreateSkillMetrics(hit.SkillKey, hit.IsBuffSource);
+            container.BreakTotal += amount;
+            container.BreakHitCount++;
+            if (hit.IsCrit)
+            {
+                container.BreakCritCount++;
+            }
+        }
+
+        /// <summary>
+        /// 「最初に攻撃した敵のみ」の門を、敵を決めずに見る。敵を決めるのは与ダメ(<see cref="IsBenchmarkFirstTarget"/>)だけで、
+        /// 決まる前の一覧の増えは数えない。
+        /// </summary>
+        private bool IsBenchmarkFirstTargetFixedTo(long enemyUuid)
+        {
+            return !IsBenchmark
+                || !BenchmarkFirstTargetOnly
+                || (_benchmarkFirstTargetUuid != 0 && enemyUuid == _benchmarkFirstTargetUuid);
         }
 
         /// <param name="ownerId">
@@ -3456,6 +3574,18 @@ namespace StarResonanceDps.Core.CombatRuntime
         public CombatStats TakenStats { get; set; } = new();
 
         /// <summary>
+        /// ヘイト(<see cref="TotalHate"/>)の1秒ごとの合計(TPS推移グラフ)。使うのは1秒ごとの値だけ。
+        /// 最初にヘイトを足したときに作る(ヘイトを持たない実体には作らない)。
+        /// </summary>
+        public CombatStats? HateStats { get; set; }
+
+        /// <summary>
+        /// ブレイク値(<see cref="TotalBreak"/>)の1秒ごとの合計(BPS推移グラフ)。使うのは1秒ごとの値だけ。
+        /// 最初にブレイク値を足したときに作る(ブレイク値を持たない実体には作らない)。
+        /// </summary>
+        public CombatStats? BreakStats { get; set; }
+
+        /// <summary>
         /// このエンティティが始めた詠唱。タイムラインの詠唱の行の材料で、
         /// <see cref="Encounter.AddSkillCast"/> がプレイヤー以外の詠唱バーを持つ技だけを積む。
         /// </summary>
@@ -3507,6 +3637,29 @@ namespace StarResonanceDps.Core.CombatRuntime
         /// <summary>中身が入るのは一部の実体だけ。既定の作り方は CPU の数だけロックを持つので、1つにする。</summary>
         public ConcurrentDictionary<long, MetricsContainer> SkillMetrics { get; set; } = new(concurrencyLevel: 1, capacity: 1);
 
+        /// <summary>
+        /// スキルの行の入れ物。無ければ作る(与ダメを記録しなかった被弾に、ヘイトやブレイク値を分けたとき)。
+        /// 名前は与ダメの行と同じく表から引き、バフのまま畳めなかった行には印を付ける。
+        /// </summary>
+        internal MetricsContainer GetOrCreateSkillMetrics(long skillId, bool isBuffSource)
+        {
+            if (!SkillMetrics.TryGetValue(skillId, out var container))
+            {
+                container = new MetricsContainer();
+                var registeredName = CombatDataCatalog.GetSourceName(skillId);
+                container.Damage.SetName(registeredName);
+                container.Healing.SetName(registeredName);
+                SkillMetrics.TryAdd(skillId, container);
+            }
+
+            if (isBuffSource)
+            {
+                container.IsBuffSource = true;
+            }
+
+            return container;
+        }
+
         public ulong TotalDamage { get; set; } = 0;
         public ulong TotalShieldBreak { get; set; } = 0;
         public ulong TotalHealing { get; set; } = 0;
@@ -3514,6 +3667,28 @@ namespace StarResonanceDps.Core.CombatRuntime
         public ulong TotalShield { get; set; } = 0;
         public ulong TotalCasts { get; set; } = 0;
         public ulong TotalDeaths { get; set; } = 0;
+
+        /// <summary>
+        /// 敵のヘイトの一覧(<c>AttrHateList</c>)でこの人の値が増えた分の合計。ゲームのヘイトの値そのもの(<see cref="Encounter.AddHate"/>)。
+        /// </summary>
+        public ulong TotalHate { get; set; } = 0;
+
+        /// <summary><see cref="TotalHate"/> のうち、この人が敵の一覧に入ったときの増え(初期ヘイト)の合計(<see cref="Encounter.AddUnattributedHate"/>)。</summary>
+        public ulong InitialHateTotal { get; set; } = 0;
+
+        /// <summary><see cref="InitialHateTotal"/> に足した回数。</summary>
+        public uint InitialHateCount { get; set; } = 0;
+
+        /// <summary><see cref="TotalHate"/> のうち、スキルの行にも初期ヘイトにも分けられなかった増え(その他)の合計(<see cref="Encounter.AddUnattributedHate"/>)。</summary>
+        public ulong OtherHateTotal { get; set; } = 0;
+
+        /// <summary><see cref="OtherHateTotal"/> に足した回数。</summary>
+        public uint OtherHateCount { get; set; } = 0;
+
+        /// <summary>
+        /// 敵の強靭(ブレイクゲージ)を削った量の合計(<see cref="Encounter.AddBreak"/>)。差分の実際の減りを、同じ差分の被弾に表の削り量の比で分けた値。
+        /// </summary>
+        public ulong TotalBreak { get; set; } = 0;
 
         /// <summary>行動と行動の間のうち、<see cref="InactiveGapSeconds"/> を超えた分の合計(秒)。有効DPS の分母から除く。</summary>
         public double TotalInactiveTime { get; set; } = 0.0;
@@ -3567,13 +3742,21 @@ namespace StarResonanceDps.Core.CombatRuntime
             ((Entity)cloned).DamageStats = (CombatStats)this.DamageStats.Clone();
             ((Entity)cloned).HealingStats = (CombatStats)this.HealingStats.Clone();
             ((Entity)cloned).TakenStats = (CombatStats)this.TakenStats.Clone();
+            ((Entity)cloned).HateStats = (CombatStats?)this.HateStats?.Clone();
+            ((Entity)cloned).BreakStats = (CombatStats?)this.BreakStats?.Clone();
 
             foreach (var container in this.SkillMetrics)
             {
                 var metrics = new MetricsContainer
                 {
                     Damage = (CombatStats)container.Value.Damage.Clone(),
-                    Healing = (CombatStats)container.Value.Healing.Clone()
+                    Healing = (CombatStats)container.Value.Healing.Clone(),
+                    HateTotal = container.Value.HateTotal,
+                    HateHitCount = container.Value.HateHitCount,
+                    HateCritCount = container.Value.HateCritCount,
+                    BreakTotal = container.Value.BreakTotal,
+                    BreakHitCount = container.Value.BreakHitCount,
+                    BreakCritCount = container.Value.BreakCritCount
                 };
                 ((Entity)cloned).SkillMetrics.AddOrUpdate(container.Key, metrics, (key, value) => metrics);
             }
@@ -4744,6 +4927,9 @@ namespace StarResonanceDps.Core.CombatRuntime
         Taken = 3
     }
 
+    /// <summary>ヘイトやブレイク値を分けた先の被弾(スキルの行の鍵は与ダメと同じ <c>SkillSourceResolver</c> の鍵)。</summary>
+    public readonly record struct ContributionHit(long SkillKey, bool IsBuffSource, bool IsCrit);
+
     public class MetricsContainer
     {
         /// <summary>スキル単位の与ダメージ統計。</summary>
@@ -4768,6 +4954,24 @@ namespace StarResonanceDps.Core.CombatRuntime
 
         /// <summary>着地先のID。<see cref="LandingKind"/> がオプションならバフID、技なら技ID。</summary>
         public int LandingId { get; set; }
+
+        /// <summary>このスキルの被弾に分けたヘイトの合計(<see cref="Encounter.AddHate"/>、スキル詳細(ヘイト値))。</summary>
+        public ulong HateTotal { get; set; }
+
+        /// <summary><see cref="HateTotal"/> を受け取った被弾の数。</summary>
+        public uint HateHitCount { get; set; }
+
+        /// <summary><see cref="HateHitCount"/> のうち会心の被弾の数。</summary>
+        public uint HateCritCount { get; set; }
+
+        /// <summary>このスキルの被弾に分けたブレイク値の合計(<see cref="Encounter.AddBreak"/>、スキル詳細(ブレイク値))。</summary>
+        public ulong BreakTotal { get; set; }
+
+        /// <summary><see cref="BreakTotal"/> を受け取った被弾の数。</summary>
+        public uint BreakHitCount { get; set; }
+
+        /// <summary><see cref="BreakHitCount"/> のうち会心の被弾の数。</summary>
+        public uint BreakCritCount { get; set; }
 
         [Newtonsoft.Json.JsonIgnore]
         public SourceLanding Landing => new(LandingKind, LandingId);

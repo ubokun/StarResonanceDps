@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.App.Models.Widgets;
 
 /// <summary>ウィジェットの状態の印の色。値の大小が悪さの順。</summary>

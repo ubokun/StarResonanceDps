@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 手動編集ファイル(`Data/Overrides`)のうち、元のテーブルや生成物と同じ値になっていて要らない項目を表示する。書き込みはしない。
 

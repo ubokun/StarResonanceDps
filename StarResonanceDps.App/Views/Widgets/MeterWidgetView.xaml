@@ -1,4 +1,5 @@
-﻿<UserControl x:Class="StarResonanceDps.App.Views.Widgets.MeterWidgetView"
+﻿<!-- This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms. -->
+<UserControl x:Class="StarResonanceDps.App.Views.Widgets.MeterWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:StarResonanceDps.App.Behaviors"
@@ -243,7 +244,8 @@
                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
                                     <MenuItem Header="{Binding SummaryMenuText}"
                                               Command="{Binding RequestSummaryCommand}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              Visibility="{Binding HasSummary, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                     <MenuItem Header="{Binding GraphMenuText}"
                                               Command="{Binding RequestGraphCommand}"
                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />

@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 
 /// <summary>装備の特化ごとの行(型2 の属性庫)。区分ごとの「行ID → r」の map の差分。</summary>

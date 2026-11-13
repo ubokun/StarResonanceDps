@@ -7,6 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StarResonanceDps.PluginSdk" Version="0.1.0" />
+    <PackageReference Include="StarResonanceDps.PluginSdk" Version="1.0.0" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 
 /// <summary>モジュールの効果(<c>Item.modNewAttr</c>)の差分。使うのは効果の番号の並びで、ほかの項目は読み進めるためだけに読む。</summary>

@@ -8,6 +8,15 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>..\StarResonanceDps.App\Assets\Images\ApplicationIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Copyright>Copyright © 2026 kokoukohiro</Copyright>
+  </PropertyGroup>
+
+  <!-- 配布物の公開(-rを付ける)は単一ファイル。Releaseのpdbは、exeの中に入れる。 -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishSingleFile>true</PublishSingleFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
 </Project>

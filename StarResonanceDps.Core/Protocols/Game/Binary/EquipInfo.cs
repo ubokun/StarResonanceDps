@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 
 /// <summary>装備スロット1つ。更新では変わった項目だけが届く。使うのは着けている装備の uuid(外すと 0)。</summary>

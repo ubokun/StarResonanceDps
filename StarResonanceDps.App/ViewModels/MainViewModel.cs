@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
@@ -115,6 +117,8 @@ public sealed partial class MainViewModel : ViewModelBase
         AddWidget(WidgetKind.Timeline, "Widget_Timeline");
         AddWidget(WidgetKind.DpsMeter, "Widget_DpsMeter");
         AddWidget(WidgetKind.HpsMeter, "Widget_HpsMeter");
+        AddWidget(WidgetKind.HateMeter, "Widget_HateMeter");
+        AddWidget(WidgetKind.BreakMeter, "Widget_BreakMeter");
         AddWidget(WidgetKind.DamageTakenLog, "Widget_DamageTakenLog");
         AddWidget(WidgetKind.DamageSkillDetail, "Widget_DamageSkillDetail");
         AddWidget(WidgetKind.DamageSummary, "Widget_DamageSummary");
@@ -122,6 +126,10 @@ public sealed partial class MainViewModel : ViewModelBase
         AddWidget(WidgetKind.HealingSkillDetail, "Widget_HealingSkillDetail");
         AddWidget(WidgetKind.HealingSummary, "Widget_HealingSummary");
         AddWidget(WidgetKind.HpsGraph, "Widget_HpsGraph");
+        AddWidget(WidgetKind.HateSkillDetail, "Widget_HateSkillDetail");
+        AddWidget(WidgetKind.HateGraph, "Widget_HateGraph");
+        AddWidget(WidgetKind.BreakSkillDetail, "Widget_BreakSkillDetail");
+        AddWidget(WidgetKind.BreakGraph, "Widget_BreakGraph");
         AddWidget(WidgetKind.DamageTakenSummary, "Widget_DamageTakenSummary");
         AddWidget(WidgetKind.Chat, "Widget_Chat");
         AddWidget(WidgetKind.HatePs, "ヘイトPSメーター");

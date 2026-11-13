@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Collections;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Globalization;

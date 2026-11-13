@@ -1,4 +1,6 @@
-﻿using System.Windows.Media;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StarResonanceDps.App.Localization;
@@ -9,8 +11,6 @@ namespace StarResonanceDps.App.ViewModels;
 /// <summary>プラグインの一覧の1行。行は作り直さず、言語と状態が変わったときに値だけ入れ替える。</summary>
 public sealed partial class PluginListItemViewModel : ViewModelBase
 {
-    private PluginStatus? _status;
-
     public required PluginInfo Info { get; init; }
 
     /// <summary>一覧と窓の鍵(<see cref="PluginInfo.Key"/>)。</summary>
@@ -58,10 +58,6 @@ public sealed partial class PluginListItemViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isUpdatePending;
 
-    /// <summary>「エラー」のピルの TIPS(理由)。エラーでなければ空。</summary>
-    [ObservableProperty]
-    private string _statusToolTip = string.Empty;
-
     public void RefreshLocalizedText()
     {
         var localization = LocalizationManager.Instance;
@@ -78,40 +74,15 @@ public sealed partial class PluginListItemViewModel : ViewModelBase
             NotificationExtensionText = Info.HasNotifications ? localization.GetString("Plugins_NotificationExtension") : string.Empty;
             AuthorText = localization.Format("Plugins_Author", Info.Author ?? string.Empty);
         }
-
-        if (_status is not null)
-        {
-            StatusToolTip = FormatStatusToolTip(_status);
-        }
     }
 
     /// <summary>行の状態を <see cref="PluginManager"/> から読み直す(作ったときと、状態が変わった知らせのとき)。</summary>
     public void RefreshStatus()
     {
-        _status = PluginManager.Instance.GetStatus(PluginKey);
-        RowState = _status.RowState;
-        CanUninstall = _status.CanUninstall;
-        IsUpdatePending = _status.IsUpdatePending;
-        StatusToolTip = FormatStatusToolTip(_status);
-    }
-
-    private static string FormatStatusToolTip(PluginStatus status)
-    {
-        var localization = LocalizationManager.Instance;
-        return status.ErrorReason switch
-        {
-            null => string.Empty,
-            PluginErrorReason.MissingFiles => localization.Format("PluginStatus_MissingFiles", string.Join(", ", status.MissingFiles)),
-            PluginErrorReason.Invalid => localization.GetString("PluginStatus_Invalid"),
-            PluginErrorReason.Stopped => localization.GetString("PluginStatus_Stopped"),
-            PluginErrorReason.InvalidNotifications => localization.GetString("PluginStatus_InvalidNotifications"),
-            PluginErrorReason.InvalidWidgets => localization.GetString("PluginStatus_InvalidWidgets"),
-            PluginErrorReason.PacketBacklog => localization.GetString("PluginStatus_PacketBacklog"),
-            PluginErrorReason.TerminatedApp => localization.GetString("PluginStatus_TerminatedApp"),
-            PluginErrorReason.DeletionFailed => localization.GetString("PluginStatus_DeletionFailed"),
-            PluginErrorReason.UpdateFailed => localization.GetString("PluginStatus_UpdateFailed"),
-            _ => throw new ArgumentOutOfRangeException(nameof(status), status.ErrorReason, "Unknown plugin error reason."),
-        };
+        var status = PluginManager.Instance.GetStatus(PluginKey);
+        RowState = status.RowState;
+        CanUninstall = status.CanUninstall;
+        IsUpdatePending = status.IsUpdatePending;
     }
 
     [RelayCommand(CanExecute = nameof(CanOpen))]

@@ -1,4 +1,5 @@
-﻿<Window x:Class="StarResonanceDps.App.Views.WidgetSettingsWindow"
+﻿<!-- This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms. -->
+<Window x:Class="StarResonanceDps.App.Views.WidgetSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:localization="clr-namespace:StarResonanceDps.App.Localization"

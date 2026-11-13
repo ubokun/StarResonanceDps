@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.Globalization;
 using System.Text.RegularExpressions;
 using StarResonanceDps.Core.CombatRuntime;
@@ -5,11 +7,11 @@ using StarResonanceDps.Core.CombatRuntime;
 namespace StarResonanceDps.Core.Diagnostics;
 
 /// <summary>
-/// スキル詳細ウィジェットの行(プレイヤーの与ダメ・ヒール)に<b>名前が入っていない</b>鍵を残す常設の計測。
+/// スキル詳細ウィジェットの行(プレイヤーの与ダメ・ヒール・ヘイト値・ブレイク値)に<b>名前が入っていない</b>鍵を残す常設の計測。
 ///
 /// <para>
 /// <b>呼ぶのは記録の直後</b>(<c>Encounter.ResolveSourceLanding</c>)。ウィジェットを開いていなくても、
-/// 全プレイヤーの与ダメ・ヒールの両方で拾う。行を作る側に置くと、開いている1人・1種別しか見えない。
+/// 全プレイヤーの与ダメ・ヒール・ヘイト値・ブレイク値で拾う。行を作る側に置くと、開いている1人・1種別しか見えない。
 /// </para>
 ///
 /// <para>
@@ -57,7 +59,7 @@ public static partial class BlankSourceNameProbe
     /// <param name="rowKey">畳んだあとの行代表キー。<c>ownerId:枝番</c> で書き出す。</param>
     /// <param name="rowKeyText">その鍵の表示形。手修正ファイルへそのまま写せる形で残す。</param>
     /// <param name="isBuffSource">届いたときの種別。名前には効かないが、正体を追う手掛かりになる。</param>
-    /// <param name="isHealing">与ダメとヒールのどちらの記録で出たか。</param>
+    /// <param name="table">与ダメ・ヒール・ヘイト値・ブレイク値のどの記録で出たか。</param>
     /// <param name="landing">付与元をたどって着いた先。着かなければ無し。</param>
     /// <param name="sceneId">検知した戦闘の記録のマップの番号。分からなければ 0。</param>
     /// <param name="trace">たどった鎖(段ごとの種類とID、止まった理由)。</param>
@@ -65,7 +67,7 @@ public static partial class BlankSourceNameProbe
         long rowKey,
         string rowKeyText,
         bool isBuffSource,
-        bool isHealing,
+        MeterSnapshotKind table,
         SourceLanding landing,
         uint sceneId,
         string trace)
@@ -80,7 +82,7 @@ public static partial class BlankSourceNameProbe
 
         var details = string.Create(
             CultureInfo.InvariantCulture,
-            $"type={(isBuffSource ? "buff" : "skill")} table={(isHealing ? "heal" : "damage")} landing={landing} scene={sceneId}");
+            $"type={(isBuffSource ? "buff" : "skill")} table={TableText(table)} landing={landing} scene={sceneId}");
         ResidentDetectionStore.Add(ResidentDetectionKind.BlankSourceName, rowKeyText, $"{details} chain={RemoveEntityIds(trace)}");
     }
 
@@ -90,7 +92,7 @@ public static partial class BlankSourceNameProbe
     public static void CaptureConflict(
         long rowKey,
         string rowKeyText,
-        bool isHealing,
+        MeterSnapshotKind table,
         SourceLanding decided,
         SourceLanding other,
         uint sceneId,
@@ -106,8 +108,21 @@ public static partial class BlankSourceNameProbe
 
         var details = string.Create(
             CultureInfo.InvariantCulture,
-            $"table={(isHealing ? "heal" : "damage")} decided={decided} other={other} scene={sceneId}");
+            $"table={TableText(table)} decided={decided} other={other} scene={sceneId}");
         ResidentDetectionStore.Add(ResidentDetectionKind.SourceLandingConflict, rowKeyText, $"{details} chain={RemoveEntityIds(trace)}");
+    }
+
+    /// <summary>報告の本文の <c>table=</c> の値。</summary>
+    private static string TableText(MeterSnapshotKind table)
+    {
+        return table switch
+        {
+            MeterSnapshotKind.Damage => "damage",
+            MeterSnapshotKind.Healing => "heal",
+            MeterSnapshotKind.Hate => "hate",
+            MeterSnapshotKind.Break => "break",
+            _ => throw new ArgumentOutOfRangeException(nameof(table), table, "Unknown skill row table")
+        };
     }
 
     /// <summary>鎖の中の実体の番号を外す。プレイヤーの uuid が入ることがあり、報告の本文は公開される。</summary>

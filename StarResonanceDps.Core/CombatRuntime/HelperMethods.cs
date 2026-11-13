@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime.DataTypes;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime.DataTypes;
 
 namespace StarResonanceDps.Core.CombatRuntime;
 
@@ -20,5 +22,6 @@ public class HelperMethods
         public static SkillAoyiStarTable SkillAoyiStars = new SkillAoyiStarTable();
         public static ChatStickerTable ChatStickers = new ChatStickerTable();
         public static ProfileImageTable ProfileImages = new ProfileImageTable();
+        public static DamageAttrTable DamageAttrs = new DamageAttrTable();
     }
 }

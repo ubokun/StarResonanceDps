@@ -8,5 +8,5 @@ namespace StarResonanceDps.PluginSdk;
 public static class PluginSdkVersion
 {
     /// <summary>The API version of this SDK.</summary>
-    public const int Current = 0;
+    public const int Current = 1;
 }

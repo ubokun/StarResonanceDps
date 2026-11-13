@@ -1,4 +1,6 @@
-﻿using System.Windows.Media;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using StarResonanceDps.App.Services;
 using StarResonanceDps.Core.CombatRuntime;

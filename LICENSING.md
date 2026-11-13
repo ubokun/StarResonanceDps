@@ -10,7 +10,7 @@ Copyright (C) 2026 kokoukohiro
 | `StarResonanceDps.PluginSdk.Analyzers/` | MIT License (`StarResonanceDps.PluginSdk.Analyzers/LICENSE`) |
 | `StarResonanceDps.Plugins.Samples/` | MIT License (`StarResonanceDps.Plugins.Samples/LICENSE`) |
 | `docs/` | MIT License (`docs/LICENSE`) |
-| Everything else | GNU General Public License version 3 only (`LICENSE`), with the additional permissions below |
+| Everything else | GNU General Public License version 3 only (`LICENSE`), with the additional permissions and additional terms below |
 
 ## GNU General Public License version 3
 
@@ -31,6 +31,14 @@ Note that people who make modified versions of Don't Check My DPS are not obliga
 ### Libraries
 
 If you modify this Program, or any covered work, by linking or combining it with the Windows SDK projection assemblies (Microsoft.Windows.SDK.NET.dll and WinRT.Runtime.dll) or Npcap (or a modified version of those libraries), containing parts covered by the terms of their respective licenses, the licensors of this Program grant you additional permission to convey the resulting work.
+
+## Additional terms under GNU GPL version 3 section 7
+
+The following additional terms apply to the material that kokoukohiro, the copyright holder of Don't Check My DPS, added to the program. If you convey Don't Check My DPS or a modified version of it, you must comply with these terms.
+
+1. Under section 7(b), you must preserve the copyright notice "Copyright (C) 2026 kokoukohiro" in this file and in the Appropriate Legal Notices displayed by the program.
+2. Under section 7(c), you must not misrepresent the origin of this material, and you must mark a modified version in reasonable ways as different from the original version, including by giving it a name different from the names in item 3.
+3. Under section 7(e), the copyright holder declines to grant you any rights under trademark law for use of the program names "Don't Check My DPS", "お願い、DPS見ないで…", "내 DPS 조회하지 마" and "别查我DPS".
 
 ## Game names, data and images
 

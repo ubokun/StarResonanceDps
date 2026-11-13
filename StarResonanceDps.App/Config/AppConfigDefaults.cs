@@ -1,4 +1,6 @@
-﻿using System.Windows.Input;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Windows.Input;
 using StarResonanceDps.Core.CombatRuntime;
 using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using StarResonanceDps.Core.Models;

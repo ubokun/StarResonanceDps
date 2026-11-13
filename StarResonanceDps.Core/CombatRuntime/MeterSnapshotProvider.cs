@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using Newtonsoft.Json.Linq;
 using Serilog;
 using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using StarResonanceDps.Core.Models;
@@ -11,7 +13,17 @@ namespace StarResonanceDps.Core.CombatRuntime;
 public enum MeterSnapshotKind
 {
     Damage,
-    Healing
+    Healing,
+
+    /// <summary>
+    /// ヘイト(<see cref="Entity.TotalHate"/>)。技ごとの内訳は <see cref="MetricsContainer.HateTotal"/>、推移グラフは <see cref="Entity.HateStats"/>。回の合計は持たない。
+    /// </summary>
+    Hate,
+
+    /// <summary>
+    /// ブレイク値(<see cref="Entity.TotalBreak"/>)。技ごとの内訳は <see cref="MetricsContainer.BreakTotal"/>、推移グラフは <see cref="Entity.BreakStats"/>。回の合計は持たない。
+    /// </summary>
+    Break
 }
 
 /// <summary>
@@ -120,6 +132,10 @@ public readonly record struct MetricGraphSkillActivationSlice(
 /// </summary>
 /// <param name="Name">表示する行名(設定しだいで内部名・内部ID注記つき)。</param>
 /// <param name="PlainName">内部名と内部ID注記の無い行名(<see cref="CombatDataCatalog.GetSourceNameWithoutInternalId"/>)。無ければ空。</param>
+/// <param name="Kind">
+/// 行の種類。スキルの行でなければ(<see cref="MetricSkillTableRowKind.InitialHate"/>・<see cref="MetricSkillTableRowKind.Other"/>)、
+/// <see cref="SkillId"/> は 0、<see cref="SkillIdText"/>・<see cref="Name"/>・<see cref="PlainName"/> は空で、名前は App が付ける。
+/// </param>
 public sealed record MetricSkillTableRowSnapshot(
     long SkillId,
     string SkillIdText,
@@ -133,7 +149,21 @@ public sealed record MetricSkillTableRowSnapshot(
     double AverageValue,
     double Percentage,
     IReadOnlyList<KeyValuePair<EDamageProperty, ulong>> ValueByElement,
-    IReadOnlyList<KeyValuePair<EDamageMode, ulong>> ValueByMode);
+    IReadOnlyList<KeyValuePair<EDamageMode, ulong>> ValueByMode,
+    MetricSkillTableRowKind Kind = MetricSkillTableRowKind.Skill);
+
+/// <summary>スキル詳細の行の種類。</summary>
+public enum MetricSkillTableRowKind
+{
+    /// <summary>スキル(畳んだ発生源の鍵)の行。</summary>
+    Skill,
+
+    /// <summary>ヘイトの、その人が敵の一覧に入ったときの増え(<see cref="Entity.InitialHateTotal"/>)。</summary>
+    InitialHate,
+
+    /// <summary>ヘイトの、スキルの行にも初期ヘイトにも分けられなかった増え(<see cref="Entity.OtherHateTotal"/>)。</summary>
+    Other
+}
 
 public sealed record MetricSkillTableSnapshot(
     IReadOnlyList<MetricSkillTableRowSnapshot> Entries);
@@ -488,7 +518,8 @@ public static class MeterSnapshotProvider
         var visibleSource = source
             .Where(player => party.ShouldInclude(player.UserId, player.IsSelf, effectivePartyDisplayMode))
             .ToArray();
-        var totalValue = effectivePartyDisplayMode == PartyDisplayMode.All
+        // ヘイトとブレイク値は回の合計を持たないので、いつも出している人の和(すべて表示ならプレイヤー全員の和)。
+        var totalValue = effectivePartyDisplayMode == PartyDisplayMode.All && kind is MeterSnapshotKind.Damage or MeterSnapshotKind.Healing
             ? kind == MeterSnapshotKind.Damage
                 ? encounter.TotalDamage
                 : encounter.TotalHealing
@@ -541,9 +572,7 @@ public static class MeterSnapshotProvider
                 continue;
             }
 
-            var totalValue = kind == MeterSnapshotKind.Damage
-                ? entity.TotalDamage
-                : entity.TotalHealing;
+            var totalValue = GetPlayerTotalValue(entity, kind);
             if (totalValue == 0)
             {
                 continue;
@@ -2387,9 +2416,20 @@ public static class MeterSnapshotProvider
             return buffer.Clear();
         }
 
-        var stats = kind == MeterSnapshotKind.Damage
-            ? entity.DamageStats
-            : entity.HealingStats;
+        var stats = kind switch
+        {
+            MeterSnapshotKind.Damage => entity.DamageStats,
+            MeterSnapshotKind.Healing => entity.HealingStats,
+            MeterSnapshotKind.Hate => entity.HateStats,
+            MeterSnapshotKind.Break => entity.BreakStats,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "The kind has no graph.")
+        };
+
+        // ヘイトとブレイク値は、まだ足していない人には入れ物が無い(グラフは空)。
+        if (stats is null)
+        {
+            return buffer.Clear();
+        }
 
         // 最後の値の時刻は時計より先に読む(後に読むと、その間に届いた値の時刻が読んだ時計の終点より後になる)。
         if (!stats.TryGetLastPerSecondTimestamp(out var lastValueTime))
@@ -2625,6 +2665,11 @@ public static class MeterSnapshotProvider
             return new MetricSkillTableSnapshot(Array.Empty<MetricSkillTableRowSnapshot>());
         }
 
+        if (kind is MeterSnapshotKind.Hate or MeterSnapshotKind.Break)
+        {
+            return CreateContributionSkillTable(encounter, entity, kind);
+        }
+
         IReadOnlyList<KeyValuePair<long, CombatStats>> skillStats = kind switch
         {
             MeterSnapshotKind.Damage => (IReadOnlyList<KeyValuePair<long, CombatStats>>)entity.SkillMetrics
@@ -2689,6 +2734,112 @@ public static class MeterSnapshotProvider
         }
 
         return new MetricSkillTableSnapshot(rows);
+    }
+
+    /// <summary>
+    /// ヘイトとブレイク値の技ごとの内訳(スキル詳細(ヘイト値)・スキル詳細(ブレイク値))。値は被弾に分けた量
+    /// (<see cref="MetricsContainer.HateTotal"/>・<see cref="MetricsContainer.BreakTotal"/>)、回数と会心率は分けた量を受け取った被弾から数える。
+    /// 属性と種類の内訳は、同じ技の与ダメの比をその行の値の大きさに合わせたもの(バーの色と TIPS の割合に使う)。
+    /// ヘイトは、与ダメの無い行(挑発の行)を無属性・無分類とし、人ごとの初期ヘイトとその他(<see cref="Entity.InitialHateTotal"/>・
+    /// <see cref="Entity.OtherHateTotal"/>)も無属性・無分類の行にする(<see cref="MetricSkillTableRowKind"/>、回数は足した回数、会心は無し)。
+    /// </summary>
+    private static MetricSkillTableSnapshot CreateContributionSkillTable(Encounter encounter, Entity entity, MeterSnapshotKind kind)
+    {
+        var entityTotalValue = GetPlayerTotalValue(entity, kind);
+        if (entityTotalValue == 0UL)
+        {
+            return new MetricSkillTableSnapshot(Array.Empty<MetricSkillTableRowSnapshot>());
+        }
+
+        var isHate = kind == MeterSnapshotKind.Hate;
+        var clock = encounter.ReadCombatClock();
+        var elapsedSeconds = clock.Elapsed.TotalSeconds;
+        var activeSeconds = entity.GetActiveSeconds(clock, encounter.ToCombatOffset);
+        var rows = new List<MetricSkillTableRowSnapshot>();
+        foreach (var (skillId, container) in entity.SkillMetrics)
+        {
+            var total = isHate ? container.HateTotal : container.BreakTotal;
+            if (total == 0UL)
+            {
+                continue;
+            }
+
+            var hitCount = isHate ? container.HateHitCount : container.BreakHitCount;
+            var critCount = isHate ? container.HateCritCount : container.BreakCritCount;
+            var hasNoDamage = isHate && container.Damage.ValueTotal == 0UL;
+            rows.Add(new MetricSkillTableRowSnapshot(
+                skillId,
+                CombatDataCatalog.FormatSourceKey(skillId),
+                CombatDataCatalog.GetSourceDisplayName(skillId, container.IsBuffSource, container.Landing),
+                CombatDataCatalog.GetSourceNameWithoutInternalId(skillId, container.IsBuffSource, container.Landing),
+                total,
+                CombatClockReading.PerSecond(total, activeSeconds),
+                CombatClockReading.PerSecond(total, elapsedSeconds),
+                hitCount,
+                hitCount > 0U ? Math.Round(critCount / (double)hitCount * 100d, 2) : 0d,
+                hitCount > 0U ? total / (double)hitCount : 0d,
+                Math.Round(total / (double)entityTotalValue * 100d, 2),
+                hasNoDamage
+                    ? [new KeyValuePair<EDamageProperty, ulong>(EDamageProperty.General, total)]
+                    : ScaleBreakdown(container.Damage.GetValueTotalByElementCopy(), container.Damage.ValueTotal, total),
+                hasNoDamage
+                    ? [new KeyValuePair<EDamageMode, ulong>(EDamageMode.DamageNormal, total)]
+                    : ScaleBreakdown(container.Damage.GetValueTotalByModeCopy(), container.Damage.ValueTotal, total)));
+        }
+
+        if (isHate)
+        {
+            AddUnattributedHateRow(rows, MetricSkillTableRowKind.InitialHate, entity.InitialHateTotal, entity.InitialHateCount);
+            AddUnattributedHateRow(rows, MetricSkillTableRowKind.Other, entity.OtherHateTotal, entity.OtherHateCount);
+        }
+
+        rows.Sort((left, right) => right.TotalValue.CompareTo(left.TotalValue));
+        return new MetricSkillTableSnapshot(rows);
+
+        void AddUnattributedHateRow(List<MetricSkillTableRowSnapshot> target, MetricSkillTableRowKind rowKind, ulong total, uint count)
+        {
+            if (total == 0UL)
+            {
+                return;
+            }
+
+            target.Add(new MetricSkillTableRowSnapshot(
+                0L,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                total,
+                CombatClockReading.PerSecond(total, activeSeconds),
+                CombatClockReading.PerSecond(total, elapsedSeconds),
+                count,
+                0d,
+                count > 0U ? total / (double)count : 0d,
+                Math.Round(total / (double)entityTotalValue * 100d, 2),
+                [new KeyValuePair<EDamageProperty, ulong>(EDamageProperty.General, total)],
+                [new KeyValuePair<EDamageMode, ulong>(EDamageMode.DamageNormal, total)],
+                rowKind));
+        }
+    }
+
+    /// <summary>与ダメの内訳の比を <paramref name="total"/> の大きさに合わせる(並びは enum の値の順)。与ダメが無ければ空。</summary>
+    private static KeyValuePair<TKey, ulong>[] ScaleBreakdown<TKey>(
+        IEnumerable<KeyValuePair<TKey, ulong>> damageParts,
+        ulong damageTotal,
+        ulong total)
+        where TKey : struct, System.Enum
+    {
+        if (damageTotal == 0UL)
+        {
+            return [];
+        }
+
+        return
+        [
+            .. damageParts
+                .Where(pair => pair.Value > 0UL)
+                .OrderBy(pair => pair.Key)
+                .Select(pair => new KeyValuePair<TKey, ulong>(pair.Key, (ulong)Math.Round(total * (double)pair.Value / damageTotal)))
+        ];
     }
 
     /// <summary>メーターが映している回(<see cref="ResolveActiveEncounter"/>)の全員の集計。回がまだ無ければ空。</summary>
@@ -3099,9 +3250,14 @@ public static class MeterSnapshotProvider
 
     private static ulong GetPlayerTotalValue(Entity entity, MeterSnapshotKind kind)
     {
-        return kind == MeterSnapshotKind.Damage
-            ? entity.TotalDamage
-            : entity.TotalHealing;
+        return kind switch
+        {
+            MeterSnapshotKind.Damage => entity.TotalDamage,
+            MeterSnapshotKind.Healing => entity.TotalHealing,
+            MeterSnapshotKind.Hate => entity.TotalHate,
+            MeterSnapshotKind.Break => entity.TotalBreak,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
     }
 
     /// <summary>
@@ -3207,13 +3363,15 @@ public static class MeterSnapshotProvider
 
     private static MeterPlayerSnapshot CreatePlayerValue(long characterId, Entity entity, MeterSnapshotKind kind, CombatClockReading clock)
     {
-        var totalValue = kind == MeterSnapshotKind.Damage
-            ? entity.TotalDamage
-            : entity.TotalHealing;
-        var stats = kind == MeterSnapshotKind.Damage
-            ? entity.DamageStats
-            : entity.HealingStats;
-        var valuePerSecond = CombatClockReading.PerSecond(stats.ValueTotal, clock.Elapsed.TotalSeconds);
+        var totalValue = GetPlayerTotalValue(entity, kind);
+        // ヘイトとブレイク値は秒ごとの値を持たないので、合計を戦闘の経過時間で割る。
+        var perSecondTotal = kind switch
+        {
+            MeterSnapshotKind.Damage => entity.DamageStats.ValueTotal,
+            MeterSnapshotKind.Healing => entity.HealingStats.ValueTotal,
+            _ => totalValue
+        };
+        var valuePerSecond = CombatClockReading.PerSecond(perSecondTotal, clock.Elapsed.TotalSeconds);
         var isSelf = IsSelf(entity);
         var source = PlayerDataSourceResolver.Resolve(entity, isSelf);
         return new MeterPlayerSnapshot(

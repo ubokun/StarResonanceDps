@@ -1,4 +1,6 @@
-﻿using Serilog;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using Serilog;
 using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using StarResonanceDps.Core.CombatRuntime.Database;
 using StarResonanceDps.Core.Logging;

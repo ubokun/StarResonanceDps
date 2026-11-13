@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 スキル名テーブルを生成する。
 

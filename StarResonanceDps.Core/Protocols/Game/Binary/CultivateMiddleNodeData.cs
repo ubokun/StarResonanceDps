@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 
 /// <summary>心相晶の因子の枠1つ(<c>CultivateMiddleNodeData</c>)の差分。</summary>

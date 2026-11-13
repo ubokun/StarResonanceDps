@@ -12,7 +12,8 @@ This widget lists your own stats in one column. Only your own stats are shown, b
 
 - Row: From the left, the icon, the item name, and the value. Items that have both a percentage and a raw value are shown in the form "12.4%(3820)".
 - When a value changes, the value is shown in the "Value Increase" or "Value Decrease" color for 2 seconds, and ▲ or ▼ appears to the left of the value. This does not happen for changes caused by changing maps.
-- For sets that are used differently by class, such as Strength, Intellect, and Agility, or ATK and MATK, only the one your class uses is shown (the same applies to penetration, refined attack, and Attack SPD and Cast Speed).
+- For sets that are used differently by class, such as Strength, Intellect, and Agility, or ATK and MATK, only the one your class uses is shown (the same applies to penetration and refined attack).
+- Attack SPD and Cast Speed are both shown for every class. Which one applies is decided per skill rather than per class, and some classes use both.
 - Move Speed is shown on one line if walking, running, and sprinting have the same value, and on three lines if they differ.
 - Values that have not arrived are 0 (because the game does not send stats whose value is 0).
 

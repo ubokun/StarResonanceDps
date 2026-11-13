@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 # DataTools共通。パスと入出力、データソースのマージ、名前の判定と取り出し、上書きファイルへの名前の書き足し、
 # アドレス一覧とバンドル(UnityFS)の読み方、バンドルからの画像の取り出しを持つ。
 #

@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime;
 using Zproto;
 using MonsterClassification = StarResonanceDps.Core.CombatRuntime.EMonsterType;
 

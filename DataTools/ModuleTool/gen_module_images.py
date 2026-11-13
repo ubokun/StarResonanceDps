@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 モジュールツールの画像(`StarResonanceDps.Plugins.ModuleTool/Assets`)のうち、表が使うのに足りないものを表示する。
 `--write`でバンドルから取り出して置き、`--compare`で今の画像とゲームの画像を比べる。

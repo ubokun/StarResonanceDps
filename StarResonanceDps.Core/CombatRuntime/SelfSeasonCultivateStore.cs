@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using BinaryCultivateAreaData = StarResonanceDps.Core.Protocols.Game.Binary.CultivateAreaData;
 using BinaryCultivateLineData = StarResonanceDps.Core.Protocols.Game.Binary.CultivateLineData;
 using BinaryCultivateLineSubTypeData = StarResonanceDps.Core.Protocols.Game.Binary.CultivateLineSubTypeData;

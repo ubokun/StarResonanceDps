@@ -504,14 +504,35 @@ Its settings are kept.</value>
 If the problem persists, reinstall the plugin or contact its author.</value>
   </data>
   <data name="PluginStoppedPacketBacklog_Detail" xml:space="preserve">
-    <value>{0} could not keep up with the incoming game data.</value>
+    <value>The plugin will be loaded again when you restart the app.
+If the problem persists, contact its author.</value>
   </data>
   <data name="PluginLoadFailed_Message" xml:space="preserve">
     <value>Some plugins could not be loaded.</value>
   </data>
   <data name="PluginLoadFailed_Detail" xml:space="preserve">
-    <value>{0}
-Reinstall the plugins or contact their authors.</value>
+    <value>Reinstall the plugins or contact their authors.</value>
+  </data>
+  <data name="PluginLoadFailed_RestartDetail" xml:space="preserve">
+    <value>Restart the app.</value>
+  </data>
+  <data name="PluginLoadFailed_Line" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="PluginLoadFailed_MissingFiles" xml:space="preserve">
+    <value>Required files are missing ({0}).</value>
+  </data>
+  <data name="PluginLoadFailed_Invalid" xml:space="preserve">
+    <value>This is not a plugin for this app, or it does not match the app version.</value>
+  </data>
+  <data name="PluginLoadFailed_InitializationFailed" xml:space="preserve">
+    <value>Could not be initialized.</value>
+  </data>
+  <data name="PluginLoadFailed_DeletionFailed" xml:space="preserve">
+    <value>Could not be deleted.</value>
+  </data>
+  <data name="PluginLoadFailed_UpdateFailed" xml:space="preserve">
+    <value>Could not be updated.</value>
   </data>
   <data name="PluginAddFailed_PendingDeletion_Detail" xml:space="preserve">
     <value>The same plugin is waiting to be deleted.
@@ -543,33 +564,6 @@ Restart the app, then add it again.</value>
   </data>
   <data name="PluginStatus_PendingUpdate" xml:space="preserve">
     <value>Updated on restart</value>
-  </data>
-  <data name="PluginStatus_MissingFiles" xml:space="preserve">
-    <value>Required files are missing ({0}).</value>
-  </data>
-  <data name="PluginStatus_Invalid" xml:space="preserve">
-    <value>This is not a plugin for this app, or it does not match the app version.</value>
-  </data>
-  <data name="PluginStatus_Stopped" xml:space="preserve">
-    <value>Stopped after an error; it resumes the next time the app starts.</value>
-  </data>
-  <data name="PluginStatus_InvalidNotifications" xml:space="preserve">
-    <value>The notification items are not defined correctly.</value>
-  </data>
-  <data name="PluginStatus_InvalidWidgets" xml:space="preserve">
-    <value>The widgets are not defined correctly.</value>
-  </data>
-  <data name="PluginStatus_PacketBacklog" xml:space="preserve">
-    <value>Stopped because it could not keep up with the incoming game data; it resumes the next time the app starts.</value>
-  </data>
-  <data name="PluginStatus_TerminatedApp" xml:space="preserve">
-    <value>Stopped because it closed the app; it resumes after you reinstall it.</value>
-  </data>
-  <data name="PluginStatus_DeletionFailed" xml:space="preserve">
-    <value>Could not be deleted; it is deleted again the next time the app starts.</value>
-  </data>
-  <data name="PluginStatus_UpdateFailed" xml:space="preserve">
-    <value>Could not be updated; it is updated again the next time the app starts.</value>
   </data>
   <data name="Confirm_UninstallPlugin_Title" xml:space="preserve">
     <value>Delete plugin</value>
@@ -620,17 +614,17 @@ Its settings will also be deleted.</value>
   <data name="Help_PluginDevelopment_Description" xml:space="preserve">
     <value>Guide for developers</value>
   </data>
-  <data name="Help_GitHub_Title" xml:space="preserve">
-    <value>GitHub</value>
-  </data>
-  <data name="Help_GitHub_Description" xml:space="preserve">
-    <value>Repository home page</value>
-  </data>
   <data name="Help_ReleaseNotes_Title" xml:space="preserve">
     <value>Release notes</value>
   </data>
   <data name="Help_ReleaseNotes_Description" xml:space="preserve">
     <value>Changes in each version</value>
+  </data>
+  <data name="Help_Sponsor_Title" xml:space="preserve">
+    <value>Sponsorship</value>
+  </data>
+  <data name="Help_Sponsor_Description" xml:space="preserve">
+    <value>Spare some change…</value>
   </data>
   <data name="Help_Copyright" xml:space="preserve">
     <value>Copyright © 2026 kokoukohiro (GNU GPL v3)</value>
@@ -709,11 +703,11 @@ Try again later.</value>
   </data>
   <data name="Update_Error_InvalidRelease" xml:space="preserve">
     <value>Could not read the release information.
-Download the zip from the {0} and overwrite the app folder.</value>
+Download the zip from {0} and overwrite the app folder.</value>
   </data>
   <data name="Update_Error_NotFromZip" xml:space="preserve">
     <value>This copy was not installed from a release zip, so it cannot update itself.
-Download the zip from the {0}.</value>
+Download the zip from {0}.</value>
   </data>
   <data name="Update_Error_Corrupt" xml:space="preserve">
     <value>The downloaded file was corrupted.
@@ -732,10 +726,10 @@ Close other apps using the app folder and try again.</value>
   </data>
   <data name="Update_Error_RestoreFailed" xml:space="preserve">
     <value>The previous version could not be restored.
-Download the zip from the {0} and overwrite the app folder.</value>
+Download the zip from {0} and overwrite the app folder.</value>
   </data>
-  <data name="Update_ReleaseNotesLink" xml:space="preserve">
-    <value>release notes</value>
+  <data name="Update_ReleasesLink" xml:space="preserve">
+    <value>Releases</value>
   </data>
   <data name="Update_RestartFailed_Message" xml:space="preserve">
     <value>Updated, but the app could not restart.</value>
@@ -991,6 +985,12 @@ Download the zip from the {0} and overwrite the app folder.</value>
   </data>
   <data name="Widget_HpsMeter" xml:space="preserve">
     <value>HPS Meter</value>
+  </data>
+  <data name="Widget_HateMeter" xml:space="preserve">
+    <value>Threat Meter</value>
+  </data>
+  <data name="Widget_BreakMeter" xml:space="preserve">
+    <value>Break Meter</value>
   </data>
   <data name="Widget_Timeline" xml:space="preserve">
     <value>Timeline</value>
@@ -1313,8 +1313,20 @@ Wait a moment and copy again.</value>
   <data name="Meter_Total" xml:space="preserve">
     <value>Total</value>
   </data>
+  <data name="Meter_HatePerSecond" xml:space="preserve">
+    <value>TPS</value>
+  </data>
+  <data name="Meter_BreakPerSecond" xml:space="preserve">
+    <value>BPS</value>
+  </data>
   <data name="Widget_HpsGraph" xml:space="preserve">
     <value>HPS Trend Graph</value>
+  </data>
+  <data name="Widget_HateGraph" xml:space="preserve">
+    <value>TPS Trend Graph</value>
+  </data>
+  <data name="Widget_BreakGraph" xml:space="preserve">
+    <value>BPS Trend Graph</value>
   </data>
   <data name="Widget_HealingSummary" xml:space="preserve">
     <value>Healing Details</value>
@@ -1500,6 +1512,18 @@ It is strongly recommended to update to this version, or higher, to avoid proble
   </data>
   <data name="Widget_HealingSkillDetail" xml:space="preserve">
     <value>Skill Details (Healing)</value>
+  </data>
+  <data name="Widget_HateSkillDetail" xml:space="preserve">
+    <value>Skill Details (Threat)</value>
+  </data>
+  <data name="Widget_BreakSkillDetail" xml:space="preserve">
+    <value>Skill Details (Break)</value>
+  </data>
+  <data name="SkillDetail_InitialHate" xml:space="preserve">
+    <value>Initial Threat</value>
+  </data>
+  <data name="SkillDetail_Other" xml:space="preserve">
+    <value>Other</value>
   </data>
   <data name="Metric_SummaryTotal" xml:space="preserve">
     <value>Total</value>

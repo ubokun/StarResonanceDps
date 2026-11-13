@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 戦闘画面の警告バーを出す技の一覧を生成する。
 

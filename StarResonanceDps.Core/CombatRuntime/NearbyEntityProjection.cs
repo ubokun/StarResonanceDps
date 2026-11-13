@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.Models;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.Models;
 using StarResonanceDps.Core.Services;
 using Zproto;
 

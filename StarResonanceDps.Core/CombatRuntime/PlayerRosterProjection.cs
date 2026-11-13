@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.Models;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.Models;
 using StarResonanceDps.Core.Services;
 using Zproto;
 
@@ -747,10 +749,10 @@ internal static class PlayerRosterProjection
     }
 
     /// <summary>
-    /// メーター(DPS/HPS)に出る人か、その回の被ダメログかタイムラインに出る人か。名簿に載せる条件。
+    /// メーター(DPS/HPS/ヘイト)に出る人か、その回の被ダメログかタイムラインに出る人か。名簿に載せる条件。
     ///
     /// <para>
-    /// メーターは <see cref="MeterSnapshotProvider"/> の <c>TotalValue &gt; 0</c> と同じ(与ダメか回復のどちらかを持っていれば片方のメーターには出る)。
+    /// メーターは <see cref="MeterSnapshotProvider"/> の <c>TotalValue &gt; 0</c> と同じ(与ダメ・回復・ヘイトのどれかを持っていればどれかのメーターには出る)。
     /// 被ダメログは被弾の記録があるか(<see cref="CombatStats.HasSkillSnapshots"/>)、
     /// タイムラインはダメージの無い戦闘不能の記録と、敵の回復・敵が付けたバフの相手(<see cref="Encounter.HasPlayerTimelineRecord"/>)。
     /// 被ダメログの絞り込みの設定は見ない。
@@ -762,6 +764,8 @@ internal static class PlayerRosterProjection
         return entity is not null
             && (entity.TotalDamage > 0
                 || entity.TotalHealing > 0
+                || entity.TotalHate > 0
+                || entity.TotalBreak > 0
                 || entity.TakenStats.HasSkillSnapshots()
                 || encounter?.HasPlayerTimelineRecord(entity.UUID) == true);
     }

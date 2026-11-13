@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -64,7 +66,7 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
     private readonly ConfigManager _configManager = ConfigManager.Instance;
     private readonly DispatcherTimer _refreshTimer;
     private readonly ObservableCollection<MetricSkillTableEntry> _skillEntries = [];
-    private readonly Dictionary<long, MetricSkillTableEntry> _skillEntriesBySkillId = [];
+    private readonly Dictionary<(MetricSkillTableRowKind Kind, long SkillId), MetricSkillTableEntry> _skillEntriesByKey = [];
     private readonly List<MetricSkillTableEntry> _orderedSkillEntries = [];
     private IReadOnlyList<MetricGraphPoint> _graphPoints = Array.Empty<MetricGraphPoint>();
     private readonly MetricGraphPointBuffer _graphPointBuffer = new();
@@ -472,8 +474,8 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
         IReadOnlyList<MetricSkillTableRowSnapshot> entries,
         int numberDisplayFormatIndex)
     {
-        var activeSkillIds = entries
-            .Select(entry => entry.SkillId)
+        var activeKeys = entries
+            .Select(entry => (entry.Kind, entry.SkillId))
             .ToHashSet();
 
         // バーの長さは1位の値で割る(メーターと同じ)。並びは総量の降順なので先頭が1位。
@@ -481,23 +483,23 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
 
         for (var index = _skillEntries.Count - 1; index >= 0; index--)
         {
-            var skillId = _skillEntries[index].SkillId;
-            if (activeSkillIds.Contains(skillId))
+            var key = (_skillEntries[index].Kind, _skillEntries[index].SkillId);
+            if (activeKeys.Contains(key))
             {
                 continue;
             }
 
-            _skillEntriesBySkillId.Remove(skillId);
+            _skillEntriesByKey.Remove(key);
             _skillEntries.RemoveAt(index);
         }
 
         for (var index = 0; index < entries.Count; index++)
         {
             var entry = entries[index];
-            if (!_skillEntriesBySkillId.TryGetValue(entry.SkillId, out var item))
+            if (!_skillEntriesByKey.TryGetValue((entry.Kind, entry.SkillId), out var item))
             {
-                item = new MetricSkillTableEntry(entry.SkillId);
-                _skillEntriesBySkillId.Add(entry.SkillId, item);
+                item = new MetricSkillTableEntry(entry.Kind, entry.SkillId);
+                _skillEntriesByKey.Add((entry.Kind, entry.SkillId), item);
             }
 
             ApplySkillEntry(item, entry, index, numberDisplayFormatIndex, topValue);
@@ -522,7 +524,13 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
             CreateElementSegments(entry),
             CreateRowToolTipText(entry),
             SkillInfoFormatFormatter.Format(
-                entry.Name,
+                // ヘイトの行「初期ヘイト」「その他」はスキルを持たないので、名前を文言で付ける。
+                entry.Kind switch
+                {
+                    MetricSkillTableRowKind.InitialHate => LocalizationManager.Instance.GetString("SkillDetail_InitialHate"),
+                    MetricSkillTableRowKind.Other => LocalizationManager.Instance.GetString("SkillDetail_Other"),
+                    _ => entry.Name
+                },
                 CreateElementText(entry),
                 CreateDamageModeText(entry),
                 entry.HitCount,
@@ -694,7 +702,7 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
 
     private void ClearSkillEntries()
     {
-        _skillEntriesBySkillId.Clear();
+        _skillEntriesByKey.Clear();
 
         if (_skillEntries.Count > 0)
         {

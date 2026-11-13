@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using StarResonanceDps.App.Localization;
 using StarResonanceDps.Core.CombatRuntime;

@@ -1,6 +1,6 @@
 [日本語](お願い、DPS見ないで…Wiki) | [한국어](내-DPS-조회하지-마-Wiki) | [简体中文](别查我DPS-Wiki) | [English](Don't-Check-My-DPS-Wiki)
 
-<img alt="Icon" src="images/ApplicationIcon.png" width="128">
+<img alt="Icon" src="https://raw.githubusercontent.com/kokoukohiro/StarResonanceDps/main/StarResonanceDps.App/Assets/Images/ApplicationIcon.png" width="128">
 
 이 Wiki에서는 내 DPS 조회하지 마의 사용 방법을 설명합니다. 설치와 초기 설정을 비롯해 각 화면과 설정의 설명, 문제 해결 방법, 플러그인 만드는 방법 등을 다룹니다.
 
@@ -44,6 +44,8 @@
 - [타임라인](타임라인)
 - [DPS 미터](DPS-미터)
 - [HPS 미터](HPS-미터)
+- [적대 수치 미터](적대-수치-미터)
+- [내성 파괴 미터](내성-파괴-미터)
 - [받은 피해 로그](받은-피해-로그)
 - [스킬 상세(피해)](스킬-상세(피해))
 - [피해 상세](피해-상세)
@@ -51,6 +53,10 @@
 - [스킬 상세(치유)](스킬-상세(치유))
 - [치유 상세](치유-상세)
 - [HPS 추이 그래프](HPS-추이-그래프)
+- [스킬 상세(적대 수치)](스킬-상세(적대-수치))
+- [TPS 추이 그래프](TPS-추이-그래프)
+- [스킬 상세(내성 파괴 수치)](스킬-상세(내성-파괴-수치))
+- [BPS 추이 그래프](BPS-추이-그래프)
 - [받은 피해 상세](받은-피해-상세)
 - [채팅](채팅)
 

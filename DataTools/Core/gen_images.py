@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 アプリの画像(`StarResonanceDps.App/Data/Images`)のうち、テーブルが使うのに足りないものを表示する。
 `--write`でバンドルから取り出して置き、`--compare`で今の画像とゲームの画像を比べる。

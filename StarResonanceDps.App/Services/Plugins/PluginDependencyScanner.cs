@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -8,13 +10,21 @@ using System.Text.Json;
 namespace StarResonanceDps.App.Services;
 
 /// <summary>
-/// プラグインの入口の DLL から、プラグインを動かすのに要るファイルを決める。
-/// 部品は、DLL が参照するアセンブリをたどったもの(<c>.deps.json</c> があればそれに書かれたネイティブの DLL・言語ごとの資源の DLL も)で、
+/// プラグインの入口のDLLから、プラグインを動かすのに要るファイルを決める。
+/// 部品は、DLLが参照するアセンブリをたどったもの(<c>.deps.json</c>があればそれに書かれたネイティブのDLL・言語ごとの資源のDLLも)で、
 /// 読み込み先(<see cref="PluginLoadContext"/>)と同じ探し方(<see cref="AssemblyDependencyResolver"/>)で入口のフォルダから探す。
-/// フォルダに無く、SDK でも本体・.NET・WPF の持つアセンブリでもなければ足りない。
+/// フォルダに無く、SDKでも.NET・WPFのアセンブリでもなければ足りない(本体の部品は借りられない)。
 /// </summary>
 internal static class PluginDependencyScanner
 {
+    /// <summary>本体の部品の名前の一覧(ビルドのときに作って埋め込む、csprojのEmbedHostAssemblyNames)。</summary>
+    private const string HostAssemblyNamesResourceName = "HostAssemblyNames.txt";
+
+    private static readonly Lazy<IReadOnlyList<string>> PluginProvidedAssemblyPaths = new(ReadPluginProvidedAssemblyPaths);
+
+    private static readonly Lazy<HashSet<string>> PluginProvidedAssemblyNames = new(
+        () => new HashSet<string>(PluginProvidedAssemblyPaths.Value.Select(path => Path.GetFileNameWithoutExtension(path)), StringComparer.OrdinalIgnoreCase));
+
     private static readonly Lazy<HashSet<string>> HostAssemblyNames = new(ReadHostAssemblyNames);
 
     public static PluginDependencyScan Scan(string mainAssemblyPath)
@@ -65,7 +75,7 @@ internal static class PluginDependencyScanner
                         {
                             AddFile(runtimePath, isManaged: true);
                         }
-                        else if (!asset.IsRuntimeSpecific && !HostAssemblyNames.Value.Contains(name))
+                        else if (!asset.IsRuntimeSpecific && !PluginProvidedAssemblyNames.Value.Contains(name))
                         {
                             missing.Add(Path.GetFileName(asset.RelativePath));
                         }
@@ -111,7 +121,7 @@ internal static class PluginDependencyScanner
                 {
                     AddFile(referencePath, isManaged: true);
                 }
-                else if (!HostAssemblyNames.Value.Contains(name))
+                else if (!PluginProvidedAssemblyNames.Value.Contains(name))
                 {
                     missing.Add(name + ".dll");
                 }
@@ -148,8 +158,40 @@ internal static class PluginDependencyScanner
             .ToArray();
     }
 
-    /// <summary>.NET・WPF・本体と本体の部品のアセンブリのパス。</summary>
-    public static IReadOnlyList<string> GetHostAssemblyPaths()
+    /// <summary>
+    /// プラグインが本体から借りられるアセンブリ(.NET・WPFとSDK)のパス。
+    /// .NET・WPFは、TRUSTED_PLATFORM_ASSEMBLIESのうちアプリのフォルダの外にあるもの(単一ファイルでも複数ファイルでも同じ集まり)。
+    /// </summary>
+    public static IReadOnlyList<string> GetPluginProvidedAssemblyPaths()
+    {
+        return PluginProvidedAssemblyPaths.Value;
+    }
+
+    private static IReadOnlyList<string> ReadPluginProvidedAssemblyPaths()
+    {
+        var appFolder = AppContext.BaseDirectory;
+        var paths = new List<string>();
+        var hasSdk = false;
+        foreach (var path in ReadTrustedPlatformAssemblyPaths())
+        {
+            if (!IsInside(appFolder, path))
+            {
+                paths.Add(path);
+            }
+            else if (IsSdk(Path.GetFileNameWithoutExtension(path)))
+            {
+                paths.Add(path);
+                hasSdk = true;
+            }
+        }
+
+        // csprojのExcludeSdkFromSingleFileでSDKをexeの外に置かないと、ここで止まる。
+        return hasSdk
+            ? paths
+            : throw new InvalidOperationException("The plugin SDK assembly is not in the trusted platform assemblies.");
+    }
+
+    private static string[] ReadTrustedPlatformAssemblyPaths()
     {
         return AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") is string trustedAssemblies
             ? trustedAssemblies.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
@@ -160,9 +202,21 @@ internal static class PluginDependencyScanner
     private static HashSet<string> ReadHostAssemblyNames()
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var path in GetHostAssemblyPaths())
+        foreach (var path in ReadTrustedPlatformAssemblyPaths())
         {
             names.Add(Path.GetFileNameWithoutExtension(path));
+        }
+
+        // 単一ファイルの公開ではexeの中の部品がTRUSTED_PLATFORM_ASSEMBLIESに入らないので、ビルドのときに作った一覧を足す。
+        using var stream = typeof(PluginDependencyScanner).Assembly.GetManifestResourceStream(HostAssemblyNamesResourceName)
+            ?? throw new InvalidOperationException($"The embedded resource '{HostAssemblyNamesResourceName}' is missing.");
+        using var reader = new StreamReader(stream);
+        while (reader.ReadLine() is { } line)
+        {
+            if (line.Length > 0)
+            {
+                names.Add(line);
+            }
         }
 
         foreach (var assembly in AssemblyLoadContext.Default.Assemblies)
@@ -207,7 +261,7 @@ internal static class PluginDependencyScanner
                 }
             }
 
-            // ほかの OS・CPU 向けの部品も並ぶ。今の環境の分だけが見つかればよいので、見つからなくても足りないとしない。
+            // ほかのOS・CPU向けの部品も並ぶ。今の環境の分だけが見つかればよいので、見つからなくても足りないとしない。
             if (library.Value.TryGetProperty("runtimeTargets", out var runtimeTargets))
             {
                 foreach (var runtimeAsset in runtimeTargets.EnumerateObject())
@@ -246,9 +300,9 @@ internal static class PluginDependencyScanner
     private sealed record DepsAsset(DepsAssetKind Kind, string RelativePath, string? Locale, bool IsRuntimeSpecific);
 }
 
-/// <param name="Folder">入口の DLL のフォルダ。</param>
-/// <param name="Files">プラグインを動かすのに要るファイル(入口・<c>.deps.json</c>・部品)。全部 <paramref name="Folder"/> の中。</param>
-/// <param name="ManagedAssemblies">そのうち、読み込み先へ先に読む .NET のアセンブリ(入口を含む)。</param>
+/// <param name="Folder">入口のDLLのフォルダ。</param>
+/// <param name="Files">プラグインを動かすのに要るファイル(入口・<c>.deps.json</c>・部品)。全部<paramref name="Folder"/>の中。</param>
+/// <param name="ManagedAssemblies">そのうち、読み込み先へ先に読む.NETのアセンブリ(入口を含む)。</param>
 /// <param name="MissingFiles">足りないファイルの名前。</param>
 internal sealed record PluginDependencyScan(
     string Folder,

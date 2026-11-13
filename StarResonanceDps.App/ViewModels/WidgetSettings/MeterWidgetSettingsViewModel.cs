@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Collections.ObjectModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -174,13 +176,15 @@ public sealed partial class MeterWidgetSettingsViewModel : ObservableObject, IDi
         set => CombatStateDisplayModeIndex = value;
     }
 
-    public bool ShowsPartyDisplaySettings => _kind is WidgetKind.PlayerList or WidgetKind.DpsMeter or WidgetKind.HpsMeter;
+    public bool ShowsPartyDisplaySettings =>
+        _kind is WidgetKind.PlayerList or WidgetKind.DpsMeter or WidgetKind.HpsMeter or WidgetKind.HateMeter or WidgetKind.BreakMeter;
 
     /// <summary>
     /// フィルター行の注記「履歴表示中では効果ありません」を出すか。
-    /// 履歴表示中にフィルターを無視するのはメーター2種だけで、プレイヤーリストは常にライブの画面なので効き続ける。
+    /// 履歴表示中にフィルターを無視するのはメーター4種だけで、プレイヤーリストは常にライブの画面なので効き続ける。
     /// </summary>
-    public bool ShowsPartyDisplayHistoryNote => _kind is WidgetKind.DpsMeter or WidgetKind.HpsMeter;
+    public bool ShowsPartyDisplayHistoryNote =>
+        _kind is WidgetKind.DpsMeter or WidgetKind.HpsMeter or WidgetKind.HateMeter or WidgetKind.BreakMeter;
 
     /// <summary>エンティティリストのフィルター(すべて表示 / オブジェクト以外)を出すか。</summary>
     public bool ShowsEntityDisplaySettings => _kind == WidgetKind.EntityList;
@@ -188,9 +192,9 @@ public sealed partial class MeterWidgetSettingsViewModel : ObservableObject, IDi
     /// <summary>ヘイトの枠の設定(「狙われるプレイヤー」「ヘイト値」)を出すか。エンティティリストだけ。</summary>
     public bool ShowsHateDisplaySettings => _kind == WidgetKind.EntityList;
 
-    /// <summary>「自分の強調表示」を出すのはプレイヤーリストとメーター2種。</summary>
+    /// <summary>「自分の強調表示」を出すのはプレイヤーリストとメーター4種。</summary>
     public bool ShowsSelfDisplaySettings =>
-        _kind is WidgetKind.PlayerList or WidgetKind.DpsMeter or WidgetKind.HpsMeter;
+        _kind is WidgetKind.PlayerList or WidgetKind.DpsMeter or WidgetKind.HpsMeter or WidgetKind.HateMeter or WidgetKind.BreakMeter;
 
     /// <summary>
     /// 「自分の強調表示」のスイッチ。保存する値は <see cref="SelfDisplayModeIndex"/> のままで、

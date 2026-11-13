@@ -15,7 +15,7 @@ This page explains how to add windows, widgets, and notification items to this a
 ## What you need
 
 - Windows (64-bit) and the .NET 10 SDK.
-- The SDK package (`StarResonanceDps.PluginSdk.<version>.nupkg`). It is listed in the [release notes](https://github.com/kokoukohiro/StarResonanceDps/releases) alongside the app's zip. It is not on the official NuGet site.
+- The SDK package (`StarResonanceDps.PluginSdk.<version>.nupkg`). It is listed in [Releases](https://github.com/kokoukohiro/StarResonanceDps/releases) alongside the app's zip. It is not on the official NuGet site.
 - The app, for testing. Use the SDK from the same release as the app that will use the plugin (see "SDK version" below).
 
 ## Creating the project
@@ -48,7 +48,7 @@ csproj:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StarResonanceDps.PluginSdk" Version="0.1.0" />
+    <PackageReference Include="StarResonanceDps.PluginSdk" Version="1.0.0" />
   </ItemGroup>
 </Project>
 ```
@@ -221,6 +221,7 @@ string title = texts["WindowTitle"];
 
 - Distribute `<assembly name>.dll` and, if it has dependencies, the `.deps.json` and the dependency DLLs (as they are arranged in the output folder). A plugin without dependencies needs only the one DLL.
 - Do not distribute `StarResonanceDps.PluginSdk.dll`. The app's copy is used.
+- Only the SDK, .NET, and WPF are taken from the app. Distribute every other dependency (such as a library added from NuGet) with the plugin, even if the app has the same one.
 - Users choose `<assembly name>.dll` with "Add plugin". It cannot be added if the dependencies are not in the same folder as the chosen DLL.
 - When you distribute a new version, raise `PluginVersion`. When a user chooses the new DLL with "Add plugin", it replaces the old one when the app restarts.
 - The settings files remain after an update. Make sure the new version can read the settings files of the previous version.
@@ -230,8 +231,9 @@ string title = texts["WindowTitle"];
 ## SDK version
 
 - The first number of the SDK package version is `PluginSdkVersion.Current`. When features are added, the second and later numbers go up.
-- The app loads a plugin whose `PluginSdkVersion.Current` passed to `PluginRegistration` is the same as the app's, and whose SDK version is the same as or older than the app's SDK. Otherwise, the plugin's row in "Plugins" shows "Error", and the tooltip shows "This is not a plugin for this app, or it does not match the app version."
+- The app loads a plugin whose `PluginSdkVersion.Current` passed to `PluginRegistration` is the same as the app's, and whose SDK version is the same as or older than the app's SDK. Otherwise, the plugin's row in "Plugins" shows "Error", and the "Plugin Error" window shows "This is not a plugin for this app, or it does not match the app version."
 - Build with the SDK from the same release as the users' app so that their app can load the plugin. A plugin built with a newer SDK cannot be loaded by an older app.
+- To switch to a new SDK, replace the `.nupkg` in `packages` and change `Version` in the csproj to the new version. If `Version` is left unchanged, the build uses the previous SDK from the NuGet cache without any warning.
 
 ## Notes
 

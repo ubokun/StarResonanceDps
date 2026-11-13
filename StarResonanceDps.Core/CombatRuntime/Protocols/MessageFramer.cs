@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.Buffers;
 using System.Buffers.Binary;
 using Serilog;

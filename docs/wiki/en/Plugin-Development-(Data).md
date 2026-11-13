@@ -200,7 +200,7 @@ private static async Task ReadMessagesAsync(IPluginContext context, IReadOnlyCol
 - Messages that arrive after `await foreach` starts are passed in the order they arrive. Earlier ones are not passed. Leaving the loop stops receiving.
 - The contents (`Payload`) are protobuf bytes. `Notify` and `Return` are decompressed, and `Return` stays in the form that wraps the response. `Call` is not decompressed.
 - `Payload` is a copy made by the app, so you can keep it as long as you like.
-- If the total of contents not yet taken exceeds 64 MB for one plugin, the plugin is stopped (the tooltip of its row in "[Plugins](Plugins)" shows "Stopped because it could not keep up with the incoming game data; it resumes the next time the app starts."). Narrow down the types you receive, and take what arrives right away.
+- If the total of contents not yet taken exceeds 64 MB for one plugin, the plugin is stopped and its row in "[Plugins](Plugins)" shows "Error" (the "Plugin Error" window appears, and the plugin is loaded again at the next startup). Narrow down the types you receive, and take what arrives right away.
 - `Initialize` is called on the UI thread, so without `ConfigureAwait(false)` the body of the loop runs on the UI thread.
 - When the app stops the plugin, the loop ends. If you did not pass `Stopping`, it ends without an exception; if you passed it, it ends with `OperationCanceledException`.
 - This wiki does not describe the IDs and content formats of game messages.

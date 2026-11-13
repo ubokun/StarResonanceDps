@@ -1,14 +1,16 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.Windows;
 using StarResonanceDps.App.Localization;
 using StarResonanceDps.App.Services;
 
 namespace StarResonanceDps.App.Views;
 
-/// <summary>更新の確認や置き換えができなかったことを出す。詳細は理由か直し方で、zipの取得が直し方なら詳細のリリースノートの語をリンクにする。</summary>
+/// <summary>更新の確認や置き換えができなかったことを出す。詳細は理由か直し方で、zipの取得が直し方なら詳細のReleasesの語をリンクにする。</summary>
 public static class UpdateFailureMessage
 {
     // 書式の中のリンクを差し込む位置の印。整形した文字列をここで区切る。
-    private const string ReleaseNotesLinkMarker = "\x01";
+    private const string ReleasesLinkMarker = "\x01";
 
     public static void ShowCheckFailed(Window? owner, AppUpdateFailure failure)
     {
@@ -40,14 +42,14 @@ public static class UpdateFailureMessage
 
         if (failure is AppUpdateFailure.InvalidRelease or AppUpdateFailure.NotFromZip or AppUpdateFailure.RestoreFailed)
         {
-            var detailParts = localization.Format(detailResourceKey, ReleaseNotesLinkMarker).Split(ReleaseNotesLinkMarker);
+            var detailParts = localization.Format(detailResourceKey, ReleasesLinkMarker).Split(ReleasesLinkMarker);
             MessageWindow.Show(
                 owner,
                 title,
                 message,
                 [
                     new MessageDetailPart(detailParts[0]),
-                    new MessageDetailPart(localization.GetString("Update_ReleaseNotesLink"), ProjectLinks.ReleasesUrl),
+                    new MessageDetailPart(localization.GetString("Update_ReleasesLink"), ProjectLinks.ReleasesUrl),
                     new MessageDetailPart(detailParts[1])
                 ]);
             return;

@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.Models;
 
 /// <summary>根のバフの種類。表は <c>Data/Generated/RootBuffs.json</c>(<c>DataTools/Core/gen_root_buffs.py</c>)。</summary>

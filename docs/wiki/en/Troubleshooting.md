@@ -13,7 +13,7 @@ This window appears when Npcap is not installed or its version cannot be detecte
 ### The "Startup error" window appears and the app closes
 
 - "Could not start the app.": The app cannot write to `Data` in the app folder. Check the write permissions of the folder shown in the window and your security software settings, or move the whole app folder to a location you can write to.
-- "Initialization failed.": Some of the app's data files may be missing or damaged. Download the zip from the release notes and overwrite the app folder with its contents. Your settings and combat history are kept.
+- "Initialization failed.": Some of the app's data files may be missing or damaged. Download the zip from Releases and overwrite the app folder with its contents. Your settings and combat history are kept.
 
 ### The "Error" window appears and the app closes
 
@@ -48,7 +48,7 @@ This window appears when "Launch app when Windows starts" in the "Startup" secti
 
 ### The "Plugin Error" window appears
 
-Some plugins could not be loaded. Reinstall those plugins or contact their authors ([Plugins](Plugins)).
+Some plugins could not be loaded. The details in the window show the reason and what to do for each plugin ([Plugins](Plugins)).
 
 ## Nothing appears
 
@@ -161,11 +161,11 @@ Skills that have no display name in the game are shown with their internal name 
 
 - The details in the "Update Error" window show how to fix the problem.
 - If the update stops at "Waiting for files in use to be released…", close File Explorer or any other program that has the app folder open.
-- If the update does not succeed, download the zip from the release notes and overwrite the app folder with its contents ([Installation and Updates](Installation-and-Updates)).
+- If the update does not succeed, download the zip from Releases and overwrite the app folder with its contents ([Installation and Updates](Installation-and-Updates)).
 
 ## A plugin does not work
 
-Hover over the "Error" mark on the plugin's row in "[Plugins](Plugins)" to see the reason.
+When a plugin's row in "[Plugins](Plugins)" shows "Error", the reason is shown in the "Plugin Error" window. If some plugins could not be loaded, this window appears every time the app starts.
 
 ## A history entry cannot be opened
 

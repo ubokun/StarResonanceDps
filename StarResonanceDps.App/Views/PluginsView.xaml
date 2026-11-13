@@ -1,7 +1,7 @@
+<!-- This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms. -->
 <UserControl x:Class="StarResonanceDps.App.Views.PluginsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:behaviors="clr-namespace:StarResonanceDps.App.Behaviors"
              xmlns:controls="clr-namespace:StarResonanceDps.App.Controls"
              xmlns:localization="clr-namespace:StarResonanceDps.App.Localization"
              xmlns:services="clr-namespace:StarResonanceDps.App.Services"
@@ -65,11 +65,9 @@
             <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
         </Style>
 
-        <!-- 「エラー」。理由は TIPS。押しても何も起きない行なので、押しても TIPS を閉じない。更新を待っている行は更新で直るので出さない。 -->
+        <!-- 「エラー」。理由は「プラグインエラー」の窓で出す。更新を待っている行は更新で直るので出さない。 -->
         <Style x:Key="PluginItem.ErrorPill" TargetType="{x:Type Border}" BasedOn="{StaticResource Panel.StatusPill}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="behaviors:ToolTipBehavior.IsEnabled" Value="True" />
-            <Setter Property="behaviors:ToolTipBehavior.KeepsOnClick" Value="True" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding RowState}" Value="{x:Static services:PluginRowState.Error}">
                     <Setter Property="Visibility" Value="Visible" />
@@ -226,11 +224,6 @@
                                         </StackPanel>
 
                                         <Border Grid.Column="2" Style="{StaticResource PluginItem.ErrorPill}">
-                                            <Border.ToolTip>
-                                                <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
-                                                         Style="{StaticResource ToolTip.Info}"
-                                                         Content="{Binding StatusToolTip}" />
-                                            </Border.ToolTip>
                                             <TextBlock Style="{StaticResource PluginItem.PillText}"
                                                        Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PluginStatus_Error]}" />
                                         </Border>

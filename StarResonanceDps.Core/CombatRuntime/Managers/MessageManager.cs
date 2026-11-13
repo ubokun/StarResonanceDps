@@ -1,3 +1,5 @@
+﻿﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using StarResonanceDps.Core.CombatRuntime.Protocols;
 using Serilog;
 using System;
@@ -252,6 +254,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             BuffOriginResolver.Instance.Clear();
             PendingEnemyBuffLogs.Clear();
             NearbyMonsterIndex.Instance.Clear();
+            EnemyContributionBaseline.Instance.Clear();
             EntityOriginIndex.Instance.Clear();
             BossDbmBarStore.Instance.Clear();
             WarningSkillCastStore.Instance.Clear();
@@ -1334,6 +1337,12 @@ namespace StarResonanceDps.Core.CombatRuntime
         private const int ReviveStartBuffId = 500111;
 
         /// <summary>
+        /// 挑発で敵に付くバフ。付いた差分で、付けた人のその敵へのヘイトが前の値の20%増える。
+        /// 攻撃の無いヘイトの増えを、このバフを付けたもの(スキル・バフ)の行に入れる(<see cref="RecordHateIncreases"/>)。
+        /// </summary>
+        private const int TauntDebuffBuffId = 55430;
+
+        /// <summary>
         /// 付いた人のスキルのクールダウンをゲームが一括で消すバフと、付与から消えるまでの時間。
         /// 510072(<c>NameDesign</c> 英雄本通用团灭恢复血量清理CD)は付与の約3.5秒後、
         /// 900122(清cd和回满生命)と 999962(肉鸽本-进休息室重置)は付与と同じ差分で消える。
@@ -1824,6 +1833,23 @@ namespace StarResonanceDps.Core.CombatRuntime
         }
 
         /// <summary>
+        /// バフの付与元を、ダメージの通知と同じ発生源の種類と番号にする。技・弾・バフ以外と、付与元が無いものは <c>(Other, 0)</c>。
+        /// </summary>
+        private static (EDamageSource Source, int OwnerId) ResolveFightSource(FightSourceInfo? source)
+        {
+            var sourceConfigId = source?.SourceConfigId ?? 0;
+            return source is null || sourceConfigId <= 0
+                ? (EDamageSource.Other, 0)
+                : (EFightSource)source.FightSourceType switch
+                {
+                    EFightSource.Skill => (EDamageSource.Skill, sourceConfigId),
+                    EFightSource.Bullet => (EDamageSource.Bullet, sourceConfigId),
+                    EFightSource.Buff => (EDamageSource.Buff, sourceConfigId),
+                    _ => (EDamageSource.Other, 0)
+                };
+        }
+
+        /// <summary>
         /// <paramref name="holderUuid"/> が持つ親のバフ <paramref name="parentBuffId"/> を付けたのが、全部プレイヤー(とその召喚)か。親が見つからなければ false。
         /// </summary>
         private static bool IsParentBuffCastByPlayers(int parentBuffId, long holderUuid, DateTime arrivalTime)
@@ -1871,17 +1897,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 return;
             }
 
-            var source = buffInfo.FightSourceInfo;
-            var sourceConfigId = source?.SourceConfigId ?? 0;
-            var (damageSource, ownerId) = source is null || sourceConfigId <= 0
-                ? (EDamageSource.Other, 0)
-                : (EFightSource)source.FightSourceType switch
-                {
-                    EFightSource.Skill => (EDamageSource.Skill, sourceConfigId),
-                    EFightSource.Bullet => (EDamageSource.Bullet, sourceConfigId),
-                    EFightSource.Buff => (EDamageSource.Buff, sourceConfigId),
-                    _ => (EDamageSource.Other, 0)
-                };
+            var (damageSource, ownerId) = ResolveFightSource(buffInfo.FightSourceInfo);
             if (damageSource == EDamageSource.Buff && IsParentBuffCastByPlayers(ownerId, fireUuid, extraData.ArrivalTime))
             {
                 return;
@@ -2819,6 +2835,338 @@ namespace StarResonanceDps.Core.CombatRuntime
             }
         }
 
+        /// <summary>
+        /// 出現の一覧の、敵のヘイトの一覧と強靭を基準として控える(<see cref="EnemyContributionBaseline"/>)。
+        /// それまでの累計が入っているので、増えとしては数えない。プレイヤーは控えない。
+        /// </summary>
+        private static void SetEnemyContributionBaseline(long uuid, EEntityType entityType, RepeatedField<Attr> attrs)
+        {
+            if (entityType == EEntityType.EntChar)
+            {
+                return;
+            }
+
+            var hasHateList = false;
+            var hasStunned = false;
+            foreach (var attr in attrs)
+            {
+                hasHateList |= attr.Id == (int)EAttrType.AttrHateList;
+                hasStunned |= attr.Id == (int)EAttrType.AttrStunned;
+            }
+
+            EnemyContributionBaseline.Instance.SetBaseline(
+                uuid,
+                hasHateList ? EncounterManager.Current.GetAttrKV(uuid, "AttrHateList") as List<HateInfo> : null,
+                hasStunned ? EncounterManager.Current.GetAttrKV(uuid, "AttrStunned") as int? : null);
+        }
+
+        /// <summary>差分の中のその敵への被弾(回復を除く)。与ダメのループで控え、ヘイトとブレイク値を被弾に分けるのに使う。</summary>
+        /// <param name="AttackerUuid">当てた人(召喚体なら召喚者)。</param>
+        /// <param name="RawAttackerUuid">通知の加害者そのもの(召喚体なら召喚体)。行の付与元をたどるのに使う。</param>
+        private readonly record struct EnemyHit(
+            long AttackerUuid,
+            long RawAttackerUuid,
+            ContributionHit Hit,
+            long Value,
+            EDamageSource Source,
+            int OwnerId,
+            int OwnerLevel,
+            int HitEventId);
+
+        /// <summary>今の差分の <see cref="EnemyHit"/>。パケットのスレッドだけで使い、差分ごとに空にする(増え続けない)。</summary>
+        private static readonly List<EnemyHit> EnemyHits = [];
+
+        /// <summary>差分の中でプレイヤーがその敵に付けた挑発のバフ(<see cref="TauntDebuffBuffId"/>)と、それを付けたもの。</summary>
+        /// <param name="CasterUuid">付けた人(召喚体なら召喚者)。</param>
+        /// <param name="FireUuid">バフを付けた実体そのもの。行の付与元をたどるのに使う。</param>
+        private readonly record struct EnemyTaunt(long CasterUuid, long FireUuid, EDamageSource Source, int OwnerId);
+
+        /// <summary>今の差分の <see cref="EnemyTaunt"/>。パケットのスレッドだけで使い、差分ごとに空にする(増え続けない)。</summary>
+        private static readonly List<EnemyTaunt> EnemyTaunts = [];
+
+        /// <summary>付けたものを発生源の種類にできなかった挑発のバフ。ログに1回ずつ書くための控えで、起動の間だけ持つ(付与元の種類の数までしか増えない)。</summary>
+        private static readonly HashSet<(int FightSourceType, int SourceConfigId)> UnknownTauntSources = [];
+
+        /// <summary>量を被弾に分ける重みと結果(<see cref="DistributeByWeight"/>)。</summary>
+        private struct WeightedShare
+        {
+            public long AttackerUuid;
+            public ContributionHit Hit;
+
+            /// <summary>分けた先の被弾の、差分の被弾の一覧(<see cref="EnemyHits"/>)の中の位置。</summary>
+            public int HitIndex;
+            public long Weight;
+            public ulong Share;
+            public ulong Remainder;
+        }
+
+        /// <summary>分けるときに使い回す一覧。パケットのスレッドだけで使い、使うたびに空にする。</summary>
+        private static readonly List<WeightedShare> ContributionShares = [];
+
+        /// <summary>
+        /// <paramref name="amount"/> を <paramref name="shares"/> の重みの比で分け、各要素の <see cref="WeightedShare.Share"/> に入れる。
+        /// 端数は余りの大きい順に1ずつ配り、分けた和を <paramref name="amount"/> と同じにする。重みはどれも 0 より大きいこと。
+        /// </summary>
+        private static void DistributeByWeight(ulong amount, List<WeightedShare> shares)
+        {
+            ulong totalWeight = 0;
+            foreach (var share in shares)
+            {
+                totalWeight += (ulong)share.Weight;
+            }
+
+            ulong assigned = 0;
+            for (var i = 0; i < shares.Count; i++)
+            {
+                var share = shares[i];
+                var product = (UInt128)amount * (ulong)share.Weight;
+                share.Share = (ulong)(product / totalWeight);
+                share.Remainder = (ulong)(product % totalWeight);
+                assigned += share.Share;
+                shares[i] = share;
+            }
+
+            for (var left = amount - assigned; left > 0; left--)
+            {
+                var largest = -1;
+                for (var i = 0; i < shares.Count; i++)
+                {
+                    if (shares[i].Remainder > 0 && (largest < 0 || shares[i].Remainder > shares[largest].Remainder))
+                    {
+                        largest = i;
+                    }
+                }
+
+                var share = shares[largest];
+                share.Share++;
+                share.Remainder = 0;
+                shares[largest] = share;
+            }
+        }
+
+        /// <summary>
+        /// 差分で増えたヘイトを、今の回に記録する(<see cref="Encounter.AddHate"/>)。戦闘の時計の判定と与ダメの記録の後に呼ぶ。
+        /// 人ごとの増えを、スキル詳細(ヘイト値)の行へ次の順で入れる。倍率の違うスキル(ブロック反撃など)は見ない(メーターは生の値だけ)。
+        /// <list type="number">
+        ///   <item>同じ差分にその人のその敵への値のある被弾があれば、被弾にダメージの値の比で分ける。</item>
+        ///   <item>無く、その人が直前の一覧にいなかったなら、初期ヘイト。</item>
+        ///   <item>
+        ///     無く、その人が同じ差分でその敵に挑発のバフを付けていれば、そのバフを付けたものの鍵(番号:0)。
+        ///     与ダメと同じ畳み方を通るので、行は見出し表と手修正(<c>RecountRowOverrides.json</c>)で決まる。
+        ///   </item>
+        ///   <item>それ以外は、その他。</item>
+        /// </list>
+        /// </summary>
+        private static void RecordHateIncreases(
+            long enemyUuid,
+            IReadOnlyList<EnemyContributionBaseline.HateIncrease> increases,
+            IReadOnlyList<EnemyHit> hits,
+            IReadOnlyList<EnemyTaunt> taunts,
+            DateTime arrivalUtc)
+        {
+            foreach (var increase in increases)
+            {
+                ContributionShares.Clear();
+                foreach (var hit in hits)
+                {
+                    if (hit.AttackerUuid == increase.PlayerUuid && hit.Value > 0)
+                    {
+                        ContributionShares.Add(new WeightedShare { AttackerUuid = hit.AttackerUuid, Hit = hit.Hit, Weight = hit.Value });
+                    }
+                }
+
+                if (ContributionShares.Count > 0)
+                {
+                    DistributeByWeight(increase.Increase, ContributionShares);
+                    foreach (var share in ContributionShares)
+                    {
+                        EncounterManager.Current.AddHate(enemyUuid, increase.PlayerUuid, share.Share, share.Hit, arrivalUtc);
+                    }
+
+                    continue;
+                }
+
+                if (increase.IsNewEntry)
+                {
+                    EncounterManager.Current.AddUnattributedHate(enemyUuid, increase.PlayerUuid, increase.Increase, isInitialHate: true, arrivalUtc);
+                    continue;
+                }
+
+                if (TryFindTaunt(taunts, increase.PlayerUuid, out var taunt))
+                {
+                    var folded = SkillSourceResolver.Resolve(taunt.Source, taunt.OwnerId, 0);
+                    EncounterManager.Current.AddHate(
+                        enemyUuid,
+                        increase.PlayerUuid,
+                        increase.Increase,
+                        new ContributionHit(folded.Key, folded.IsBuffSource, IsCrit: false),
+                        arrivalUtc);
+                    EncounterManager.Current.ResolveSourceLanding(
+                        increase.PlayerUuid,
+                        folded.Key,
+                        MeterSnapshotKind.Hate,
+                        taunt.Source,
+                        taunt.OwnerId,
+                        taunt.FireUuid,
+                        arrivalUtc);
+                    continue;
+                }
+
+                EncounterManager.Current.AddUnattributedHate(enemyUuid, increase.PlayerUuid, increase.Increase, isInitialHate: false, arrivalUtc);
+            }
+
+            ContributionShares.Clear();
+        }
+
+        /// <summary>
+        /// 差分で <paramref name="playerUuid"/> が付けた挑発のバフを探す。付けたものが2つ以上に分かれていれば、
+        /// どちらの増えか決まらないので見つからなかったことにし(増えはその他)、ログに1回書く。
+        /// </summary>
+        private static bool TryFindTaunt(IReadOnlyList<EnemyTaunt> taunts, long playerUuid, out EnemyTaunt found)
+        {
+            found = default;
+            var isFound = false;
+            foreach (var taunt in taunts)
+            {
+                if (taunt.CasterUuid != playerUuid)
+                {
+                    continue;
+                }
+
+                if (isFound && (taunt.Source != found.Source || taunt.OwnerId != found.OwnerId))
+                {
+                    if (!_ambiguousTauntLogged)
+                    {
+                        _ambiguousTauntLogged = true;
+                        Log.Warning(
+                            "Threat meter: a player taunted an enemy from two sources in one delta ({FirstSource} {FirstOwnerId}, {SecondSource} {SecondOwnerId}); the threat increase goes to Other",
+                            found.Source,
+                            found.OwnerId,
+                            taunt.Source,
+                            taunt.OwnerId);
+                    }
+
+                    return false;
+                }
+
+                found = taunt;
+                isFound = true;
+            }
+
+            return isFound;
+        }
+
+        /// <summary><see cref="TryFindTaunt"/> の付けたものが分かれた回をログに書いたか。起動の間に1回だけ書く。</summary>
+        private static bool _ambiguousTauntLogged;
+
+        /// <summary>
+        /// 敵に付いた挑発のバフを、付けたものと一緒に今の差分の控え(<see cref="EnemyTaunts"/>)へ入れる。付けた人がプレイヤーのときだけ。
+        /// 付けたものが技・弾・バフでなければ控えず、その増えはその他に入る(種類と番号ごとにログに1回書く)。
+        /// </summary>
+        private static void AddEnemyTaunt(BuffInfo buffInfo)
+        {
+            if (buffInfo.FireUuid == 0)
+            {
+                return;
+            }
+
+            var casterUuid = ResolveBuffCaster(buffInfo.FireUuid);
+            if (Utils.UuidToEntityType(casterUuid) != (long)EEntityType.EntChar)
+            {
+                return;
+            }
+
+            var (source, ownerId) = ResolveFightSource(buffInfo.FightSourceInfo);
+            if (source == EDamageSource.Other)
+            {
+                var fightSourceType = buffInfo.FightSourceInfo?.FightSourceType ?? -1;
+                var sourceConfigId = buffInfo.FightSourceInfo?.SourceConfigId ?? 0;
+                if (UnknownTauntSources.Add((fightSourceType, sourceConfigId)))
+                {
+                    Log.Warning(
+                        "Threat meter: taunt debuff {BuffId} came from a source that is not a skill, bullet or buff (type={FightSourceType}, id={SourceConfigId}); threat increases from it go to Other",
+                        buffInfo.BaseId,
+                        fightSourceType,
+                        sourceConfigId);
+                }
+
+                return;
+            }
+
+            EnemyTaunts.Add(new EnemyTaunt(casterUuid, buffInfo.FireUuid, source, ownerId));
+        }
+
+        /// <summary>表に行の無かった被弾(ブレイクメーター)。ログに1回ずつ書くための控えで、起動の間だけ持つ(被弾の種類の数までしか増えない)。</summary>
+        private static readonly HashSet<(EDamageSource Source, int OwnerId, int HitEventId)> UnknownStunnedDamageHits = [];
+
+        /// <summary>
+        /// 差分で減った敵の強靭(ブレイクゲージ)を、同じ差分のその敵への被弾に表の削り量(<see cref="DamageAttrTable"/>)の比で分け、
+        /// プレイヤーの分を今の回に記録する(<see cref="Encounter.AddBreak"/>)。減りはゲームの値そのままで、ブレイク効率などの割り増しは見ない。
+        /// 当てた人は与ダメと同じく召喚体なら召喚者で、プレイヤー以外の分は誰にも付けない。
+        /// 戻り・前の値が分からない・削り量のある被弾が無い差分(段の切り替えで最大が変わった減りなど)は数えない。戦闘の時計の判定と与ダメの記録の後に呼ぶ。
+        /// </summary>
+        private static void RecordBreakDecrease(long enemyUuid, int? stunnedBefore, IReadOnlyList<EnemyHit> hits, DateTime arrivalUtc)
+        {
+            if (stunnedBefore is not { } before
+                || EncounterManager.Current.GetAttrKV(enemyUuid, "AttrStunned") is not int after
+                || after >= before)
+            {
+                return;
+            }
+
+            ContributionShares.Clear();
+            for (var hitIndex = 0; hitIndex < hits.Count; hitIndex++)
+            {
+                var hit = hits[hitIndex];
+                if (!HelperMethods.DataTables.DamageAttrs.TryGetStunnedDamage(
+                        hit.Source, hit.OwnerId, hit.OwnerLevel, hit.HitEventId, out var weight))
+                {
+                    if (UnknownStunnedDamageHits.Add((hit.Source, hit.OwnerId, hit.HitEventId)))
+                    {
+                        Log.Warning(
+                            "Break meter: no DamageAttrTable row for a hit in a delta with a stun decrease source={Source} owner={OwnerId} hit={HitEventId}",
+                            hit.Source,
+                            hit.OwnerId,
+                            hit.HitEventId);
+                    }
+
+                    continue;
+                }
+
+                if (weight > 0)
+                {
+                    ContributionShares.Add(new WeightedShare { AttackerUuid = hit.AttackerUuid, Hit = hit.Hit, Weight = weight, HitIndex = hitIndex });
+                }
+            }
+
+            if (ContributionShares.Count == 0)
+            {
+                return;
+            }
+
+            DistributeByWeight((ulong)(before - after), ContributionShares);
+            foreach (var share in ContributionShares)
+            {
+                if (Utils.UuidToEntityType(share.AttackerUuid) == (long)EEntityType.EntChar)
+                {
+                    EncounterManager.Current.AddBreak(enemyUuid, share.AttackerUuid, share.Share, share.Hit, arrivalUtc);
+
+                    // 値の無い被弾(与ダメの行の名前を調べない)にもブレイク値は付くので、ブレイク値の行として名前を調べる。
+                    var hit = hits[share.HitIndex];
+                    EncounterManager.Current.ResolveSourceLanding(
+                        share.AttackerUuid,
+                        share.Hit.SkillKey,
+                        MeterSnapshotKind.Break,
+                        hit.Source,
+                        hit.OwnerId,
+                        hit.RawAttackerUuid,
+                        arrivalUtc);
+                }
+            }
+
+            ContributionShares.Clear();
+        }
+
         public static void ProcessSyncNearEntities(ReadOnlySpan<byte> payloadBuffer, ExtraPacketData extraData)
         {
             var syncNearEntities = SyncNearEntities.Parser.ParseFrom(payloadBuffer);
@@ -2829,6 +3177,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                 NearbyEntityProjection.RemoveEntity(disappearedEntity.Uuid);
                 SummonSourceIndex.Instance.Remove(disappearedEntity.Uuid);
                 NearbyMonsterIndex.Instance.Remove(disappearedEntity.Uuid);
+                EnemyContributionBaseline.Instance.Remove(disappearedEntity.Uuid);
                 PlayerDeathStates.Remove(disappearedEntity.Uuid);
                 LastPassiveHealTicks.Remove(disappearedEntity.Uuid);
                 EncounterManager.Current.RemoveDisappearedEntity(disappearedEntity.Uuid);
@@ -2857,6 +3206,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     ProcessAttrs(entity.Uuid, attrCollection.Attrs, extraData.ArrivalTime);
                     RecordSummonSource(entity.Uuid, attrCollection.Attrs, extraData.ArrivalTime);
                     RecordNearbyMonster(entity.Uuid, attrCollection.Attrs);
+                    SetEnemyContributionBaseline(entity.Uuid, entity.EntType, attrCollection.Attrs);
 
                     // 名前・クラスなどの出所を受けた印(名簿へ入れる下の行より前に立てる)。
                     if (entity.EntType == EEntityType.EntChar)
@@ -3140,6 +3490,10 @@ namespace StarResonanceDps.Core.CombatRuntime
                 playerVitalsBefore = CapturePlayerVitals(targetUuid);
             }
 
+            // 敵のヘイトの一覧の増え(ヘイトメーター)と強靭の前の値(ブレイクメーター)。記録するのは戦闘の時計の判定と与ダメの後。
+            IReadOnlyList<EnemyContributionBaseline.HateIncrease> hateIncreases = [];
+            int? stunnedBefore = null;
+
             if (attrCollection?.Attrs != null && attrCollection.Attrs.Any())
             {
                 foreach (var attr in attrCollection.Attrs)
@@ -3167,6 +3521,21 @@ namespace StarResonanceDps.Core.CombatRuntime
                 if (isTargetPlayer)
                 {
                     TrackPlayerDeath(targetUuid, playerVitalsBefore, changedAttributes, extraData);
+                }
+                else
+                {
+                    if (changedAttributes.Contains(EAttrType.AttrHateList)
+                        && EncounterManager.Current.GetAttrKV(targetUuid, "AttrHateList") is List<HateInfo> hateList)
+                    {
+                        hateIncreases = EnemyContributionBaseline.Instance.UpdateHate(targetUuid, hateList);
+                    }
+
+                    if (changedAttributes.Contains(EAttrType.AttrStunned))
+                    {
+                        stunnedBefore = EnemyContributionBaseline.Instance.UpdateStunned(
+                            targetUuid,
+                            EncounterManager.Current.GetAttrKV(targetUuid, "AttrStunned") as int? ?? 0);
+                    }
                 }
 
                 RecordSummonSource(targetUuid, attrCollection.Attrs, extraData.ArrivalTime);
@@ -3213,6 +3582,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             var sawBuffAdd = false;
             var sawPotionHealBuff = false;
             var addedBuffIds = new List<int>();
+
+            // 前の差分が途中の例外で空にできなかった分を残さない。
+            EnemyTaunts.Clear();
             if (delta.BuffEffect != null)
             {
                 for (int buffIdx = 0; buffIdx < delta.BuffEffect.BuffEffects.Count; buffIdx++)
@@ -3245,6 +3617,11 @@ namespace StarResonanceDps.Core.CombatRuntime
                                     buffInfo.FightSourceInfo?.FightSourceType == (int)EFightSource.Buff
                                         ? buffInfo.FightSourceInfo.SourceConfigId : 0, extraData.ArrivalTime);
                                 addedBuffIds.Add(buffInfo.BaseId);
+                                if (!isTargetPlayer && buffInfo.BaseId == TauntDebuffBuffId)
+                                {
+                                    AddEnemyTaunt(buffInfo);
+                                }
+
                                 if (buffInfo.BaseId == PotionHealBuffId)
                                 {
                                     sawPotionHealBuff = true;
@@ -3413,8 +3790,13 @@ namespace StarResonanceDps.Core.CombatRuntime
 
             if (skillEffect?.Damages == null || skillEffect.Damages.Count == 0)
             {
+                RecordHateIncreases(targetUuid, hateIncreases, [], EnemyTaunts, extraData.ArrivalTime);
+                EnemyTaunts.Clear();
                 return;
             }
+
+            // 前の差分が途中の例外で空にできなかった分を残さない。
+            EnemyHits.Clear();
 
             // 被ダメログとタイムラインの加害者を先に決める(タイムラインに載る敵の回復は回復した側)。
             var damages = skillEffect.Damages;
@@ -3505,6 +3887,18 @@ namespace StarResonanceDps.Core.CombatRuntime
 
                 bool isCrit = (syncDamageInfo.TypeFlag & 1) == 1;
                 bool isHeal = syncDamageInfo.Type == EDamageType.Heal;
+                if (!isTargetPlayer && !isHeal)
+                {
+                    EnemyHits.Add(new EnemyHit(
+                        attackerUuid,
+                        syncDamageInfo.AttackerUuid,
+                        new ContributionHit(skillId, foldedSource.IsBuffSource, isCrit),
+                        damage,
+                        syncDamageInfo.DamageSource,
+                        syncDamageInfo.OwnerId,
+                        syncDamageInfo.OwnerLevel,
+                        syncDamageInfo.HitEventId));
+                }
                 var luckyValue = syncDamageInfo.LuckyValue;
                 bool isLucky = luckyValue != 0;
                 long hpLessen = syncDamageInfo.HpLessenValue;
@@ -3601,7 +3995,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                     EncounterManager.Current.ResolveSourceLanding(
                         attackerUuid,
                         skillId,
-                        isHeal,
+                        isHeal ? MeterSnapshotKind.Healing : MeterSnapshotKind.Damage,
                         syncDamageInfo.DamageSource,
                         syncDamageInfo.OwnerId,
                         syncDamageInfo.AttackerUuid,
@@ -3620,6 +4014,12 @@ namespace StarResonanceDps.Core.CombatRuntime
 
                 buffBasedShieldBreakValue = 0;
             }
+
+            // 与ダメの後に記録する(「最初に攻撃した敵のみ」の敵は、この差分の与ダメで決まることがある)。
+            RecordHateIncreases(targetUuid, hateIncreases, EnemyHits, EnemyTaunts, extraData.ArrivalTime);
+            RecordBreakDecrease(targetUuid, stunnedBefore, EnemyHits, extraData.ArrivalTime);
+            EnemyHits.Clear();
+            EnemyTaunts.Clear();
 
             foreach (var playerUuid in rosterPlayersToUpsert)
             {

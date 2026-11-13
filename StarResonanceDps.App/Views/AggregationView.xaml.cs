@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using StarResonanceDps.App.Config;

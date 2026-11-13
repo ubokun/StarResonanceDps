@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.CombatRuntime.Protocols;
 
 public class NotifyId(ulong serviceId, uint methoidId)

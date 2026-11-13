@@ -6,6 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Releaseのpdbは、DLLの中に入れる(例外の行番号を残し、配布物にpdbを並べない)。 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
     <Folder Include="Config\" />
     <Folder Include="Statistics\" />

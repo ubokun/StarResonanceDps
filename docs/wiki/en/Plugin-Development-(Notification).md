@@ -139,7 +139,7 @@ Use `IPluginContext.Notifications` (`IPluginNotificationService`).
 
 ## Errors and exceptions
 
-- A mistake in a definition (the form of an ID or key or a duplicate, the range of a number or slider, a color setting, and so on) stops the plugin, and the tooltip of its row in "[Plugins](Plugins)" shows "The notification items are not defined correctly." The reason is written to the log in English.
+- A mistake in a definition (the form of an ID or key or a duplicate, the range of a number or slider, a color setting, and so on) stops the plugin, and its row in "[Plugins](Plugins)" shows "Error". The "Plugin Error" window shows "Could not be initialized." The reason is written to the log in English.
 - An exception in `GetNotificationDefinitions` or `SettingsChanged` also stops the plugin.
 - If an item name, a default text, or the name of an insertable item is empty, the build stops (SRDPS014).
 

@@ -11,10 +11,10 @@ This tab lets you check the app version and open pages such as the usage guide.
 |---|---|
 | How to use | [Home](Don't-Check-My-DPS-Wiki) of this wiki |
 | Making plugins | [Plugin Development](Plugin-Development) of this wiki |
-| GitHub | The home page of the GitHub repository (README) |
-| Release notes | The release notes on GitHub (changes in each version) |
+| Release notes | Releases on GitHub (changes in each version) |
+| Sponsorship | GitHub Sponsors (supporting development) |
 
-- "How to use" and "Making plugins" open the page in the app's language. The table shows where they open when the app is in English. In other languages, they open the wiki page in that language. The README on GitHub is in Japanese, and the links at the top open the README in other languages.
+- "How to use" and "Making plugins" open the page in the app's language. The table shows where they open when the app is in English. In other languages, they open the wiki page in that language.
 - Bottom: The copyright and license. Click "License" to open the page on GitHub that explains the license.
 
 ## Controls

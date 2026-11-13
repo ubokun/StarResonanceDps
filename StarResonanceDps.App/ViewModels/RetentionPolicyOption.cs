@@ -1,4 +1,6 @@
-﻿namespace StarResonanceDps.App.ViewModels;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+namespace StarResonanceDps.App.ViewModels;
 
 /// <summary>
 /// 集計設定「履歴の最大保持数」の選択肢1つ。

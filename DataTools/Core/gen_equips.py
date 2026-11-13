@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 装備の数値・効果の文言のテーブルを生成する。装備の名前は`gen_items.py`のアイテムの名前(装備IDもアイテムID)。
 

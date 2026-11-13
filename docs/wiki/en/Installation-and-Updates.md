@@ -8,7 +8,7 @@ This page explains how to install Don't Check My DPS and how to update it to a n
 
 ## Installation
 
-1. Download the zip from the [release notes](https://github.com/kokoukohiro/StarResonanceDps/releases).
+1. Download the zip from [Releases](https://github.com/kokoukohiro/StarResonanceDps/releases).
 2. Extract the zip to a folder you can write to.
 3. Start `StarResonanceDps.exe` in the folder.
 
@@ -27,4 +27,4 @@ You can update to a new version from within the app.
 - Bundled plugins that you uninstalled are not restored.
 - You can stop the check at startup with "Check for updates at app startup" in the "Startup" section of Settings.
 - The app connects to GitHub to check for and download updates. It does not send combat data.
-- If the update does not succeed, download the zip from the release notes and overwrite the app folder with its contents.
+- If the update does not succeed, download the zip from Releases and overwrite the app folder with its contents.

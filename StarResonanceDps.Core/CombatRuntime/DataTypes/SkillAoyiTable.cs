@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.Core.CombatRuntime.DataTypes
 {
     /// <summary>イマジンの表(<c>Data/Raw/SkillAoyiTable.json</c>)。行の番号がイマジンの技ID。</summary>

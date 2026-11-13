@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using Newtonsoft.Json.Linq;
 using StarResonanceDps.Core.Models;
 using StarResonanceDps.Core.Services;
 using Zproto;

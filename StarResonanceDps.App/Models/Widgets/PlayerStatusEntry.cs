@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -90,9 +92,10 @@ public sealed partial class PlayerStatusRowItem : ObservableObject
 /// </para>
 ///
 /// <para>
-/// 筋力・知力・敏捷と、物理/魔法で対になる項目(攻撃力・防御力無視・精錬攻撃・攻撃/詠唱速度)は
+/// 筋力・知力・敏捷と、物理/魔法で対になる項目(攻撃力・防御力無視・精錬攻撃)は
 /// <b>職業ごとに1つだけ</b>出す。どれを出すかは <c>ProfessionSystemTable</c> が決める
 /// (直書きの分岐にするとゲームの表とずれる)。
+/// 攻撃速度と詠唱速度は職業で絞らず両方出す(どちらが効くかは技ごとに決まり、両方を使う職業がある)。
 /// </para>
 /// </summary>
 public static class PlayerStatusEntry
@@ -112,14 +115,11 @@ public static class PlayerStatusEntry
     /// </summary>
     private static readonly int[] DefensePenetrationAttrIds = [11370, 11380];
     private static readonly int[] RefinedAttackAttrIds = [11410, 11430];
-    private static readonly int[] AttackSpeedAttrIds = [11720, 11730];
 
     private const int PhysicalPenetrationAttrId = 11370;
     private const int MagicalPenetrationAttrId = 11380;
     private const int PhysicalRefinedAttackAttrId = 11410;
     private const int MagicalRefinedAttackAttrId = 11430;
-    private const int AttackSpeedAttrId = 11720;
-    private const int CastSpeedAttrId = 11730;
     private const int MagicalAttackAttrId = 11340;
 
     /// <param name="AttrIds">畳む番号。並びは表示の順で、先頭の位置に出す。</param>
@@ -347,11 +347,10 @@ public static class PlayerStatusEntry
         AttackAttrIds,
         DefensePenetrationAttrIds,
         RefinedAttackAttrIds,
-        AttackSpeedAttrIds,
     ];
 
     /// <summary>
-    /// 並べ替えの単位。<b>組は代表1つにまとめた76件</b>で、並びが既定の表示順。
+    /// 並べ替えの単位。<b>組は代表1つにまとめた78件</b>で、並びが既定の表示順。
     /// 設定の一覧(<see cref="SettingRowAttrIds"/>)と違い、職業で片方だけ出る組も1件にする。
     /// </summary>
     public static IReadOnlyList<int> OrderUnitAttrIds { get; } = BuildOrderUnitAttrIds();
@@ -520,7 +519,6 @@ public static class PlayerStatusEntry
         var isMagical = shownAttack == MagicalAttackAttrId;
         var shownPenetration = isMagical ? MagicalPenetrationAttrId : PhysicalPenetrationAttrId;
         var shownRefinedAttack = isMagical ? MagicalRefinedAttackAttrId : PhysicalRefinedAttackAttrId;
-        var shownSpeed = isMagical ? CastSpeedAttrId : AttackSpeedAttrId;
 
         var rows = new List<PlayerStatusRow>(Rows.Length);
         var rowKeys = new List<int>(Rows.Length);
@@ -529,8 +527,7 @@ public static class PlayerStatusEntry
             if (IsHidden(spec.AttrId, PrimaryStatAttrIds, shownPrimaryStat)
                 || IsHidden(spec.AttrId, AttackAttrIds, shownAttack)
                 || IsHidden(spec.AttrId, DefensePenetrationAttrIds, shownPenetration)
-                || IsHidden(spec.AttrId, RefinedAttackAttrIds, shownRefinedAttack)
-                || IsHidden(spec.AttrId, AttackSpeedAttrIds, shownSpeed))
+                || IsHidden(spec.AttrId, RefinedAttackAttrIds, shownRefinedAttack))
             {
                 continue;
             }

@@ -1,4 +1,6 @@
-﻿namespace StarResonanceDps.App.Models.Widgets;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+namespace StarResonanceDps.App.Models.Widgets;
 
 public enum WidgetKind
 {
@@ -55,5 +57,22 @@ public enum WidgetKind
     CombatExtensionTimeline = 31,
     HatePs = 32,
     PartyDps = 33,
-    EnemyCatalog = 34
+    EnemyCatalog = 34,
+    /// <summary>ヘイトメーター。プレイヤーごとの、敵のヘイトの一覧の増えの合計と毎秒の値。</summary>
+    HateMeter = 35,
+
+    /// <summary>ブレイクメーター。プレイヤーごとの、敵の強靭(ブレイクゲージ)を削った量の合計と毎秒の値。</summary>
+    BreakMeter = 36,
+
+    /// <summary>スキル詳細(ヘイト値)。1人のヘイトを、増えた差分のその人の被弾にダメージの値の比で分けた技ごとの内訳。</summary>
+    HateSkillDetail = 37,
+
+    /// <summary>スキル詳細(ブレイク値)。1人のブレイク値を、被弾ごとに分けた技ごとの内訳。</summary>
+    BreakSkillDetail = 38,
+
+    /// <summary>TPS推移グラフ。1人のヘイトの1秒ごとの合計を描く。</summary>
+    HateGraph = 39,
+
+    /// <summary>BPS推移グラフ。1人のブレイク値の1秒ごとの合計を描く。</summary>
+    BreakGraph = 40
 }

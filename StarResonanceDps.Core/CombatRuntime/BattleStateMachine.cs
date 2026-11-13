@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime.DataTypes;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using Serilog;
 using System;
 using System.Collections.Concurrent;
@@ -45,6 +47,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             Services.SourceLandingResolver.Instance.Clear();
             Services.BuffOriginResolver.Instance.Clear();
             Services.NearbyMonsterIndex.Instance.Clear();
+            Services.EnemyContributionBaseline.Instance.Clear();
             Services.EntityOriginIndex.Instance.Clear();
             Services.BossDbmBarStore.Instance.Clear();
             Services.WarningSkillCastStore.Instance.Clear();

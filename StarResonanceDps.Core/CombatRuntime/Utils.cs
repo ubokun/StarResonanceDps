@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime.DataTypes;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;

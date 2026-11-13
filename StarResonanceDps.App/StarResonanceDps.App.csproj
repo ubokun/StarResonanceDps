@@ -9,11 +9,20 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>StarResonanceDps</AssemblyName>
-    <Version>4.0.0</Version>
+    <Version>4.1.0</Version>
+    <Copyright>Copyright © 2026 kokoukohiro</Copyright>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\Images\ApplicationIcon.ico</ApplicationIcon>
     <!-- 参照先の説明の XML(SDK の StarResonanceDps.PluginSdk.xml)は、プラグインを作る人向けのパッケージに入れるもので、アプリの配布物には入れない。 -->
     <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+  </PropertyGroup>
+
+  <!-- 配布物の公開(-rを付ける)は単一ファイル。Releaseのpdbは、DLL・exeの中に入れる(例外の行番号を残し、配布物にpdbを並べない)。 -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishSingleFile>true</PublishSingleFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -163,7 +172,8 @@
     <ProjectReference Include="..\StarResonanceDps.PluginSdk\StarResonanceDps.PluginSdk.csproj" />
 
     <ProjectReference Include="..\StarResonanceDps.Plugins.ModuleTool\StarResonanceDps.Plugins.ModuleTool.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\StarResonanceDps.HotkeyHost\StarResonanceDps.HotkeyHost.csproj" ReferenceOutputAssembly="false" />
+    <!-- 補助のファイルはCopyHotkeyHost・PublishHotkeyHostで置く(参照したexeのruntimeconfig.jsonを.NETが写さないように)。 -->
+    <ProjectReference Include="..\StarResonanceDps.HotkeyHost\StarResonanceDps.HotkeyHost.csproj" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
 
   <ItemGroup>
@@ -318,8 +328,11 @@
     <Copy SourceFiles="@(HotkeyHostFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="CopyHotkeyHostToPublish" AfterTargets="Publish">
-    <Copy SourceFiles="@(HotkeyHostFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  <!-- 公開では補助も公開して直下に置く(-rを付けた公開では単一ファイルのexeが1つ)。構成・-r・PathMapは、この公開の指定を引き継ぐ。 -->
+  <Target Name="PublishHotkeyHost" AfterTargets="Publish">
+    <MSBuild Projects="..\StarResonanceDps.HotkeyHost\StarResonanceDps.HotkeyHost.csproj"
+             Targets="Publish"
+             Properties="PublishDir=$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(PublishDir)'))" />
   </Target>
 
   <ItemGroup>
@@ -354,8 +367,31 @@
     </None>
   </ItemGroup>
 
+  <!-- 本体の部品の名前の一覧(PluginDependencyScannerが、アプリの部品と同じ名前のプラグインを読まない確かめに使う)。
+       単一ファイルの公開ではexeの中の部品がTRUSTED_PLATFORM_ASSEMBLIESに入らないので、ビルドのときに作って埋め込む。 -->
+  <Target Name="EmbedHostAssemblyNames" AfterTargets="ResolveReferences">
+    <ItemGroup>
+      <_HostAssemblyName Include="$(AssemblyName)" />
+      <_HostAssemblyName Include="@(ReferenceCopyLocalPaths->'%(Filename)')" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll' and '%(ReferenceCopyLocalPaths.AssetType)' != 'native' and '%(ReferenceCopyLocalPaths.AssetType)' != 'resources'" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)HostAssemblyNames.txt" Lines="@(_HostAssemblyName->Distinct())" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(IntermediateOutputPath)HostAssemblyNames.txt" LogicalName="HostAssemblyNames.txt" />
+      <FileWrites Include="$(IntermediateOutputPath)HostAssemblyNames.txt" />
+    </ItemGroup>
+  </Target>
+
+  <!-- SDKはexeの外に置く(プラグインの「＋」の確かめが、SDKをファイルのパスで読むため)。 -->
+  <Target Name="ExcludeSdkFromSingleFile" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Condition="'%(ResolvedFileToPublish.Filename)%(ResolvedFileToPublish.Extension)' == 'StarResonanceDps.PluginSdk.dll'">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
   <!-- 更新で置き換えるファイルの一覧(AppUpdateApplier.FileListName)。公開の出力が全部そろってから書く。 -->
-  <Target Name="WriteUpdateFileList" AfterTargets="Publish" DependsOnTargets="CopyBundledPluginAssembliesToPublish;CopyHotkeyHostToPublish">
+  <Target Name="WriteUpdateFileList" AfterTargets="Publish" DependsOnTargets="CopyBundledPluginAssembliesToPublish;PublishHotkeyHost">
     <ItemGroup>
       <_UpdateListedFile Include="$(PublishDir)**\*" Exclude="$(PublishDir)update-files.txt" />
     </ItemGroup>

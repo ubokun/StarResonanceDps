@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;

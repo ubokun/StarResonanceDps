@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 ボス大技の予告(DBM)の名前テーブルを生成する。
 

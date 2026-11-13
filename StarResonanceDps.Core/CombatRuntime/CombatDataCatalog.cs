@@ -1,4 +1,6 @@
-﻿using System.Collections.Frozen;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Collections.Frozen;
 using Newtonsoft.Json;
 using Serilog;
 using StarResonanceDps.Core.CombatRuntime.DataTypes;

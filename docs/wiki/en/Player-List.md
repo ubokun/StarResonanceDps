@@ -8,7 +8,7 @@ Click the start button on the "Player List" card in "[Widgets](Widgets)".
 
 ## What it shows
 
-- Who is listed: Yourself, your party members, and the players around you (including helper NPCs). People who appear in the records of the current battle (DPS Meter, HPS Meter, Timeline, and Damage Taken Log) remain even after they are no longer around you.
+- Who is listed: Yourself, your party members, and the players around you (including helper NPCs). People who appear in the records of the current battle (DPS Meter, HPS Meter, Threat Meter, Break Meter, Timeline, and Damage Taken Log) remain even after they are no longer around you.
 - Row: From the left, the class icon, the Deep-Slumber Psychoscope type, the player name and HP, and the skill slots.
   - Class icon: The class spec (such as Iaido Slash) appears below it. It shows "Class I" if the player has no talents equipped, "Unknown" until it is known, and the transformation name while the player is transformed.
   - Deep-Slumber Psychoscope type: The image at the lower right of the class icon. Only the frame is shown if it is not enabled, and a question mark until it is known.

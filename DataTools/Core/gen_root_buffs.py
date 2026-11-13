@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 ルートバフの名前・種類・並び・アイコンと、モジュール効果の名前・アイコン・段階、タレントの木の形・タレントの名前を生成する。
 

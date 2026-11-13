@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime.Protocols;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime.Protocols;
 using StarResonanceDps.Core.Services;
 using System;
 using System.Collections.Generic;

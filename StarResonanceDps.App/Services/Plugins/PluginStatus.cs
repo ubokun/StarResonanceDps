@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 namespace StarResonanceDps.App.Services;
 
 /// <summary>プラグインの一覧の行の状態。押せるのは <see cref="Openable"/> の行だけ。<see cref="Error"/> と <see cref="PendingDeletion"/> の行は灰色にする。</summary>
@@ -16,7 +18,7 @@ public enum PluginRowState
     PendingDeletion,
 }
 
-/// <summary>一覧の行が <see cref="PluginRowState.Error"/> のときの理由(行の TIPS)。</summary>
+/// <summary>一覧の行が <see cref="PluginRowState.Error"/> のときの理由。読み込めなかった理由は「プラグインエラー」の窓に出す(<see cref="PluginLoadFailure"/>)。</summary>
 public enum PluginErrorReason
 {
     /// <summary>要るファイルが足りない(フォルダに同じ名前の DLL が無いときも)。</summary>
@@ -48,13 +50,17 @@ public enum PluginErrorReason
 }
 
 /// <summary>一覧の行1つの状態。</summary>
-/// <param name="ErrorReason"><see cref="PluginRowState.Error"/> のときだけ値がある。</param>
-/// <param name="MissingFiles"><see cref="PluginErrorReason.MissingFiles"/> のときの、足りないファイルの名前。</param>
 /// <param name="CanUninstall">ゴミ箱を押せるか。削除を待っている行と、削除できなかった行(次の起動でまた消す)は押せない。</param>
 /// <param name="IsUpdatePending">新しいバージョンを選び、次の起動での置き換えを待っている。</param>
 public sealed record PluginStatus(
     PluginRowState RowState,
-    PluginErrorReason? ErrorReason,
-    IReadOnlyList<string> MissingFiles,
     bool CanUninstall,
     bool IsUpdatePending);
+
+/// <summary>「プラグインエラー」の窓に出す、読み込めなかったプラグイン1つ(起動時と、「＋」で足したとき)。</summary>
+/// <param name="Name">一覧の行と同じ名前(今の言語)。</param>
+/// <param name="MissingFiles"><see cref="PluginErrorReason.MissingFiles"/> のときの、足りないファイルの名前。</param>
+public sealed record PluginLoadFailure(
+    string Name,
+    PluginErrorReason Reason,
+    IReadOnlyList<string> MissingFiles);

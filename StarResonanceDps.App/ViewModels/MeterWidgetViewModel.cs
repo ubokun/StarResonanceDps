@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -113,20 +115,34 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
         LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
     }
 
-    public string SkillDetailMenuText => LocalizationManager.Instance.GetString(
-        _kind == MeterSnapshotKind.Damage
-            ? "Widget_DamageSkillDetail"
-            : "Widget_HealingSkillDetail");
+    /// <summary>行から詳細を開けるか(右クリックのメニューの項目)。ヘイトメーターとブレイクメーターには詳細が無い。</summary>
+    public bool HasSummary => _kind is MeterSnapshotKind.Damage or MeterSnapshotKind.Healing;
 
-    public string SummaryMenuText => LocalizationManager.Instance.GetString(
-        _kind == MeterSnapshotKind.Damage
-            ? "Widget_DamageSummary"
-            : "Widget_HealingSummary");
+    public string SkillDetailMenuText => LocalizationManager.Instance.GetString(_kind switch
+    {
+        MeterSnapshotKind.Damage => "Widget_DamageSkillDetail",
+        MeterSnapshotKind.Healing => "Widget_HealingSkillDetail",
+        MeterSnapshotKind.Hate => "Widget_HateSkillDetail",
+        MeterSnapshotKind.Break => "Widget_BreakSkillDetail",
+        _ => throw new InvalidOperationException($"No skill detail for the meter kind {_kind}.")
+    });
 
-    public string GraphMenuText => LocalizationManager.Instance.GetString(
-        _kind == MeterSnapshotKind.Damage
-            ? "Widget_DpsGraph"
-            : "Widget_HpsGraph");
+    /// <summary>詳細の項目の文字。項目が無いメーター(<see cref="HasSummary"/> が偽)では空。</summary>
+    public string SummaryMenuText => _kind switch
+    {
+        MeterSnapshotKind.Damage => LocalizationManager.Instance.GetString("Widget_DamageSummary"),
+        MeterSnapshotKind.Healing => LocalizationManager.Instance.GetString("Widget_HealingSummary"),
+        _ => string.Empty
+    };
+
+    public string GraphMenuText => LocalizationManager.Instance.GetString(_kind switch
+    {
+        MeterSnapshotKind.Damage => "Widget_DpsGraph",
+        MeterSnapshotKind.Healing => "Widget_HpsGraph",
+        MeterSnapshotKind.Hate => "Widget_HateGraph",
+        MeterSnapshotKind.Break => "Widget_BreakGraph",
+        _ => throw new InvalidOperationException($"No graph for the meter kind {_kind}.")
+    });
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)
     {
@@ -173,7 +189,15 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
             benchmarkState.IsActive
                 ? "Meter_StopBenchmark"
                 : "Meter_Benchmark");
-        PartyMetricLabel = $"{LocalizationManager.Instance.GetString(_kind == MeterSnapshotKind.Damage ? "Metric_EncounterDps" : "Metric_EncounterHps")}:";
+        var partyMetricLabelKey = _kind switch
+        {
+            MeterSnapshotKind.Damage => "Metric_EncounterDps",
+            MeterSnapshotKind.Healing => "Metric_EncounterHps",
+            MeterSnapshotKind.Hate => "Meter_HatePerSecond",
+            MeterSnapshotKind.Break => "Meter_BreakPerSecond",
+            _ => throw new InvalidOperationException($"No footer label for the meter kind {_kind}.")
+        };
+        PartyMetricLabel = $"{LocalizationManager.Instance.GetString(partyMetricLabelKey)}:";
         PartyMetricValueText = MeterNumberFormatter.Format(snapshot.ValuePerSecond, numberDisplayFormatIndex);
         TotalLabel = $"{LocalizationManager.Instance.GetString("Meter_Total")}:";
         TotalValueText = MeterNumberFormatter.Format(snapshot.TotalValue, numberDisplayFormatIndex);
@@ -235,9 +259,14 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
     private void RequestSkillDetail(MeterPlayerEntry? player)
     {
         RequestPlayerWindow(
-            _kind == MeterSnapshotKind.Damage
-                ? WidgetKind.DamageSkillDetail
-                : WidgetKind.HealingSkillDetail,
+            _kind switch
+            {
+                MeterSnapshotKind.Damage => WidgetKind.DamageSkillDetail,
+                MeterSnapshotKind.Healing => WidgetKind.HealingSkillDetail,
+                MeterSnapshotKind.Hate => WidgetKind.HateSkillDetail,
+                MeterSnapshotKind.Break => WidgetKind.BreakSkillDetail,
+                _ => throw new InvalidOperationException($"No skill detail for the meter kind {_kind}.")
+            },
             player);
     }
 
@@ -245,9 +274,12 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
     private void RequestSummary(MeterPlayerEntry? player)
     {
         RequestPlayerWindow(
-            _kind == MeterSnapshotKind.Damage
-                ? WidgetKind.DamageSummary
-                : WidgetKind.HealingSummary,
+            _kind switch
+            {
+                MeterSnapshotKind.Damage => WidgetKind.DamageSummary,
+                MeterSnapshotKind.Healing => WidgetKind.HealingSummary,
+                _ => throw new InvalidOperationException($"No summary for the meter kind {_kind}.")
+            },
             player);
     }
 
@@ -255,9 +287,14 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
     private void RequestGraph(MeterPlayerEntry? player)
     {
         RequestPlayerWindow(
-            _kind == MeterSnapshotKind.Damage
-                ? WidgetKind.DpsGraph
-                : WidgetKind.HpsGraph,
+            _kind switch
+            {
+                MeterSnapshotKind.Damage => WidgetKind.DpsGraph,
+                MeterSnapshotKind.Healing => WidgetKind.HpsGraph,
+                MeterSnapshotKind.Hate => WidgetKind.HateGraph,
+                MeterSnapshotKind.Break => WidgetKind.BreakGraph,
+                _ => throw new InvalidOperationException($"No graph for the meter kind {_kind}.")
+            },
             player);
     }
 

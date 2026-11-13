@@ -1,4 +1,6 @@
-﻿using System;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -1633,6 +1635,30 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
                 initialPlayer,
                 MeterSnapshotKind.Healing,
                 PlayerMetricDisplayMode.SkillDetail),
+            WidgetKind.HateSkillDetail => new PlayerMetricWidgetViewModel(
+                playerWidget,
+                requestedCharacterId,
+                initialPlayer,
+                MeterSnapshotKind.Hate,
+                PlayerMetricDisplayMode.SkillDetail),
+            WidgetKind.BreakSkillDetail => new PlayerMetricWidgetViewModel(
+                playerWidget,
+                requestedCharacterId,
+                initialPlayer,
+                MeterSnapshotKind.Break,
+                PlayerMetricDisplayMode.SkillDetail),
+            WidgetKind.HateGraph => new PlayerMetricWidgetViewModel(
+                playerWidget,
+                requestedCharacterId,
+                initialPlayer,
+                MeterSnapshotKind.Hate,
+                PlayerMetricDisplayMode.Graph),
+            WidgetKind.BreakGraph => new PlayerMetricWidgetViewModel(
+                playerWidget,
+                requestedCharacterId,
+                initialPlayer,
+                MeterSnapshotKind.Break,
+                PlayerMetricDisplayMode.Graph),
             WidgetKind.HealingSummary => new PlayerMetricSummaryWidgetViewModel(
                 playerWidget,
                 requestedCharacterId,
@@ -1763,6 +1789,8 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
                 new ListWidgetFooterView()),
             WidgetKind.DpsMeter => CreateMeterWidgetComposition(widget, MeterSnapshotKind.Damage),
             WidgetKind.HpsMeter => CreateMeterWidgetComposition(widget, MeterSnapshotKind.Healing),
+            WidgetKind.HateMeter => CreateMeterWidgetComposition(widget, MeterSnapshotKind.Hate),
+            WidgetKind.BreakMeter => CreateMeterWidgetComposition(widget, MeterSnapshotKind.Break),
             WidgetKind.Timeline => CreateTimelineComposition(widget),
             WidgetKind.ReviveList => CreateReviveListComposition(widget),
             WidgetKind.DamageTakenLog => CreateDamageTakenLogComposition(widget),
@@ -2335,6 +2363,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             or WidgetKind.HealingSkillDetail
             or WidgetKind.HealingSummary
             or WidgetKind.HpsGraph
+            or WidgetKind.HateSkillDetail
+            or WidgetKind.HateGraph
+            or WidgetKind.BreakSkillDetail
+            or WidgetKind.BreakGraph
             or WidgetKind.DamageTakenSummary
             or WidgetKind.EntityInfo
             or WidgetKind.Chat;

@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using Zproto;
@@ -42,6 +44,12 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
             nameof(Entity.MaxHp),
             nameof(Entity.TotalDamage),
             nameof(Entity.TotalHealing),
+            nameof(Entity.TotalHate),
+            nameof(Entity.InitialHateTotal),
+            nameof(Entity.InitialHateCount),
+            nameof(Entity.OtherHateTotal),
+            nameof(Entity.OtherHateCount),
+            nameof(Entity.TotalBreak),
             nameof(Entity.TotalOverhealing),
             nameof(Entity.TotalShieldBreak),
             nameof(Entity.TotalCasts),
@@ -51,6 +59,8 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
             nameof(Entity.DamageStats),
             nameof(Entity.HealingStats),
             nameof(Entity.TakenStats),
+            nameof(Entity.HateStats),
+            nameof(Entity.BreakStats),
             nameof(Entity.SkillMetrics),
             nameof(Entity.Attributes),
             nameof(Entity.SkillCasts),
@@ -101,6 +111,12 @@ internal sealed class EncounterBlobContractResolver : DefaultContractResolver
             nameof(MetricsContainer.IsBuffSource),
             nameof(MetricsContainer.LandingKind),
             nameof(MetricsContainer.LandingId),
+            nameof(MetricsContainer.HateTotal),
+            nameof(MetricsContainer.HateHitCount),
+            nameof(MetricsContainer.HateCritCount),
+            nameof(MetricsContainer.BreakTotal),
+            nameof(MetricsContainer.BreakHitCount),
+            nameof(MetricsContainer.BreakCritCount),
         ],
         [typeof(SkillSnapshot)] =
         [

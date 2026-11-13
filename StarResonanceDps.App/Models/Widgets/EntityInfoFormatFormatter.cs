@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Text.RegularExpressions;
 using StarResonanceDps.App.Localization;
 
 namespace StarResonanceDps.App.Models.Widgets;

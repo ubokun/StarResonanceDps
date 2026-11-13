@@ -1,3 +1,4 @@
+<!-- This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms. -->
 <UserControl x:Class="StarResonanceDps.App.Views.Widgets.DamageTakenLogWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"

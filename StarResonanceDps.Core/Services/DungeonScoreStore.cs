@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using StarResonanceDps.Core.CombatRuntime;
 using StarResonanceDps.Core.Protocols.Game.Binary;
 

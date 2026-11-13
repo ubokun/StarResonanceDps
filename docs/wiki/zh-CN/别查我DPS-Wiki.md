@@ -1,6 +1,6 @@
 [日本語](お願い、DPS見ないで…Wiki) | [한국어](내-DPS-조회하지-마-Wiki) | [简体中文](别查我DPS-Wiki) | [English](Don't-Check-My-DPS-Wiki)
 
-<img alt="Icon" src="images/ApplicationIcon.png" width="128">
+<img alt="Icon" src="https://raw.githubusercontent.com/kokoukohiro/StarResonanceDps/main/StarResonanceDps.App/Assets/Images/ApplicationIcon.png" width="128">
 
 本Wiki介绍别查我DPS的使用方法，内容包括安装与初始设置、各界面和设置的说明、疑难解答以及插件开发等。
 
@@ -44,6 +44,8 @@
 - [时间轴](时间轴)
 - [DPS计量器](DPS计量器)
 - [HPS计量器](HPS计量器)
+- [仇恨计量器](仇恨计量器)
+- [破韧计量器](破韧计量器)
 - [承伤日志](承伤日志)
 - [技能详情(伤害)](技能详情(伤害))
 - [伤害详情](伤害详情)
@@ -51,6 +53,10 @@
 - [技能详情(治疗)](技能详情(治疗))
 - [治疗详情](治疗详情)
 - [HPS趋势图表](HPS趋势图表)
+- [技能详情(仇恨值)](技能详情(仇恨值))
+- [TPS趋势图表](TPS趋势图表)
+- [技能详情(破韧值)](技能详情(破韧值))
+- [BPS趋势图表](BPS趋势图表)
 - [承伤详情](承伤详情)
 - [聊天](聊天)
 

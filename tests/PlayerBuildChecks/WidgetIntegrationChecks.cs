@@ -15,6 +15,10 @@ internal static class WidgetIntegrationChecks
 {
     public static void Run(Action<bool,string> check)
     {
+        var kinds=Enum.GetValues<WidgetKind>();
+        check(kinds.Distinct().Count()==kinds.Length,"upstream and custom widget kinds have no numeric aliases");
+        var legacyKinds=System.Text.Json.JsonSerializer.Deserialize<WidgetKind[]>("[30,31,32,33,34]")!;
+        check(legacyKinds.SequenceEqual(new[]{WidgetKind.UserBuildLibrary,WidgetKind.CombatExtensionTimeline,WidgetKind.HatePs,WidgetKind.PartyDps,WidgetKind.EnemyCatalog}),"previous custom widget identifiers keep their meaning after upstream meter integration");
         foreach (var kind in new[] { WidgetKind.UserBuildLibrary, WidgetKind.CombatExtensionTimeline, WidgetKind.HatePs, WidgetKind.PartyDps, WidgetKind.EnemyCatalog })
         {
             var vm = new WidgetListItemViewModel { Kind = kind, DisplayNameResourceKey = kind.ToString() };

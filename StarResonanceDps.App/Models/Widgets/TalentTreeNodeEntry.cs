@@ -1,3 +1,5 @@
+// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
 using static StarResonanceDps.Core.CombatRuntime.DataTypes.Enums.Professions;
 
 namespace StarResonanceDps.App.Models.Widgets;

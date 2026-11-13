@@ -1,4 +1,6 @@
-﻿using StarResonanceDps.Core.CombatRuntime.DataTypes;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using StarResonanceDps.Core.CombatRuntime.DataTypes;
 using Serilog;
 using System;
 using System.Collections.Frozen;
@@ -55,6 +57,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             reads.Start<Dictionary<string, ProfileImage>>(RawTablePath("ProfileImageTable.json"));
             reads.Start<Dictionary<string, CookCuisine>>(RawTablePath("CookCuisineTable.json"));
             reads.Start<Dictionary<string, FightAttr>>(RawTablePath("FightAttrTable.json"));
+            reads.Start<Dictionary<string, DamageAttr>>(RawTablePath("DamageAttrTable.json"));
 
             LoadRawTable<Monster>(reads, "MonsterTable.json", table => HelperMethods.DataTables.Monsters.Data = table);
             LoadRawTable<Skill>(reads, "SkillTable.json", table => HelperMethods.DataTables.Skills.Data = table);
@@ -75,6 +78,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             LoadRawTable<TempAttr>(reads, "TempAttrTable.json", table => HelperMethods.DataTables.TempAttrs.Data = table);
             LoadRawTable<ChatSticker>(reads, "ChatStickersTable.json", table => HelperMethods.DataTables.ChatStickers.Data = table);
             LoadRawTable<ProfileImage>(reads, "ProfileImageTable.json", table => HelperMethods.DataTables.ProfileImages.Data = table);
+            LoadRawTable<DamageAttr>(reads, "DamageAttrTable.json", table => HelperMethods.DataTables.DamageAttrs.Load(table));
 
             LoadCookCuisineTable(reads);
             LoadFightAttrTable(reads);

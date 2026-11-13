@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿// This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
+
+using System.Diagnostics;
 
 namespace StarResonanceDps.Core.Protocols.Game.Binary;
 

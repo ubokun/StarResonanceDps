@@ -1,3 +1,4 @@
+# This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 """
 メーターの行名の表`RecountTable`を、発生源キーで引ける形に変換する。
 

@@ -233,7 +233,7 @@ public sealed class Plugin : IStarResonancePlugin, IPluginMultiWidgetProvider
 
 ## Errors and exceptions
 
-- A mistake in a definition (the form of an ID or a duplicate, the size, the icon, the range of a setting value, and so on) stops the plugin, and the tooltip of its row in "[Plugins](Plugins)" shows "The widgets are not defined correctly." The reason is written to the log in English.
+- A mistake in a definition (the form of an ID or a duplicate, the size, the icon, the range of a setting value, and so on) stops the plugin, and its row in "[Plugins](Plugins)" shows "Error". The "Plugin Error" window shows "Could not be initialized." The reason is written to the log in English.
 - A mistake in the content (`Body` is `null`, or `HasFooter` and `Footer` do not match) or an exception in `CreateWidget` stops the plugin, and that window does not open, not even at the next startup.
 - An exception in `SettingsChanged`, in `Click` of a header button, in `Dispose`, or in `GetWidgetTargets` also stops the plugin.
 - When the plugin is stopped, its open windows close. The window state is kept, so they open again at the next startup.

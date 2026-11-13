@@ -460,7 +460,7 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>플러그인을 추가할 수 없습니다.</value>
   </data>
   <data name="PluginAddFailed_InvalidFile_Detail" xml:space="preserve">
-    <value>선택한 파일이 이 앱의 플러그인이 아니거나 앱과 버전이 맞지 않습니다.</value>
+    <value>선택한 파일이 이 앱의 플러그인이 아니거나 앱과 버전이 일치하지 않습니다.</value>
   </data>
   <data name="PluginAddFailed_CannotPlace_Detail" xml:space="preserve">
     <value>앱을 종료하고 Plugins 폴더 안에 DLL과 같은 이름의 폴더를 만든 후, 선택한 DLL이 있는 폴더의 내용을 복사하고 앱을 다시 실행하세요.</value>
@@ -501,17 +501,38 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="PluginStopped_Detail" xml:space="preserve">
     <value>앱을 다시 시작하면 다시 불러옵니다.
-해결되지 않으면 플러그인을 다시 설치하거나 제작자에게 알려 주세요.</value>
+해결되지 않으면 플러그인을 다시 설치하거나 제작자에게 연락해 주세요.</value>
   </data>
   <data name="PluginStoppedPacketBacklog_Detail" xml:space="preserve">
-    <value>{0}이(가) 통신 수신을 따라가지 못했습니다.</value>
+    <value>앱을 다시 시작하면 다시 불러옵니다.
+해결되지 않으면 제작자에게 연락해 주세요.</value>
   </data>
   <data name="PluginLoadFailed_Message" xml:space="preserve">
     <value>불러오지 못한 플러그인이 있습니다.</value>
   </data>
   <data name="PluginLoadFailed_Detail" xml:space="preserve">
-    <value>{0}
-플러그인을 다시 설치하거나 제작자에게 알려 주세요.</value>
+    <value>플러그인을 다시 설치하거나 제작자에게 연락해 주세요.</value>
+  </data>
+  <data name="PluginLoadFailed_RestartDetail" xml:space="preserve">
+    <value>앱을 다시 시작해 주세요.</value>
+  </data>
+  <data name="PluginLoadFailed_Line" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="PluginLoadFailed_MissingFiles" xml:space="preserve">
+    <value>필요한 파일({0})을 찾을 수 없습니다.</value>
+  </data>
+  <data name="PluginLoadFailed_Invalid" xml:space="preserve">
+    <value>이 앱의 플러그인이 아니거나 앱과 버전이 일치하지 않습니다.</value>
+  </data>
+  <data name="PluginLoadFailed_InitializationFailed" xml:space="preserve">
+    <value>초기화하지 못했습니다.</value>
+  </data>
+  <data name="PluginLoadFailed_DeletionFailed" xml:space="preserve">
+    <value>삭제하지 못했습니다.</value>
+  </data>
+  <data name="PluginLoadFailed_UpdateFailed" xml:space="preserve">
+    <value>업데이트하지 못했습니다.</value>
   </data>
   <data name="PluginAddFailed_PendingDeletion_Detail" xml:space="preserve">
     <value>같은 플러그인이 삭제를 기다리고 있습니다.
@@ -543,33 +564,6 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="PluginStatus_PendingUpdate" xml:space="preserve">
     <value>재시작 후 업데이트</value>
-  </data>
-  <data name="PluginStatus_MissingFiles" xml:space="preserve">
-    <value>필요한 파일({0})을 찾을 수 없습니다</value>
-  </data>
-  <data name="PluginStatus_Invalid" xml:space="preserve">
-    <value>이 앱의 플러그인이 아니거나 앱과 버전이 맞지 않습니다</value>
-  </data>
-  <data name="PluginStatus_Stopped" xml:space="preserve">
-    <value>오류가 발생해 중지됨, 다음 실행 시 다시 시작</value>
-  </data>
-  <data name="PluginStatus_InvalidNotifications" xml:space="preserve">
-    <value>알림 항목의 구성에 오류가 있습니다</value>
-  </data>
-  <data name="PluginStatus_InvalidWidgets" xml:space="preserve">
-    <value>위젯의 구성에 오류가 있습니다</value>
-  </data>
-  <data name="PluginStatus_PacketBacklog" xml:space="preserve">
-    <value>통신 수신을 따라가지 못해 중지됨, 다음 실행 시 다시 시작</value>
-  </data>
-  <data name="PluginStatus_TerminatedApp" xml:space="preserve">
-    <value>앱을 종료시켜 중지됨, 다시 설치하면 다시 시작</value>
-  </data>
-  <data name="PluginStatus_DeletionFailed" xml:space="preserve">
-    <value>삭제하지 못했습니다, 다음 실행 시 다시 삭제합니다</value>
-  </data>
-  <data name="PluginStatus_UpdateFailed" xml:space="preserve">
-    <value>업데이트하지 못했습니다, 다음 실행 시 다시 업데이트합니다</value>
   </data>
   <data name="Confirm_UninstallPlugin_Title" xml:space="preserve">
     <value>플러그인 삭제</value>
@@ -620,17 +614,17 @@ VOICEVOX를 다시 시작하세요.</value>
   <data name="Help_PluginDevelopment_Description" xml:space="preserve">
     <value>개발자용 설명</value>
   </data>
-  <data name="Help_GitHub_Title" xml:space="preserve">
-    <value>GitHub</value>
-  </data>
-  <data name="Help_GitHub_Description" xml:space="preserve">
-    <value>리포지토리 홈페이지</value>
-  </data>
   <data name="Help_ReleaseNotes_Title" xml:space="preserve">
     <value>릴리스 노트</value>
   </data>
   <data name="Help_ReleaseNotes_Description" xml:space="preserve">
     <value>버전별 변경 사항</value>
+  </data>
+  <data name="Help_Sponsor_Title" xml:space="preserve">
+    <value>개발 후원</value>
+  </data>
+  <data name="Help_Sponsor_Description" xml:space="preserve">
+    <value>한 푼만 주세요…</value>
   </data>
   <data name="Help_Copyright" xml:space="preserve">
     <value>Copyright © 2026 kokoukohiro(GNU GPL v3)</value>
@@ -734,8 +728,8 @@ VOICEVOX를 다시 시작하세요.</value>
     <value>이전 버전으로 되돌리지 못했습니다.
 {0}에서 zip을 받아 앱 폴더에 덮어쓰세요.</value>
   </data>
-  <data name="Update_ReleaseNotesLink" xml:space="preserve">
-    <value>릴리스 노트</value>
+  <data name="Update_ReleasesLink" xml:space="preserve">
+    <value>Releases</value>
   </data>
   <data name="Update_RestartFailed_Message" xml:space="preserve">
     <value>업데이트했지만 다시 시작하지 못했습니다.</value>
@@ -991,6 +985,12 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="Widget_HpsMeter" xml:space="preserve">
     <value>HPS 미터</value>
+  </data>
+  <data name="Widget_HateMeter" xml:space="preserve">
+    <value>적대 수치 미터</value>
+  </data>
+  <data name="Widget_BreakMeter" xml:space="preserve">
+    <value>내성 파괴 미터</value>
   </data>
   <data name="Widget_Timeline" xml:space="preserve">
     <value>타임라인</value>
@@ -1313,8 +1313,20 @@ VOICEVOX를 다시 시작하세요.</value>
   <data name="Meter_Total" xml:space="preserve">
     <value>합계</value>
   </data>
+  <data name="Meter_HatePerSecond" xml:space="preserve">
+    <value>TPS</value>
+  </data>
+  <data name="Meter_BreakPerSecond" xml:space="preserve">
+    <value>BPS</value>
+  </data>
   <data name="Widget_HpsGraph" xml:space="preserve">
     <value>HPS 추이 그래프</value>
+  </data>
+  <data name="Widget_HateGraph" xml:space="preserve">
+    <value>TPS 추이 그래프</value>
+  </data>
+  <data name="Widget_BreakGraph" xml:space="preserve">
+    <value>BPS 추이 그래프</value>
   </data>
   <data name="Widget_HealingSummary" xml:space="preserve">
     <value>치유 상세</value>
@@ -1500,6 +1512,18 @@ VOICEVOX를 다시 시작하세요.</value>
   </data>
   <data name="Widget_HealingSkillDetail" xml:space="preserve">
     <value>스킬 상세(치유)</value>
+  </data>
+  <data name="Widget_HateSkillDetail" xml:space="preserve">
+    <value>스킬 상세(적대 수치)</value>
+  </data>
+  <data name="Widget_BreakSkillDetail" xml:space="preserve">
+    <value>스킬 상세(내성 파괴 수치)</value>
+  </data>
+  <data name="SkillDetail_InitialHate" xml:space="preserve">
+    <value>초기 적대 수치</value>
+  </data>
+  <data name="SkillDetail_Other" xml:space="preserve">
+    <value>기타</value>
   </data>
   <data name="Metric_SummaryTotal" xml:space="preserve">
     <value>합계</value>
