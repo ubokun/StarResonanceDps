@@ -1,0 +1,897 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Keybind.Action.Fishing.CastReelIn" xml:space="preserve">
+    <value>キャスト/竿を引く</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatChannelDown" xml:space="preserve">
+    <value>トークチャンネル下切替</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatChannelUp" xml:space="preserve">
+    <value>トークチャンネル上切替</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatInputChannelLeft" xml:space="preserve">
+    <value>トークチャンネル左切替</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatInputChannelRight" xml:space="preserve">
+    <value>トークチャンネル右切替</value>
+  </data>
+  <data name="Keybind.Action.Fishing.CloseMenu" xml:space="preserve">
+    <value>メニューを閉じる</value>
+  </data>
+  <data name="Keybind.Action.Fishing.FishingEncyclopedia" xml:space="preserve">
+    <value>釣り/図鑑</value>
+  </data>
+  <data name="Keybind.Action.Fishing.FishingResearch" xml:space="preserve">
+    <value>釣り/研究</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ModeGuide" xml:space="preserve">
+    <value>モード/ガイド</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveBack" xml:space="preserve">
+    <value>竿移動-後</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveForward" xml:space="preserve">
+    <value>竿移動-前</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveForwardBack" xml:space="preserve">
+    <value>竿移動-前後</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveLeft" xml:space="preserve">
+    <value>竿移動-左</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveLeftRight" xml:space="preserve">
+    <value>竿移動-左右</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveRight" xml:space="preserve">
+    <value>竿移動-右</value>
+  </data>
+  <data name="Keybind.Action.Fishing.Settings" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ShowMouseCursor" xml:space="preserve">
+    <value>マウス呼出し</value>
+  </data>
+  <data name="Keybind.Action.Fishing.SocialMode" xml:space="preserve">
+    <value>ソーシャルモード</value>
+  </data>
+  <data name="Keybind.Action.Fishing.SwitchBait" xml:space="preserve">
+    <value>釣り餌切替</value>
+  </data>
+  <data name="Keybind.Action.Fishing.SwitchRod" xml:space="preserve">
+    <value>竿切替</value>
+  </data>
+  <data name="Keybind.Action.Fishing.Talk" xml:space="preserve">
+    <value>トーク</value>
+  </data>
+  <data name="Keybind.Action.Main.Abilities" xml:space="preserve">
+    <value>アビリティ</value>
+  </data>
+  <data name="Keybind.Action.Main.AcceptInvite" xml:space="preserve">
+    <value>招待承認</value>
+  </data>
+  <data name="Keybind.Action.Main.Action" xml:space="preserve">
+    <value>アクション</value>
+  </data>
+  <data name="Keybind.Action.Main.AutoBattle" xml:space="preserve">
+    <value>オートバトル</value>
+  </data>
+  <data name="Keybind.Action.Main.AutoRun" xml:space="preserve">
+    <value>オートラン</value>
+  </data>
+  <data name="Keybind.Action.Main.BattleImagine1" xml:space="preserve">
+    <value>バトルイマジン1</value>
+  </data>
+  <data name="Keybind.Action.Main.BattleImagine2" xml:space="preserve">
+    <value>バトルイマジン2</value>
+  </data>
+  <data name="Keybind.Action.Main.CameraForwardBack" xml:space="preserve">
+    <value>カメラ-前後</value>
+  </data>
+  <data name="Keybind.Action.Main.CameraLeftRight" xml:space="preserve">
+    <value>カメラ-左右</value>
+  </data>
+  <data name="Keybind.Action.Main.CancelInteraction" xml:space="preserve">
+    <value>インタラクト解除</value>
+  </data>
+  <data name="Keybind.Action.Main.Channel" xml:space="preserve">
+    <value>チャンネル</value>
+  </data>
+  <data name="Keybind.Action.Main.Character" xml:space="preserve">
+    <value>キャラクター</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatChannelDown" xml:space="preserve">
+    <value>トークチャンネル下切替</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatChannelUp" xml:space="preserve">
+    <value>トークチャンネル上切替</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatInputChannelLeft" xml:space="preserve">
+    <value>トークチャンネル左切替</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatInputChannelRight" xml:space="preserve">
+    <value>トークチャンネル右切替</value>
+  </data>
+  <data name="Keybind.Action.Main.CloseMenu" xml:space="preserve">
+    <value>メニューを閉じる</value>
+  </data>
+  <data name="Keybind.Action.Main.CursorMoveLeftRight" xml:space="preserve">
+    <value>カーソル移動-左右</value>
+  </data>
+  <data name="Keybind.Action.Main.CursorMoveUpDown" xml:space="preserve">
+    <value>カーソル移動-上下</value>
+  </data>
+  <data name="Keybind.Action.Main.CycleItemsLeft" xml:space="preserve">
+    <value>左でアイテム切り替え</value>
+  </data>
+  <data name="Keybind.Action.Main.CycleItemsRight" xml:space="preserve">
+    <value>右でアイテム切り替え</value>
+  </data>
+  <data name="Keybind.Action.Main.DashDodge" xml:space="preserve">
+    <value>ダッシュ/回避</value>
+  </data>
+  <data name="Keybind.Action.Main.DashDodge1" xml:space="preserve">
+    <value>ダッシュ/回避1</value>
+  </data>
+  <data name="Keybind.Action.Main.DashDodge2" xml:space="preserve">
+    <value>ダッシュ/回避2</value>
+  </data>
+  <data name="Keybind.Action.Main.DeclineInvite" xml:space="preserve">
+    <value>招待拒否</value>
+  </data>
+  <data name="Keybind.Action.Main.EditHome" xml:space="preserve">
+    <value>ホーム編集</value>
+  </data>
+  <data name="Keybind.Action.Main.EnvironmentalResonance1" xml:space="preserve">
+    <value>環境共鳴能力1</value>
+  </data>
+  <data name="Keybind.Action.Main.EnvironmentalResonance2" xml:space="preserve">
+    <value>環境共鳴能力2</value>
+  </data>
+  <data name="Keybind.Action.Main.Equipment" xml:space="preserve">
+    <value>装備</value>
+  </data>
+  <data name="Keybind.Action.Main.ExtraSkill" xml:space="preserve">
+    <value>エクストラスキル</value>
+  </data>
+  <data name="Keybind.Action.Main.Guild" xml:space="preserve">
+    <value>ギルド</value>
+  </data>
+  <data name="Keybind.Action.Main.HideUi" xml:space="preserve">
+    <value>UI非表示</value>
+  </data>
+  <data name="Keybind.Action.Main.HomeBlueprint" xml:space="preserve">
+    <value>ホーム設計図</value>
+  </data>
+  <data name="Keybind.Action.Main.IllustrationGuide" xml:space="preserve">
+    <value>イラストガイド</value>
+  </data>
+  <data name="Keybind.Action.Main.Inventory" xml:space="preserve">
+    <value>所持品</value>
+  </data>
+  <data name="Keybind.Action.Main.Jump" xml:space="preserve">
+    <value>ジャンプ</value>
+  </data>
+  <data name="Keybind.Action.Main.LeaveDungeon" xml:space="preserve">
+    <value>ダンジョン退出</value>
+  </data>
+  <data name="Keybind.Action.Main.LockOnSwitch" xml:space="preserve">
+    <value>ロックオン/切替</value>
+  </data>
+  <data name="Keybind.Action.Main.LockOnSwitch1" xml:space="preserve">
+    <value>ロックオン/切替1</value>
+  </data>
+  <data name="Keybind.Action.Main.LockOnSwitch2" xml:space="preserve">
+    <value>ロックオン/切替2</value>
+  </data>
+  <data name="Keybind.Action.Main.MapOnOff" xml:space="preserve">
+    <value>マップON/OFF</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill1" xml:space="preserve">
+    <value>マスタリースキル1</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill2" xml:space="preserve">
+    <value>マスタリースキル2</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill3" xml:space="preserve">
+    <value>マスタリースキル3</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill4" xml:space="preserve">
+    <value>マスタリースキル4</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveBack" xml:space="preserve">
+    <value>移動-後</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveForward" xml:space="preserve">
+    <value>移動-前</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveForwardBack" xml:space="preserve">
+    <value>移動-前後</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveLeft" xml:space="preserve">
+    <value>移動-左</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveLeftRight" xml:space="preserve">
+    <value>移動-左右</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveRight" xml:space="preserve">
+    <value>移動-右</value>
+  </data>
+  <data name="Keybind.Action.Main.NormalAttack" xml:space="preserve">
+    <value>通常攻撃</value>
+  </data>
+  <data name="Keybind.Action.Main.OpenMenu" xml:space="preserve">
+    <value>メニューを開く</value>
+  </data>
+  <data name="Keybind.Action.Main.OpenSkillPalette" xml:space="preserve">
+    <value>スキルパレットを開く</value>
+  </data>
+  <data name="Keybind.Action.Main.Party" xml:space="preserve">
+    <value>パーティ</value>
+  </data>
+  <data name="Keybind.Action.Main.Quests" xml:space="preserve">
+    <value>クエスト</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickAction" xml:space="preserve">
+    <value>クイック操作</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickUseQuestItem" xml:space="preserve">
+    <value>クエストアイテムのクイック使用</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheel" xml:space="preserve">
+    <value>クイックホイール</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot1" xml:space="preserve">
+    <value>クイックホイール-スロット1</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot2" xml:space="preserve">
+    <value>クイックホイール-スロット2</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot3" xml:space="preserve">
+    <value>クイックホイール-スロット3</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot4" xml:space="preserve">
+    <value>クイックホイール-スロット4</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot5" xml:space="preserve">
+    <value>クイックホイール-スロット5</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot6" xml:space="preserve">
+    <value>クイックホイール-スロット6</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot7" xml:space="preserve">
+    <value>クイックホイール-スロット7</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot8" xml:space="preserve">
+    <value>クイックホイール-スロット8</value>
+  </data>
+  <data name="Keybind.Action.Main.RecommendedEvents" xml:space="preserve">
+    <value>おすすめイベント</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill1" xml:space="preserve">
+    <value>ロールスキル1</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill2" xml:space="preserve">
+    <value>ロールスキル2</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill3" xml:space="preserve">
+    <value>ロールスキル3</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill4" xml:space="preserve">
+    <value>ロールスキル4</value>
+  </data>
+  <data name="Keybind.Action.Main.SeasonCenter" xml:space="preserve">
+    <value>シーズンセンター</value>
+  </data>
+  <data name="Keybind.Action.Main.ShowMouseCursor" xml:space="preserve">
+    <value>マウス呼出し</value>
+  </data>
+  <data name="Keybind.Action.Main.Skills" xml:space="preserve">
+    <value>スキル</value>
+  </data>
+  <data name="Keybind.Action.Main.SocialMode" xml:space="preserve">
+    <value>ソーシャルモード</value>
+  </data>
+  <data name="Keybind.Action.Main.SpecialAttack" xml:space="preserve">
+    <value>特殊攻撃</value>
+  </data>
+  <data name="Keybind.Action.Main.SummonAttendantImagine" xml:space="preserve">
+    <value>アテンドイマジンを召喚する</value>
+  </data>
+  <data name="Keybind.Action.Main.SummonDismissMount" xml:space="preserve">
+    <value>乗り物召喚/解除</value>
+  </data>
+  <data name="Keybind.Action.Main.SwitchQuestLeft" xml:space="preserve">
+    <value>クエスト切り替え（左）</value>
+  </data>
+  <data name="Keybind.Action.Main.SwitchQuestRight" xml:space="preserve">
+    <value>クエスト切り替え（右）</value>
+  </data>
+  <data name="Keybind.Action.Main.TakePhoto" xml:space="preserve">
+    <value>撮影</value>
+  </data>
+  <data name="Keybind.Action.Main.Talk" xml:space="preserve">
+    <value>トーク</value>
+  </data>
+  <data name="Keybind.Action.Main.TogglePartyVoice" xml:space="preserve">
+    <value>パーティボイス切り替え</value>
+  </data>
+  <data name="Keybind.Action.Main.ToggleWalkRun" xml:space="preserve">
+    <value>歩く/走る切替</value>
+  </data>
+  <data name="Keybind.Action.Main.TrackQuest" xml:space="preserve">
+    <value>クエスト追跡</value>
+  </data>
+  <data name="Keybind.Action.Main.UltimateSkill" xml:space="preserve">
+    <value>究極スキル</value>
+  </data>
+  <data name="Keybind.Action.Main.UseItem" xml:space="preserve">
+    <value>アイテム使用</value>
+  </data>
+  <data name="Keybind.Action.Main.UseItemAlternate" xml:space="preserve">
+    <value>アイテムを使用</value>
+  </data>
+  <data name="Keybind.Action.Main.ZoomIn" xml:space="preserve">
+    <value>ズームイン</value>
+  </data>
+  <data name="Keybind.Action.Main.ZoomOut" xml:space="preserve">
+    <value>ズームアウト</value>
+  </data>
+  <data name="Keybind.Action.Main.ZoomOutIn" xml:space="preserve">
+    <value>ズームアウト/ズームイン</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraForwardBack" xml:space="preserve">
+    <value>カメラ-前後</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraLeftRight" xml:space="preserve">
+    <value>カメラ-左右</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveDown" xml:space="preserve">
+    <value>カメラ移動-下</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveLeft" xml:space="preserve">
+    <value>カメラ移動-左</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveLeftRight" xml:space="preserve">
+    <value>カメラ移動-左右</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveRight" xml:space="preserve">
+    <value>カメラ移動-右</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveUp" xml:space="preserve">
+    <value>カメラ移動-上</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveUpDown" xml:space="preserve">
+    <value>カメラ移動-上下</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanBack" xml:space="preserve">
+    <value>カメラパン-後</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanForward" xml:space="preserve">
+    <value>カメラパン-前</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanForwardBack" xml:space="preserve">
+    <value>カメラパン-前後</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanLeft" xml:space="preserve">
+    <value>カメラパン-左</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanLeftRight" xml:space="preserve">
+    <value>カメラパン-左右</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanRight" xml:space="preserve">
+    <value>カメラパン-右</value>
+  </data>
+  <data name="Keybind.Action.Photo.CloseMenu" xml:space="preserve">
+    <value>メニューを閉じる</value>
+  </data>
+  <data name="Keybind.Action.Photo.CursorMoveLeftRight" xml:space="preserve">
+    <value>カーソル移動-左右</value>
+  </data>
+  <data name="Keybind.Action.Photo.CursorMoveUpDown" xml:space="preserve">
+    <value>カーソル移動-上下</value>
+  </data>
+  <data name="Keybind.Action.Photo.DashDodge" xml:space="preserve">
+    <value>ダッシュ/回避</value>
+  </data>
+  <data name="Keybind.Action.Photo.Exit" xml:space="preserve">
+    <value>終了</value>
+  </data>
+  <data name="Keybind.Action.Photo.HideInterface" xml:space="preserve">
+    <value>画面を非表示にする</value>
+  </data>
+  <data name="Keybind.Action.Photo.Jump" xml:space="preserve">
+    <value>ジャンプ</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill1" xml:space="preserve">
+    <value>マスタリースキル1</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill2" xml:space="preserve">
+    <value>マスタリースキル2</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill3" xml:space="preserve">
+    <value>マスタリースキル3</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill4" xml:space="preserve">
+    <value>マスタリースキル4</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveBack" xml:space="preserve">
+    <value>移動-後</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveForward" xml:space="preserve">
+    <value>移動-前</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveForwardBack" xml:space="preserve">
+    <value>移動-前後</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveLeft" xml:space="preserve">
+    <value>移動-左</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveLeftRight" xml:space="preserve">
+    <value>移動-左右</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveRight" xml:space="preserve">
+    <value>移動-右</value>
+  </data>
+  <data name="Keybind.Action.Photo.ParticipantMenu" xml:space="preserve">
+    <value>参加者メニュー</value>
+  </data>
+  <data name="Keybind.Action.Photo.SettingsMenu" xml:space="preserve">
+    <value>設定メニュー</value>
+  </data>
+  <data name="Keybind.Action.Photo.ShowCursor" xml:space="preserve">
+    <value>カーソル呼出し</value>
+  </data>
+  <data name="Keybind.Action.Photo.SpecialAttack" xml:space="preserve">
+    <value>特殊攻撃</value>
+  </data>
+  <data name="Keybind.Action.Photo.SummonDismissMount" xml:space="preserve">
+    <value>乗り物召喚/解除</value>
+  </data>
+  <data name="Keybind.Action.Photo.TakePhoto" xml:space="preserve">
+    <value>撮影</value>
+  </data>
+  <data name="Keybind.Action.Photo.ToggleWalkRun" xml:space="preserve">
+    <value>歩く/走る切替</value>
+  </data>
+  <data name="Keybind.Action.Photo.UltimateSkill" xml:space="preserve">
+    <value>究極スキル</value>
+  </data>
+  <data name="Keybind.Action.Photo.ZoomIn" xml:space="preserve">
+    <value>ズームイン</value>
+  </data>
+  <data name="Keybind.Action.Photo.ZoomOut" xml:space="preserve">
+    <value>ズームアウト</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.CloseQuickWheel" xml:space="preserve">
+    <value>クイックホイールを閉じる</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.EditQuickWheel" xml:space="preserve">
+    <value>クイックホイール編集</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.SwitchQuickWheel" xml:space="preserve">
+    <value>クイックホイール切替</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.SwitchQuickWheelLeft" xml:space="preserve">
+    <value>クイックホイール切替（左）</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.SwitchQuickWheelRight" xml:space="preserve">
+    <value>クイックホイール切替（右）</value>
+  </data>
+  <data name="Keybind.Button.Load" xml:space="preserve">
+    <value>読み込み</value>
+  </data>
+  <data name="Keybind.Button.ManualSelect" xml:space="preserve">
+    <value>手動選択</value>
+  </data>
+  <data name="Keybind.Button.OpenLocation" xml:space="preserve">
+    <value>場所を開く</value>
+  </data>
+  <data name="Keybind.Button.Rescan" xml:space="preserve">
+    <value>再スキャン</value>
+  </data>
+  <data name="Keybind.Button.Reset" xml:space="preserve">
+    <value>リセット</value>
+  </data>
+  <data name="Keybind.Button.Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Keybind.CheckBox.FishingIndependent" xml:space="preserve">
+    <value>釣りモードのアクションを単独で設定する</value>
+  </data>
+  <data name="Keybind.CheckBox.PhotoIndependent" xml:space="preserve">
+    <value>撮影モードのアクションを単独で設定する</value>
+  </data>
+  <data name="Keybind.CheckBox.QuickWheelIndependent" xml:space="preserve">
+    <value>クイックホイールのアクションを単独で設定する</value>
+  </data>
+  <data name="Keybind.Dialog.SelectSaveFile.Filter" xml:space="preserve">
+    <value>Bytesファイル (*.bytes)|*.bytes</value>
+  </data>
+  <data name="Keybind.Dialog.SelectSaveFile.Title" xml:space="preserve">
+    <value>設定ファイルを選択</value>
+  </data>
+  <data name="Keybind.Input.Axis.ForwardBack" xml:space="preserve">
+    <value>前後</value>
+  </data>
+  <data name="Keybind.Input.Axis.LeftRight" xml:space="preserve">
+    <value>左右</value>
+  </data>
+  <data name="Keybind.InputDevice.Controller" xml:space="preserve">
+    <value>ゲームパッド</value>
+  </data>
+  <data name="Keybind.InputDevice.KeyMouse" xml:space="preserve">
+    <value>キーボード/マウス</value>
+  </data>
+  <data name="Keybind.Label.ConfirmCancel" xml:space="preserve">
+    <value>確認/キャンセル</value>
+  </data>
+  <data name="Keybind.Label.ActionHelper" xml:space="preserve">
+    <value>補助キー</value>
+  </data>
+  <data name="Keybind.Label.Button" xml:space="preserve">
+    <value>ボタン</value>
+  </data>
+  <data name="Keybind.Label.Key" xml:space="preserve">
+    <value>キー</value>
+  </data>
+  <data name="Keybind.Label.Controller" xml:space="preserve">
+    <value>ゲームパッドの種類</value>
+  </data>
+  <data name="Keybind.Label.KeyboardLayout" xml:space="preserve">
+    <value>キーボードのレイアウト</value>
+  </data>
+  <data name="Keybind.KeyboardLayout.Japanese" xml:space="preserve">
+    <value>日本語キーボード (106/109 キー)</value>
+  </data>
+  <data name="Keybind.KeyboardLayout.English" xml:space="preserve">
+    <value>英語キーボード (101/102 キー)</value>
+  </data>
+  <data name="Keybind.Label.Helper1" xml:space="preserve">
+    <value>補助キー1</value>
+  </data>
+  <data name="Keybind.Label.Helper2" xml:space="preserve">
+    <value>補助キー2</value>
+  </data>
+  <data name="Keybind.Message.DirectoryNotFound" xml:space="preserve">
+    <value>フォルダが見つかりません。</value>
+  </data>
+  <data name="Keybind.Message.LayoutFileMissing" xml:space="preserve">
+    <value>キー設定プリセットが見つかりません。</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadFailedBody" xml:space="preserve">
+    <value>キー設定プリセットの読み込みに失敗しました。</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadFailedDetail" xml:space="preserve">
+    <value>キー設定プリセットのファイルが壊れているか、読み取れませんでした。
+ファイルの読み取り権限と、同期ソフトやセキュリティソフトによるファイル使用を確認してください。</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadedBody" xml:space="preserve">
+    <value>キー設定を読み込みました。</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadedDetail" xml:space="preserve">
+    <value>ゲーム設定へ反映するには、保存を押してください。</value>
+  </data>
+  <data name="Keybind.Message.LoadErrorBody" xml:space="preserve">
+    <value>設定ファイルの読み込みに失敗しました。</value>
+  </data>
+  <data name="Keybind.Message.Title.PresetUnavailable" xml:space="preserve">
+    <value>一部のキー設定は編集できません</value>
+  </data>
+  <data name="Keybind.Message.PresetUnavailableBody" xml:space="preserve">
+    <value>確認/キャンセルは編集できません。</value>
+  </data>
+  <data name="Keybind.Message.PresetUnavailableDetail" xml:space="preserve">
+    <value>この設定ファイルでは、確認/キャンセル設定がゲーム内でまだ一度も編集されていないため、このツールでは確認/キャンセルを編集できません。ほかの項目はそのまま編集できます。</value>
+  </data>
+  <data name="Keybind.Message.OpenDirectoryFailed" xml:space="preserve">
+    <value>フォルダを開けませんでした。</value>
+  </data>
+  <data name="Keybind.Message.OpenDirectoryFailedDetail" xml:space="preserve">
+    <value>フォルダへのアクセス権限と、セキュリティソフトによる制限を確認してください。</value>
+  </data>
+  <data name="Keybind.Message.SaveCompletedBody" xml:space="preserve">
+    <value>キー設定プリセットを作成しました。</value>
+  </data>
+  <data name="Keybind.Message.SaveErrorBody" xml:space="preserve">
+    <value>キー設定プリセットまたはゲーム設定ファイルを書き込めませんでした。</value>
+  </data>
+  <data name="Keybind.Message.SaveErrorDetail" xml:space="preserve">
+    <value>保存先フォルダへの書き込み権限、空き容量、同期ソフトやセキュリティソフトによるファイル使用を確認してください。</value>
+  </data>
+  <data name="Keybind.Message.IncompleteSettings" xml:space="preserve">
+    <value>未設定のキーがあります。</value>
+  </data>
+  <data name="Keybind.Message.IncompleteSettingsItem" xml:space="preserve">
+    <value>• {0}: {1}</value>
+  </data>
+  <data name="Keybind.Message.SelectFileFirst" xml:space="preserve">
+    <value>設定ファイルが選択されていません。</value>
+  </data>
+  <data name="Keybind.Message.SelectFileFirstSaveDetail" xml:space="preserve">
+    <value>ゲーム設定に反映するには、設定ファイルを選択してから保存してください。</value>
+  </data>
+  <data name="Keybind.Message.Title.LayoutLoadError" xml:space="preserve">
+    <value>キー設定プリセット読み込みエラー</value>
+  </data>
+  <data name="Keybind.Message.Title.LayoutLoaded" xml:space="preserve">
+    <value>キー設定を読み込みました</value>
+  </data>
+  <data name="Keybind.Message.Title.LoadError" xml:space="preserve">
+    <value>読み込みエラー</value>
+  </data>
+  <data name="Keybind.Message.Title.OpenLocationError" xml:space="preserve">
+    <value>場所を開けません</value>
+  </data>
+  <data name="Keybind.Message.Title.SaveCompleted" xml:space="preserve">
+    <value>保存しました</value>
+  </data>
+  <data name="Keybind.Message.Title.SaveError" xml:space="preserve">
+    <value>保存エラー</value>
+  </data>
+  <data name="Keybind.Section.FishingModeKeySettings" xml:space="preserve">
+    <value>釣りモードのキー設定</value>
+  </data>
+  <data name="Keybind.Section.HelperKeys" xml:space="preserve">
+    <value>補助キー設定</value>
+  </data>
+  <data name="Keybind.Section.InputDevice" xml:space="preserve">
+    <value>入力デバイスを選択</value>
+  </data>
+  <data name="Keybind.Section.MainKeySettings" xml:space="preserve">
+    <value>通常キー設定</value>
+  </data>
+  <data name="Keybind.Section.PhotoModeKeySettings" xml:space="preserve">
+    <value>撮影モードのキー設定</value>
+  </data>
+  <data name="Keybind.Section.Preset" xml:space="preserve">
+    <value>キー設定プリセット</value>
+  </data>
+  <data name="Keybind.Section.QuickWheelKeySettings" xml:space="preserve">
+    <value>クイックホイールのキー設定</value>
+  </data>
+  <data name="Keybind.Section.SelectSaveFile" xml:space="preserve">
+    <value>設定ファイルを選択</value>
+  </data>
+  <data name="Keybind.Hint.SaveFileLocation" xml:space="preserve">
+    <value>キー設定の設定ファイルは通常、次の場所にあります。
+%USERPROFILE%\AppData\LocalLow\bokura\[アジア版やSteam版などのフォルダ]\
+localsave\Env1\[数字のフォルダ]\[キャラクターUIDのフォルダ]\localsave.bytes (2 KB以上)</value>
+  </data>
+  <data name="Keybind.Status.DetectedSelected" xml:space="preserve">
+    <value>{0}件の設定ファイルを検出、{1}を選択中</value>
+  </data>
+  <data name="Keybind.Status.LayoutLoadFailed" xml:space="preserve">
+    <value>キー設定の読み込みに失敗しました</value>
+  </data>
+  <data name="Keybind.Status.LayoutLoaded" xml:space="preserve">
+    <value>キー設定を読み込みました: {0}</value>
+  </data>
+  <data name="Keybind.Status.LoadCompleted" xml:space="preserve">
+    <value>読み込みました</value>
+  </data>
+  <data name="Keybind.Status.LoadFailed" xml:space="preserve">
+    <value>読み込みに失敗しました</value>
+  </data>
+  <data name="Keybind.Status.LoadedSelected" xml:space="preserve">
+    <value>読み込みました: {0}</value>
+  </data>
+  <data name="Keybind.Status.NoDetectedSave" xml:space="preserve">
+    <value>検出された設定ファイルはありません</value>
+  </data>
+  <data name="Keybind.Status.NoFileSelected" xml:space="preserve">
+    <value>ファイル未選択</value>
+  </data>
+  <data name="Keybind.Status.Reset" xml:space="preserve">
+    <value>読み込み時の値へリセットしました</value>
+  </data>
+  <data name="Keybind.Status.SaveFailed" xml:space="preserve">
+    <value>保存に失敗しました</value>
+  </data>
+  <data name="Keybind.Status.Saved" xml:space="preserve">
+    <value>保存しました</value>
+  </data>
+  <data name="Keybind.Value.Unassigned" xml:space="preserve">
+    <value>———</value>
+  </data>
+  <data name="Keybind.Value.UnknownControllerInput" xml:space="preserve">
+    <value>不明 ({0})</value>
+  </data>
+  <data name="Keybind.Value.UnknownKeyMouseInput" xml:space="preserve">
+    <value>不明 ({0}:{1})</value>
+  </data>
+  <data name="Keybind.Value.UnknownPreset" xml:space="preserve">
+    <value>不明 ({0})</value>
+  </data>
+  <data name="Keybind.Error.Helper1OffsetNotFound" xml:space="preserve">
+    <value>補助キー1の保存位置を特定できません。</value>
+  </data>
+  <data name="Keybind.Error.Helper2OffsetNotFound" xml:space="preserve">
+    <value>補助キー2の保存位置を特定できません。</value>
+  </data>
+  <data name="Keybind.Error.HelperKeysNotFound" xml:space="preserve">
+    <value>補助キー設定が見つかりません。</value>
+  </data>
+  <data name="Keybind.Error.InvalidActionHelper" xml:space="preserve">
+    <value>{0}の補助キー設定が不正です。</value>
+  </data>
+  <data name="Keybind.Error.InvalidActionKey" xml:space="preserve">
+    <value>{0}のキーが不正です。</value>
+  </data>
+  <data name="Keybind.Error.InvalidActionValue" xml:space="preserve">
+    <value>{0}の値が不正です。</value>
+  </data>
+  <data name="Keybind.Error.InvalidControllerType" xml:space="preserve">
+    <value>ゲームパッド種類の値が不正です。</value>
+  </data>
+  <data name="Keybind.Error.InvalidHelper1" xml:space="preserve">
+    <value>補助キー1の値が不正です。</value>
+  </data>
+  <data name="Keybind.Error.InvalidHelper2" xml:space="preserve">
+    <value>補助キー2の値が不正です。</value>
+  </data>
+  <data name="Keybind.Error.InvalidPreset" xml:space="preserve">
+    <value>確認/キャンセルの値が不正です。</value>
+  </data>
+  <data name="Keybind.Error.RequiredInputDataNotFound" xml:space="preserve">
+    <value>必須の入力設定データが見つかりません。</value>
+  </data>
+  <data name="Keybind.Error.SaveDirectoryUnavailable" xml:space="preserve">
+    <value>設定ファイルの保存先を特定できません。</value>
+  </data>
+  <data name="Keybind.Error.SaveSessionNotLoaded" xml:space="preserve">
+    <value>設定ファイルが読み込まれていません。</value>
+  </data>
+  <data name="Keybind.Error.UnexpectedFileFormat" xml:space="preserve">
+    <value>ファイルの形式が想定と異なります。</value>
+  </data>
+  <data name="Keybind.Group.Main" xml:space="preserve">
+    <value>通常</value>
+  </data>
+  <data name="Keybind.Group.QuickWheel" xml:space="preserve">
+    <value>クイックホイール</value>
+  </data>
+  <data name="Keybind.Group.Photo" xml:space="preserve">
+    <value>撮影モード</value>
+  </data>
+  <data name="Keybind.Group.Fishing" xml:space="preserve">
+    <value>釣りモード</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveIntro" xml:space="preserve">
+    <value>以下の項目は不正または未生成の保存先を検出したため書き換えていません。</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveRecovery" xml:space="preserve">
+    <value>ゲーム内でキー設定をデフォルトに戻してゲームを完全に終了した後、このツールでキー設定プリセットを読み込み、もう一度保存してください。</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveNote" xml:space="preserve">
+    <value>※このエラーは、ゲーム側の更新で対象項目が実装されるまで解消しない可能性があります。</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveTarget" xml:space="preserve">
+    <value>・{0}: {1} &gt; {2}</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveControllerOffset" xml:space="preserve">
+    <value>  +0x{0:X5}: type=0x{1:X8}, state=0x{2:X8}</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveKeyMouseOffset" xml:space="preserve">
+    <value>  +0x{0:X5}: type=0x{1:X8}</value>
+  </data>
+  <data name="Keybind.Message.Title.PartialSave" xml:space="preserve">
+    <value>一部のキーを保存できませんでした</value>
+  </data>
+</root>

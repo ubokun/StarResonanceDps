@@ -1,4 +1,4 @@
-﻿# Player build checks
+# Player build checks
 
 Run from the repository root with a .NET 10 SDK on Windows:
 
@@ -42,3 +42,6 @@ WidgetIntegrationChecks: 4種類の共通ウィジェット枠・配置・停止
 
 HateAttributionChecks: 実命中・継続効果・回復による帰属改善、別対象・別プレイヤーの除外、時間境界、複数原因と不明発生源の保持、枝番とバフ種別の分離、過剰回復・空振り・無効化除外、ProtoBuf/DB復元、ヘイト合計保存を確認する。
 --inspect-history-db / --analyze-hate-db はゲームと同じ対応表を読み、新旧方式の帰属不明割合を同じ時計・同じヘイト増加量で比較する。古い集計の命中記録は復元しない。
+
+
+SDK更新時の追加プラグイン検証: `PlayerBuildChecks.exe --validate-plugin <DLLのパス>`。MetadataLoadContextで実アプリと同じ登録チェックを行い、プラグインのコードは実行しない。

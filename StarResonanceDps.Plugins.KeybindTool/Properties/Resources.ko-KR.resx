@@ -1,0 +1,839 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Keybind.Action.Fishing.CastReelIn" xml:space="preserve">
+    <value>낚싯대 던지기/감기</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatChannelDown" xml:space="preserve">
+    <value>채팅 채널 아래으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatChannelUp" xml:space="preserve">
+    <value>채팅 채널 위으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatInputChannelLeft" xml:space="preserve">
+    <value>채팅 채널 왼쪽으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ChatInputChannelRight" xml:space="preserve">
+    <value>채팅 채널 오른쪽으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Fishing.CloseMenu" xml:space="preserve">
+    <value>메뉴 닫기</value>
+  </data>
+  <data name="Keybind.Action.Fishing.FishingEncyclopedia" xml:space="preserve">
+    <value>낚시/도감</value>
+  </data>
+  <data name="Keybind.Action.Fishing.FishingResearch" xml:space="preserve">
+    <value>낚시/연구</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ModeGuide" xml:space="preserve">
+    <value>콘텐츠/가이드</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveBack" xml:space="preserve">
+    <value>낚싯대 이동 - 뒤</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveForward" xml:space="preserve">
+    <value>낚싯대 이동 - 앞</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveForwardBack" xml:space="preserve">
+    <value>낚싯대 이동 - 앞/뒤</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveLeft" xml:space="preserve">
+    <value>낚싯대 이동 - 왼쪽</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveLeftRight" xml:space="preserve">
+    <value>낚싯대 이동 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Fishing.RodMoveRight" xml:space="preserve">
+    <value>낚싯대 이동 - 오른쪽</value>
+  </data>
+  <data name="Keybind.Action.Fishing.Settings" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="Keybind.Action.Fishing.ShowMouseCursor" xml:space="preserve">
+    <value>마우스 커서 표시</value>
+  </data>
+  <data name="Keybind.Action.Fishing.SocialMode" xml:space="preserve">
+    <value>채팅</value>
+  </data>
+  <data name="Keybind.Action.Fishing.SwitchBait" xml:space="preserve">
+    <value>미끼 전환</value>
+  </data>
+  <data name="Keybind.Action.Fishing.SwitchRod" xml:space="preserve">
+    <value>낚싯대 전환</value>
+  </data>
+  <data name="Keybind.Action.Fishing.Talk" xml:space="preserve">
+    <value>대화</value>
+  </data>
+  <data name="Keybind.Action.Main.Abilities" xml:space="preserve">
+    <value>어빌리티</value>
+  </data>
+  <data name="Keybind.Action.Main.AcceptInvite" xml:space="preserve">
+    <value>초대 수락</value>
+  </data>
+  <data name="Keybind.Action.Main.Action" xml:space="preserve">
+    <value>상호작용</value>
+  </data>
+  <data name="Keybind.Action.Main.AutoBattle" xml:space="preserve">
+    <value>자동 전투</value>
+  </data>
+  <data name="Keybind.Action.Main.AutoRun" xml:space="preserve">
+    <value>자동 질주</value>
+  </data>
+  <data name="Keybind.Action.Main.BattleImagine1" xml:space="preserve">
+    <value>배틀 이매진1</value>
+  </data>
+  <data name="Keybind.Action.Main.BattleImagine2" xml:space="preserve">
+    <value>배틀 이매진2</value>
+  </data>
+  <data name="Keybind.Action.Main.CameraForwardBack" xml:space="preserve">
+    <value>카메라 - 앞/뒤</value>
+  </data>
+  <data name="Keybind.Action.Main.CameraLeftRight" xml:space="preserve">
+    <value>카메라 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Main.CancelInteraction" xml:space="preserve">
+    <value>상호작용 해제</value>
+  </data>
+  <data name="Keybind.Action.Main.Channel" xml:space="preserve">
+    <value>채널</value>
+  </data>
+  <data name="Keybind.Action.Main.Character" xml:space="preserve">
+    <value>캐릭터</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatChannelDown" xml:space="preserve">
+    <value>채팅 채널 아래으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatChannelUp" xml:space="preserve">
+    <value>채팅 채널 위으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatInputChannelLeft" xml:space="preserve">
+    <value>채팅 채널 왼쪽으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.ChatInputChannelRight" xml:space="preserve">
+    <value>채팅 채널 오른쪽으로 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.CloseMenu" xml:space="preserve">
+    <value>메뉴 닫기</value>
+  </data>
+  <data name="Keybind.Action.Main.CursorMoveLeftRight" xml:space="preserve">
+    <value>커서 이동 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Main.CursorMoveUpDown" xml:space="preserve">
+    <value>커서 이동 - 위/아래</value>
+  </data>
+  <data name="Keybind.Action.Main.CycleItemsLeft" xml:space="preserve">
+    <value>왼쪽으로 아이템 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.CycleItemsRight" xml:space="preserve">
+    <value>오른쪽으로 아이템 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.DashDodge" xml:space="preserve">
+    <value>대시</value>
+  </data>
+  <data name="Keybind.Action.Main.DashDodge1" xml:space="preserve">
+    <value>대시1</value>
+  </data>
+  <data name="Keybind.Action.Main.DashDodge2" xml:space="preserve">
+    <value>대시2</value>
+  </data>
+  <data name="Keybind.Action.Main.DeclineInvite" xml:space="preserve">
+    <value>초대 거절</value>
+  </data>
+  <data name="Keybind.Action.Main.EditHome" xml:space="preserve">
+    <value>가문 편집기 트리거</value>
+  </data>
+  <data name="Keybind.Action.Main.EnvironmentalResonance1" xml:space="preserve">
+    <value>환경 공명 능력1</value>
+  </data>
+  <data name="Keybind.Action.Main.EnvironmentalResonance2" xml:space="preserve">
+    <value>환경 공명 능력2</value>
+  </data>
+  <data name="Keybind.Action.Main.Equipment" xml:space="preserve">
+    <value>장비</value>
+  </data>
+  <data name="Keybind.Action.Main.ExtraSkill" xml:space="preserve">
+    <value>추가 스킬</value>
+  </data>
+  <data name="Keybind.Action.Main.Guild" xml:space="preserve">
+    <value>길드</value>
+  </data>
+  <data name="Keybind.Action.Main.HideUi" xml:space="preserve">
+    <value>UI 숨기기</value>
+  </data>
+  <data name="Keybind.Action.Main.HomeBlueprint" xml:space="preserve">
+    <value>가든 블루프린트</value>
+  </data>
+  <data name="Keybind.Action.Main.IllustrationGuide" xml:space="preserve">
+    <value>이미지 가이드</value>
+  </data>
+  <data name="Keybind.Action.Main.Inventory" xml:space="preserve">
+    <value>가방</value>
+  </data>
+  <data name="Keybind.Action.Main.Jump" xml:space="preserve">
+    <value>점프</value>
+  </data>
+  <data name="Keybind.Action.Main.LeaveDungeon" xml:space="preserve">
+    <value>던전 나가기</value>
+  </data>
+  <data name="Keybind.Action.Main.LockOnSwitch" xml:space="preserve">
+    <value>고정/변경</value>
+  </data>
+  <data name="Keybind.Action.Main.LockOnSwitch1" xml:space="preserve">
+    <value>고정/변경1</value>
+  </data>
+  <data name="Keybind.Action.Main.LockOnSwitch2" xml:space="preserve">
+    <value>고정/변경2</value>
+  </data>
+  <data name="Keybind.Action.Main.MapOnOff" xml:space="preserve">
+    <value>맵 열기/닫기</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill1" xml:space="preserve">
+    <value>마스터리 스킬1</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill2" xml:space="preserve">
+    <value>마스터리 스킬2</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill3" xml:space="preserve">
+    <value>마스터리 스킬3</value>
+  </data>
+  <data name="Keybind.Action.Main.MasterySkill4" xml:space="preserve">
+    <value>마스터리 스킬4</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveBack" xml:space="preserve">
+    <value>이동 - 뒤</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveForward" xml:space="preserve">
+    <value>이동 - 앞</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveForwardBack" xml:space="preserve">
+    <value>이동 - 앞/뒤</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveLeft" xml:space="preserve">
+    <value>이동 - 왼쪽</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveLeftRight" xml:space="preserve">
+    <value>이동 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Main.MoveRight" xml:space="preserve">
+    <value>이동 - 오른쪽</value>
+  </data>
+  <data name="Keybind.Action.Main.NormalAttack" xml:space="preserve">
+    <value>일반 공격</value>
+  </data>
+  <data name="Keybind.Action.Main.OpenMenu" xml:space="preserve">
+    <value>메뉴 열기</value>
+  </data>
+  <data name="Keybind.Action.Main.OpenSkillPalette" xml:space="preserve">
+    <value>스킬 서랍 열기</value>
+  </data>
+  <data name="Keybind.Action.Main.Party" xml:space="preserve">
+    <value>파티</value>
+  </data>
+  <data name="Keybind.Action.Main.Quests" xml:space="preserve">
+    <value>퀘스트</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickAction" xml:space="preserve">
+    <value>빠른 설명</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickUseQuestItem" xml:space="preserve">
+    <value>퀘스트 아이템 빠른 사용</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheel" xml:space="preserve">
+    <value>퀵 슬롯 표시/닫기</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot1" xml:space="preserve">
+    <value>퀵 슬롯 1번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot2" xml:space="preserve">
+    <value>퀵 슬롯 2번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot3" xml:space="preserve">
+    <value>퀵 슬롯 3번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot4" xml:space="preserve">
+    <value>퀵 슬롯 4번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot5" xml:space="preserve">
+    <value>퀵 슬롯 5번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot6" xml:space="preserve">
+    <value>퀵 슬롯 6번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot7" xml:space="preserve">
+    <value>퀵 슬롯 7번</value>
+  </data>
+  <data name="Keybind.Action.Main.QuickWheelSlot8" xml:space="preserve">
+    <value>퀵 슬롯 8번</value>
+  </data>
+  <data name="Keybind.Action.Main.RecommendedEvents" xml:space="preserve">
+    <value>추천 이벤트</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill1" xml:space="preserve">
+    <value>포지션 스킬1</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill2" xml:space="preserve">
+    <value>포지션 스킬2</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill3" xml:space="preserve">
+    <value>포지션 스킬3</value>
+  </data>
+  <data name="Keybind.Action.Main.RoleSkill4" xml:space="preserve">
+    <value>포지션 스킬4</value>
+  </data>
+  <data name="Keybind.Action.Main.SeasonCenter" xml:space="preserve">
+    <value>시즌 센터</value>
+  </data>
+  <data name="Keybind.Action.Main.ShowMouseCursor" xml:space="preserve">
+    <value>마우스 표시</value>
+  </data>
+  <data name="Keybind.Action.Main.Skills" xml:space="preserve">
+    <value>스킬</value>
+  </data>
+  <data name="Keybind.Action.Main.SocialMode" xml:space="preserve">
+    <value>채팅</value>
+  </data>
+  <data name="Keybind.Action.Main.SpecialAttack" xml:space="preserve">
+    <value>특수 공격</value>
+  </data>
+  <data name="Keybind.Action.Main.SummonAttendantImagine" xml:space="preserve">
+    <value>펫 이매진 소환</value>
+  </data>
+  <data name="Keybind.Action.Main.SummonDismissMount" xml:space="preserve">
+    <value>라이드 이매진 소환/해제</value>
+  </data>
+  <data name="Keybind.Action.Main.SwitchQuestLeft" xml:space="preserve">
+    <value>퀘스트 목록 왼쪽 이동</value>
+  </data>
+  <data name="Keybind.Action.Main.SwitchQuestRight" xml:space="preserve">
+    <value>퀘스트 목록 오른쪽 이동</value>
+  </data>
+  <data name="Keybind.Action.Main.TakePhoto" xml:space="preserve">
+    <value>촬영</value>
+  </data>
+  <data name="Keybind.Action.Main.Talk" xml:space="preserve">
+    <value>빠른 채팅</value>
+  </data>
+  <data name="Keybind.Action.Main.TogglePartyVoice" xml:space="preserve">
+    <value>파티 음성 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.ToggleWalkRun" xml:space="preserve">
+    <value>걷기/달리기 전환</value>
+  </data>
+  <data name="Keybind.Action.Main.TrackQuest" xml:space="preserve">
+    <value>퀘스트 목표 추적</value>
+  </data>
+  <data name="Keybind.Action.Main.UltimateSkill" xml:space="preserve">
+    <value>궁극 스킬</value>
+  </data>
+  <data name="Keybind.Action.Main.UseItem" xml:space="preserve">
+    <value>아이템 사용</value>
+  </data>
+  <data name="Keybind.Action.Main.UseItemAlternate" xml:space="preserve">
+    <value>아이템 빠른 사용</value>
+  </data>
+  <data name="Keybind.Action.Main.ZoomIn" xml:space="preserve">
+    <value>확대</value>
+  </data>
+  <data name="Keybind.Action.Main.ZoomOut" xml:space="preserve">
+    <value>축소</value>
+  </data>
+  <data name="Keybind.Action.Main.ZoomOutIn" xml:space="preserve">
+    <value>카메라 줌 아웃/줌 인</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraForwardBack" xml:space="preserve">
+    <value>카메라 - 앞/뒤</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraLeftRight" xml:space="preserve">
+    <value>카메라 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveDown" xml:space="preserve">
+    <value>카메라 이동 - 아래</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveLeft" xml:space="preserve">
+    <value>카메라 이동 - 왼쪽</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveLeftRight" xml:space="preserve">
+    <value>카메라 이동 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveRight" xml:space="preserve">
+    <value>카메라 이동 - 오른쪽</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveUp" xml:space="preserve">
+    <value>카메라 이동 - 위</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraMoveUpDown" xml:space="preserve">
+    <value>카메라 이동 - 위/아래</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanBack" xml:space="preserve">
+    <value>카메라 팬 - 뒤</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanForward" xml:space="preserve">
+    <value>카메라 팬 - 앞</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanForwardBack" xml:space="preserve">
+    <value>카메라 팬 - 앞/뒤</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanLeft" xml:space="preserve">
+    <value>카메라 팬 - 왼쪽</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanLeftRight" xml:space="preserve">
+    <value>카메라 팬 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Photo.CameraPanRight" xml:space="preserve">
+    <value>카메라 팬 - 오른쪽</value>
+  </data>
+  <data name="Keybind.Action.Photo.CloseMenu" xml:space="preserve">
+    <value>메뉴 닫기</value>
+  </data>
+  <data name="Keybind.Action.Photo.CursorMoveLeftRight" xml:space="preserve">
+    <value>커서 이동 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Photo.CursorMoveUpDown" xml:space="preserve">
+    <value>커서 이동 - 위/아래</value>
+  </data>
+  <data name="Keybind.Action.Photo.DashDodge" xml:space="preserve">
+    <value>대시</value>
+  </data>
+  <data name="Keybind.Action.Photo.Exit" xml:space="preserve">
+    <value>종료</value>
+  </data>
+  <data name="Keybind.Action.Photo.HideInterface" xml:space="preserve">
+    <value>인터페이스 숨기기</value>
+  </data>
+  <data name="Keybind.Action.Photo.Jump" xml:space="preserve">
+    <value>점프</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill1" xml:space="preserve">
+    <value>마스터리 스킬1</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill2" xml:space="preserve">
+    <value>마스터리 스킬2</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill3" xml:space="preserve">
+    <value>마스터리 스킬3</value>
+  </data>
+  <data name="Keybind.Action.Photo.MasterySkill4" xml:space="preserve">
+    <value>마스터리 스킬4</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveBack" xml:space="preserve">
+    <value>이동 - 뒤</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveForward" xml:space="preserve">
+    <value>이동 - 앞</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveForwardBack" xml:space="preserve">
+    <value>이동 - 앞/뒤</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveLeft" xml:space="preserve">
+    <value>이동 - 왼쪽</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveLeftRight" xml:space="preserve">
+    <value>이동 - 좌/우</value>
+  </data>
+  <data name="Keybind.Action.Photo.MoveRight" xml:space="preserve">
+    <value>이동 - 오른쪽</value>
+  </data>
+  <data name="Keybind.Action.Photo.ParticipantMenu" xml:space="preserve">
+    <value>참가자 메뉴</value>
+  </data>
+  <data name="Keybind.Action.Photo.SettingsMenu" xml:space="preserve">
+    <value>설정 메뉴</value>
+  </data>
+  <data name="Keybind.Action.Photo.ShowCursor" xml:space="preserve">
+    <value>커서 표시</value>
+  </data>
+  <data name="Keybind.Action.Photo.SpecialAttack" xml:space="preserve">
+    <value>특수 공격</value>
+  </data>
+  <data name="Keybind.Action.Photo.SummonDismissMount" xml:space="preserve">
+    <value>라이드 이매진 소환/해제</value>
+  </data>
+  <data name="Keybind.Action.Photo.TakePhoto" xml:space="preserve">
+    <value>촬영</value>
+  </data>
+  <data name="Keybind.Action.Photo.ToggleWalkRun" xml:space="preserve">
+    <value>걷기/달리기 전환</value>
+  </data>
+  <data name="Keybind.Action.Photo.UltimateSkill" xml:space="preserve">
+    <value>궁극 스킬</value>
+  </data>
+  <data name="Keybind.Action.Photo.ZoomIn" xml:space="preserve">
+    <value>확대</value>
+  </data>
+  <data name="Keybind.Action.Photo.ZoomOut" xml:space="preserve">
+    <value>축소</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.CloseQuickWheel" xml:space="preserve">
+    <value>퀵 휠 닫기</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.EditQuickWheel" xml:space="preserve">
+    <value>퀵 슬롯 편집</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.SwitchQuickWheel" xml:space="preserve">
+    <value>퀵 슬롯 전환</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.SwitchQuickWheelLeft" xml:space="preserve">
+    <value>퀵 휠 전환 (왼쪽)</value>
+  </data>
+  <data name="Keybind.Action.QuickWheel.SwitchQuickWheelRight" xml:space="preserve">
+    <value>퀵 휠 전환 (오른쪽)</value>
+  </data>
+  <data name="Keybind.Button.Load" xml:space="preserve">
+    <value>불러오기</value>
+  </data>
+  <data name="Keybind.Button.ManualSelect" xml:space="preserve">
+    <value>수동 선택</value>
+  </data>
+  <data name="Keybind.Button.OpenLocation" xml:space="preserve">
+    <value>위치 열기</value>
+  </data>
+  <data name="Keybind.Button.Rescan" xml:space="preserve">
+    <value>다시 검색</value>
+  </data>
+  <data name="Keybind.Button.Reset" xml:space="preserve">
+    <value>초기화</value>
+  </data>
+  <data name="Keybind.Button.Save" xml:space="preserve">
+    <value>저장</value>
+  </data>
+  <data name="Keybind.CheckBox.FishingIndependent" xml:space="preserve">
+    <value>낚시 모드 동작을 개별적으로 설정</value>
+  </data>
+  <data name="Keybind.CheckBox.PhotoIndependent" xml:space="preserve">
+    <value>촬영 모드 동작을 개별적으로 설정</value>
+  </data>
+  <data name="Keybind.CheckBox.QuickWheelIndependent" xml:space="preserve">
+    <value>퀵 휠 동작을 개별적으로 설정</value>
+  </data>
+  <data name="Keybind.Dialog.SelectSaveFile.Filter" xml:space="preserve">
+    <value>Bytes 파일 (*.bytes)|*.bytes</value>
+  </data>
+  <data name="Keybind.Dialog.SelectSaveFile.Title" xml:space="preserve">
+    <value>설정 파일 선택</value>
+  </data>
+  <data name="Keybind.Input.Axis.ForwardBack" xml:space="preserve">
+    <value>앞/뒤</value>
+  </data>
+  <data name="Keybind.Input.Axis.LeftRight" xml:space="preserve">
+    <value>좌/우</value>
+  </data>
+  <data name="Keybind.InputDevice.Controller" xml:space="preserve">
+    <value>컨트롤러</value>
+  </data>
+  <data name="Keybind.InputDevice.KeyMouse" xml:space="preserve">
+    <value>키보드/마우스</value>
+  </data>
+  <data name="Keybind.Label.ConfirmCancel" xml:space="preserve">
+    <value>확인/취소</value>
+  </data>
+  <data name="Keybind.Label.ActionHelper" xml:space="preserve">
+    <value>보조 키</value>
+  </data>
+  <data name="Keybind.Label.Button" xml:space="preserve">
+    <value>버튼</value>
+  </data>
+  <data name="Keybind.Label.Key" xml:space="preserve">
+    <value>키</value>
+  </data>
+  <data name="Keybind.Label.Controller" xml:space="preserve">
+    <value>컨트롤러 종류</value>
+  </data>
+  <data name="Keybind.Label.KeyboardLayout" xml:space="preserve">
+    <value>키보드 레이아웃</value>
+  </data>
+  <data name="Keybind.KeyboardLayout.Japanese" xml:space="preserve">
+    <value>일본어 키보드 (106/109키)</value>
+  </data>
+  <data name="Keybind.KeyboardLayout.English" xml:space="preserve">
+    <value>영어 키보드 (101/102키)</value>
+  </data>
+  <data name="Keybind.Label.Helper1" xml:space="preserve">
+    <value>보조 키1</value>
+  </data>
+  <data name="Keybind.Label.Helper2" xml:space="preserve">
+    <value>보조 키2</value>
+  </data>
+  <data name="Keybind.Message.DirectoryNotFound" xml:space="preserve">
+    <value>폴더를 찾을 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Message.LayoutFileMissing" xml:space="preserve">
+    <value>키 설정 프리셋을 찾을 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadFailedBody" xml:space="preserve">
+    <value>키 설정 프리셋을 불러오지 못했습니다.</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadFailedDetail" xml:space="preserve">
+    <value>키 설정 프리셋 파일이 손상되었거나 읽을 수 없습니다.
+파일 읽기 권한과 동기화 소프트웨어나 보안 소프트웨어가 파일을 사용 중인지 확인하세요.</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadedBody" xml:space="preserve">
+    <value>키 설정을 불러왔습니다.</value>
+  </data>
+  <data name="Keybind.Message.LayoutLoadedDetail" xml:space="preserve">
+    <value>게임 설정에 적용하려면 저장을 누르세요.</value>
+  </data>
+  <data name="Keybind.Message.LoadErrorBody" xml:space="preserve">
+    <value>설정 파일을 불러오지 못했습니다.</value>
+  </data>
+  <data name="Keybind.Message.Title.PresetUnavailable" xml:space="preserve">
+    <value>일부 키 설정을 편집할 수 없습니다</value>
+  </data>
+  <data name="Keybind.Message.PresetUnavailableBody" xml:space="preserve">
+    <value>확인/취소를 편집할 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Message.PresetUnavailableDetail" xml:space="preserve">
+    <value>이 설정 파일의 확인/취소 설정은 게임 내에서 아직 한 번도 변경되지 않아 이 도구에서 편집할 수 없습니다. 다른 항목은 그대로 편집할 수 있습니다.</value>
+  </data>
+  <data name="Keybind.Message.OpenDirectoryFailed" xml:space="preserve">
+    <value>폴더를 열 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Message.OpenDirectoryFailedDetail" xml:space="preserve">
+    <value>폴더 접근 권한과 보안 소프트웨어의 제한 여부를 확인하세요.</value>
+  </data>
+  <data name="Keybind.Message.SaveCompletedBody" xml:space="preserve">
+    <value>키 설정 프리셋을 만들었습니다.</value>
+  </data>
+  <data name="Keybind.Message.SaveErrorBody" xml:space="preserve">
+    <value>키 설정 프리셋 또는 게임 설정 파일에 쓸 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Message.SaveErrorDetail" xml:space="preserve">
+    <value>저장 대상 폴더의 쓰기 권한, 디스크 여유 공간, 동기화 소프트웨어나 보안 소프트웨어가 파일을 사용 중인지 확인하세요.</value>
+  </data>
+  <data name="Keybind.Message.IncompleteSettings" xml:space="preserve">
+    <value>설정되지 않은 키가 있습니다.</value>
+  </data>
+  <data name="Keybind.Message.IncompleteSettingsItem" xml:space="preserve">
+    <value>• {0}: {1}</value>
+  </data>
+  <data name="Keybind.Message.SelectFileFirst" xml:space="preserve">
+    <value>설정 파일이 선택되지 않았습니다.</value>
+  </data>
+  <data name="Keybind.Message.SelectFileFirstSaveDetail" xml:space="preserve">
+    <value>게임 설정에 적용하려면 설정 파일을 선택한 후 저장하세요.</value>
+  </data>
+  <data name="Keybind.Message.Title.LayoutLoadError" xml:space="preserve">
+    <value>키 설정 프리셋 불러오기 오류</value>
+  </data>
+  <data name="Keybind.Message.Title.LayoutLoaded" xml:space="preserve">
+    <value>키 설정을 불러왔습니다</value>
+  </data>
+  <data name="Keybind.Message.Title.LoadError" xml:space="preserve">
+    <value>불러오기 오류</value>
+  </data>
+  <data name="Keybind.Message.Title.OpenLocationError" xml:space="preserve">
+    <value>위치를 열 수 없습니다</value>
+  </data>
+  <data name="Keybind.Message.Title.SaveCompleted" xml:space="preserve">
+    <value>저장했습니다</value>
+  </data>
+  <data name="Keybind.Message.Title.SaveError" xml:space="preserve">
+    <value>저장 오류</value>
+  </data>
+  <data name="Keybind.Section.FishingModeKeySettings" xml:space="preserve">
+    <value>낚시 모드 키 설정</value>
+  </data>
+  <data name="Keybind.Section.HelperKeys" xml:space="preserve">
+    <value>보조 키 설정</value>
+  </data>
+  <data name="Keybind.Section.InputDevice" xml:space="preserve">
+    <value>입력 장치 선택</value>
+  </data>
+  <data name="Keybind.Section.MainKeySettings" xml:space="preserve">
+    <value>일반 키 설정</value>
+  </data>
+  <data name="Keybind.Section.PhotoModeKeySettings" xml:space="preserve">
+    <value>촬영 모드 키 설정</value>
+  </data>
+  <data name="Keybind.Section.Preset" xml:space="preserve">
+    <value>키 설정 프리셋</value>
+  </data>
+  <data name="Keybind.Section.QuickWheelKeySettings" xml:space="preserve">
+    <value>퀵 휠 키 설정</value>
+  </data>
+  <data name="Keybind.Section.SelectSaveFile" xml:space="preserve">
+    <value>설정 파일 선택</value>
+  </data>
+  <data name="Keybind.Hint.SaveFileLocation" xml:space="preserve">
+    <value>키 설정 파일은 일반적으로 다음 위치에 있습니다.
+%USERPROFILE%\AppData\LocalLow\bokura\[서버 폴더]\
+localsave\Env1\[숫자 폴더]\[캐릭터 UID 폴더]\localsave.bytes (2KB 이상)</value>
+  </data>
+  <data name="Keybind.Status.DetectedSelected" xml:space="preserve">
+    <value>설정 파일 {0}개를 감지했으며 {1}을(를) 선택했습니다</value>
+  </data>
+  <data name="Keybind.Status.LayoutLoadFailed" xml:space="preserve">
+    <value>키 설정을 불러오지 못했습니다</value>
+  </data>
+  <data name="Keybind.Status.LayoutLoaded" xml:space="preserve">
+    <value>키 설정을 불러왔습니다: {0}</value>
+  </data>
+  <data name="Keybind.Status.LoadCompleted" xml:space="preserve">
+    <value>불러왔습니다</value>
+  </data>
+  <data name="Keybind.Status.LoadFailed" xml:space="preserve">
+    <value>불러오기에 실패했습니다</value>
+  </data>
+  <data name="Keybind.Status.LoadedSelected" xml:space="preserve">
+    <value>불러옴: {0}</value>
+  </data>
+  <data name="Keybind.Status.NoDetectedSave" xml:space="preserve">
+    <value>감지된 설정 파일이 없습니다</value>
+  </data>
+  <data name="Keybind.Status.NoFileSelected" xml:space="preserve">
+    <value>파일이 선택되지 않았습니다</value>
+  </data>
+  <data name="Keybind.Status.Reset" xml:space="preserve">
+    <value>불러온 값으로 초기화했습니다</value>
+  </data>
+  <data name="Keybind.Status.SaveFailed" xml:space="preserve">
+    <value>저장하지 못했습니다</value>
+  </data>
+  <data name="Keybind.Status.Saved" xml:space="preserve">
+    <value>저장했습니다</value>
+  </data>
+  <data name="Keybind.Value.Unassigned" xml:space="preserve">
+    <value>———</value>
+  </data>
+  <data name="Keybind.Value.UnknownControllerInput" xml:space="preserve">
+    <value>알 수 없음 ({0})</value>
+  </data>
+  <data name="Keybind.Value.UnknownKeyMouseInput" xml:space="preserve">
+    <value>알 수 없음 ({0}:{1})</value>
+  </data>
+  <data name="Keybind.Value.UnknownPreset" xml:space="preserve">
+    <value>알 수 없음 ({0})</value>
+  </data>
+  <data name="Keybind.Error.Helper1OffsetNotFound" xml:space="preserve">
+    <value>보조 키 1의 저장 위치를 확인할 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Error.Helper2OffsetNotFound" xml:space="preserve">
+    <value>보조 키 2의 저장 위치를 확인할 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Error.HelperKeysNotFound" xml:space="preserve">
+    <value>보조 키 설정을 찾을 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidActionHelper" xml:space="preserve">
+    <value>{0}의 보조 키 설정이 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidActionKey" xml:space="preserve">
+    <value>{0}의 키가 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidActionValue" xml:space="preserve">
+    <value>{0} 값이 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidControllerType" xml:space="preserve">
+    <value>게임패드 종류 값이 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidHelper1" xml:space="preserve">
+    <value>보조 키 1 값이 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidHelper2" xml:space="preserve">
+    <value>보조 키 2 값이 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.InvalidPreset" xml:space="preserve">
+    <value>확인/취소 프리셋 값이 올바르지 않습니다.</value>
+  </data>
+  <data name="Keybind.Error.RequiredInputDataNotFound" xml:space="preserve">
+    <value>필수 입력 설정 데이터를 찾을 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Error.SaveDirectoryUnavailable" xml:space="preserve">
+    <value>설정 파일의 저장 위치를 확인할 수 없습니다.</value>
+  </data>
+  <data name="Keybind.Error.SaveSessionNotLoaded" xml:space="preserve">
+    <value>설정 파일을 불러오지 않았습니다.</value>
+  </data>
+  <data name="Keybind.Error.UnexpectedFileFormat" xml:space="preserve">
+    <value>파일 형식이 예상한 구성과 다릅니다.</value>
+  </data>
+  <data name="Keybind.Group.Main" xml:space="preserve">
+    <value>일반</value>
+  </data>
+  <data name="Keybind.Group.QuickWheel" xml:space="preserve">
+    <value>퀵 휠</value>
+  </data>
+  <data name="Keybind.Group.Photo" xml:space="preserve">
+    <value>촬영 모드</value>
+  </data>
+  <data name="Keybind.Group.Fishing" xml:space="preserve">
+    <value>낚시 모드</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveIntro" xml:space="preserve">
+    <value>다음 항목은 잘못되었거나 아직 생성되지 않은 저장 위치가 감지되어 변경하지 않았습니다.</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveRecovery" xml:space="preserve">
+    <value>게임 내 키 설정을 기본값으로 되돌리고 게임을 완전히 종료한 후, 이 도구에서 키 설정 프리셋을 불러와 다시 저장하세요.</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveNote" xml:space="preserve">
+    <value>※ 이 오류는 게임 업데이트에서 해당 항목이 구현될 때까지 해결되지 않을 수 있습니다.</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveTarget" xml:space="preserve">
+    <value>• {0}: {1} &gt; {2}</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveControllerOffset" xml:space="preserve">
+    <value>  +0x{0:X5}: type=0x{1:X8}, state=0x{2:X8}</value>
+  </data>
+  <data name="Keybind.Message.PartialSaveKeyMouseOffset" xml:space="preserve">
+    <value>  +0x{0:X5}: type=0x{1:X8}</value>
+  </data>
+  <data name="Keybind.Message.Title.PartialSave" xml:space="preserve">
+    <value>일부 키를 저장하지 못했습니다</value>
+  </data>
+</root>

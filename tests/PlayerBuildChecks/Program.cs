@@ -17,6 +17,14 @@ internal static class Program
 {
  [STAThread] private static void Main(string[] args)
  {
+  if(args is ["--validate-plugin",var pluginPath])
+  {
+   var paths=((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator).Append(Path.GetFullPath(pluginPath));
+   using var metadata=new MetadataLoadContext(new PathAssemblyResolver(paths));
+   var assembly=metadata.LoadFromAssemblyPath(Path.GetFullPath(pluginPath));
+   typeof(WidgetWindowManager).Assembly.GetType("StarResonanceDps.App.Services.PluginManager")!.GetMethod("CreateRegistration",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,[assembly,Path.GetFileNameWithoutExtension(pluginPath)]);
+   Console.WriteLine("Plugin registration and SDK metadata valid.");return;
+  }
   if(args is ["--probe-target-udp",var portList,var seconds]) { SelectionTransportProbe.Run(portList,int.Parse(seconds)); return; }
   if (args is ["--ui-demo"])
   {

@@ -5,6 +5,9 @@
   <Project Path="StarResonanceDps.Plugins.ModuleTool/StarResonanceDps.Plugins.ModuleTool.csproj" />
   <Project Path="StarResonanceDps.PluginSdk/StarResonanceDps.PluginSdk.csproj" />
   <Project Path="StarResonanceDps.PluginSdk.Analyzers/StarResonanceDps.PluginSdk.Analyzers.csproj" />
+  <Folder Name="/CustomPlugins/">
+    <Project Path="StarResonanceDps.Plugins.KeybindTool/StarResonanceDps.Plugins.KeybindTool.csproj" />
+  </Folder>
   <Folder Name="/SamplePlugins/">
     <Project Path="StarResonanceDps.Plugins.Samples/SampleAll/SampleAll.csproj"><Build Solution="Release|*" Project="false" /></Project>
     <Project Path="StarResonanceDps.Plugins.Samples/SampleDependency/SampleDependency.csproj"><Build Solution="Release|*" Project="false" /></Project>

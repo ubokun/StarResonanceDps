@@ -1,0 +1,102 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>KeybindTool</AssemblyName>
+    <RootNamespace>StarResonanceDps.Plugins.KeybindTool</RootNamespace>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StarResonanceDps.PluginSdk.Analyzers\StarResonanceDps.PluginSdk.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets\2016.png" />
+    <None Remove="Assets\2017.png" />
+    <None Remove="Assets\2018.png" />
+    <None Remove="Assets\2019.png" />
+    <None Remove="Assets\2020.png" />
+    <None Remove="Assets\2021.png" />
+    <None Remove="Assets\2022.png" />
+    <None Remove="Assets\320.png" />
+    <None Remove="Assets\326.png" />
+  </ItemGroup>
+
+
+  <!-- Keep every locale embedded in the plugin DLL so plugins remain self-contained under runtime\Plugins. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <WithCulture>false</WithCulture>
+      <LogicalName>StarResonanceDps.Plugins.KeybindTool.Properties.Resources.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.ja-JP.resx">
+      <WithCulture>false</WithCulture>
+      <LogicalName>StarResonanceDps.Plugins.KeybindTool.Properties.Resources.ja-JP.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.ko-KR.resx">
+      <WithCulture>false</WithCulture>
+      <LogicalName>StarResonanceDps.Plugins.KeybindTool.Properties.Resources.ko-KR.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Resources.zh-CN.resx">
+      <WithCulture>false</WithCulture>
+      <LogicalName>StarResonanceDps.Plugins.KeybindTool.Properties.Resources.zh-CN.resources</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StarResonanceDps.PluginSdk\StarResonanceDps.PluginSdk.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\1001.png" />
+    <Resource Include="Assets\1002.png" />
+    <Resource Include="Assets\1003.png" />
+    <Resource Include="Assets\1004.png" />
+    <Resource Include="Assets\1005.png" />
+    <Resource Include="Assets\1006.png" />
+    <Resource Include="Assets\1007.png" />
+    <Resource Include="Assets\1008.png" />
+    <Resource Include="Assets\1009.png" />
+    <Resource Include="Assets\1010.png" />
+    <Resource Include="Assets\1011.png" />
+    <Resource Include="Assets\1012.png" />
+    <Resource Include="Assets\1013.png" />
+    <Resource Include="Assets\1014.png" />
+    <Resource Include="Assets\1016.png" />
+    <Resource Include="Assets\1017.png" />
+    <Resource Include="Assets\1018.png" />
+    <Resource Include="Assets\1019.png" />
+    <Resource Include="Assets\1020.png" />
+    <Resource Include="Assets\2001.png" />
+    <Resource Include="Assets\2002.png" />
+    <Resource Include="Assets\2003.png" />
+    <Resource Include="Assets\2004.png" />
+    <Resource Include="Assets\2005.png" />
+    <Resource Include="Assets\2006.png" />
+    <Resource Include="Assets\2007.png" />
+    <Resource Include="Assets\2008.png" />
+    <Resource Include="Assets\2009.png" />
+    <Resource Include="Assets\2010.png" />
+    <Resource Include="Assets\2011.png" />
+    <Resource Include="Assets\2012.png" />
+    <Resource Include="Assets\2013.png" />
+    <Resource Include="Assets\2014.png" />
+    <Resource Include="Assets\2015.png" />
+    <Resource Include="Assets\2016.png" />
+    <Resource Include="Assets\2017.png" />
+    <Resource Include="Assets\2018.png" />
+    <Resource Include="Assets\2019.png" />
+    <Resource Include="Assets\2020.png" />
+    <Resource Include="Assets\2021.png" />
+    <Resource Include="Assets\2022.png" />
+    <Resource Include="Assets\320.png" />
+    <Resource Include="Assets\323.png" />
+    <Resource Include="Assets\324.png" />
+    <Resource Include="Assets\325.png" />
+    <Resource Include="Assets\326.png" />
+  </ItemGroup>
+</Project>
