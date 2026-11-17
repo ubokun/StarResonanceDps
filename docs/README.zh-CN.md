@@ -66,6 +66,13 @@
 
 可以通过插件添加功能。开发方法请参阅[插件开发](https://github.com/kokoukohiro/StarResonanceDps/wiki/插件开发)。SDK包(`.nupkg`)与应用的zip一起发布在Releases中。
 
+### 已发布的插件
+
+| 插件 | 类型 | 作者 | 获取方式 |
+|---|---|---|---|
+| [ただのモジュールツール](https://github.com/kokoukohiro/StarResonanceDps/wiki/ただのモジュールツール(简体中文)) | 模组工具 | kokoukohiro | 随本应用附带(Releases中也有`ModuleTool.dll`) |
+| BPSR：パッド勢を救いたい | 按键绑定工具 | kokoukohiro | [BPSRControllerHelper](https://github.com/kokoukohiro/BPSRControllerHelper) |
+
 ## ✅ 安全与隐私
 
 - 不修改游戏客户端

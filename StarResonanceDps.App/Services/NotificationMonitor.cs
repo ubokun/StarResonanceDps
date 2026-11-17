@@ -13,7 +13,7 @@ using StarResonanceDps.Core.Services;
 namespace StarResonanceDps.App.Services;
 
 /// <summary>
-/// ウィジェットを開いていなくても通知する項目(入場確認・HP低下・プレイヤー出現・エンティティ出現・狙われるプレイヤー・
+/// ウィジェットを開いていなくても通知する項目(入場確認・HP低下・プレイヤー出現・エンティティ出現・狙われるプレイヤー・リキャスト完了・
 /// 自分の薬剤・料理効果切れ・予兆技・エンティティ詠唱・プライベートトーク・ワールドチャット)の判定を持つ。起動時から動き、画面のスレッドで使う。
 /// バフ・デバフ効果切れと、ほかの人の薬剤・料理効果切れは、開いているバフ・デバフカードとバフ・デバフグループが判定する(<see cref="BuffNotificationRegistry"/>)。
 ///
@@ -23,8 +23,8 @@ namespace StarResonanceDps.App.Services;
 /// HP低下と狙われるプレイヤーはプレイヤーの通知なので、NPC(助っ人)と判定された人は渡さない。
 /// 出現の2つは、オンにした・対象(名前とID)を変えたときに今の一覧を「既にいる相手」として控え直す。起動した直後に見えた相手には出す。
 /// 狙われるプレイヤーも、オンにした・設定を選び直したときに今の狙われ状態を控え直す。エンティティ詠唱も、オンにした・対象を変えたときに今の詠唱を控え直す。
-/// 出現の2つとエンティティ詠唱は、対象の名前もIDも空なら判定を動かさない(<see cref="NotificationWatchTarget"/>)。ワールドチャットは一致ワードが空なら出さない。
-/// 予兆技は、通知条件を選び直したときに予告を控え直す。
+/// 出現の2つとエンティティ詠唱とリキャスト完了は、対象の名前もIDも空なら判定を動かさない(<see cref="NotificationWatchTarget"/>)。ワールドチャットは一致ワードが空なら出さない。
+/// 予兆技は、通知条件を選び直したときに予告を控え直す。リキャスト完了は、対象か通知条件を選び直したときに判定を作り直す。
 /// </para>
 ///
 /// <para>
@@ -40,6 +40,9 @@ public sealed class NotificationMonitor
     /// <summary>自分の料理・薬剤を確かめる間隔。バフ・デバフカードとグループの更新と同じ間隔。</summary>
     private static readonly TimeSpan CuisinePotionPollInterval = TimeSpan.FromSeconds(1);
 
+    /// <summary>自分のスキルの CD を確かめる間隔。プレイヤーリストのスキルの待ち時間の更新と同じ間隔。</summary>
+    private static readonly TimeSpan CooldownReadyPollInterval = TimeSpan.FromMilliseconds(250);
+
     private static readonly BuffGroup[] CuisinePotionGroups = [BuffGroup.Cuisine, BuffGroup.Potion];
 
     private readonly HealthLowNotificationTracker _healthLowTracker = new();
@@ -52,11 +55,15 @@ public sealed class NotificationMonitor
     private readonly List<PlayerRosterEntry> _nearbyPlayers = [];
     private readonly DispatcherTimer _telegraphedSkillTimer;
     private readonly DispatcherTimer _cuisinePotionTimer;
+    private readonly DispatcherTimer _cooldownReadyTimer;
 
     /// <summary>自分の料理・薬剤の判定。鍵はまとまり。項目がオフの間と自分が分からない間は空。</summary>
     private readonly Dictionary<BuffGroup, BuffNotificationWatch> _cuisinePotionWatches = [];
 
     private TelegraphedSkillNotificationTracker? _telegraphedSkillTracker;
+
+    /// <summary>リキャスト完了の判定。オフの間と、対象の名前もIDも空の間は null。</summary>
+    private CooldownReadyNotificationTracker? _cooldownReadyTracker;
 
     /// <summary>狙われるプレイヤーの今の設定。変わったら今の狙われ状態を控え直す。</summary>
     private (bool IsEnabled, int TargetedPlayerModeIndex, int TargetEntityModeIndex, int ConditionIndex) _targetedSettings;
@@ -90,6 +97,11 @@ public sealed class NotificationMonitor
             Interval = CuisinePotionPollInterval
         };
         _cuisinePotionTimer.Tick += CuisinePotionTimer_Tick;
+        _cooldownReadyTimer = new DispatcherTimer
+        {
+            Interval = CooldownReadyPollInterval
+        };
+        _cooldownReadyTimer.Tick += CooldownReadyTimer_Tick;
 
         // 起動時の設定は控え直さずに見始める(起動した直後に見えた相手にも出す)。
         var notifications = ConfigManager.Instance.GetNotificationsSnapshot();
@@ -187,6 +199,23 @@ public sealed class NotificationMonitor
         {
             _telegraphedSkillTimer.Stop();
             _telegraphedSkillTracker = null;
+        }
+
+        var cooldownReady = notifications.Get(NotificationKind.CooldownReady);
+        var cooldownReadyTarget = NotificationWatchTarget.From(cooldownReady);
+        var cooldownReadyLeadSeconds = AppConfigDefaults.CooldownReadyLeadSeconds[cooldownReady.CooldownReadyConditionIndex];
+        if (cooldownReadyTarget is null)
+        {
+            _cooldownReadyTimer.Stop();
+            _cooldownReadyTracker = null;
+        }
+        else if (_cooldownReadyTracker is null
+            || _cooldownReadyTracker.Target != cooldownReadyTarget
+            || _cooldownReadyTracker.LeadSeconds != cooldownReadyLeadSeconds)
+        {
+            // 選び直した時点で既に秒数を切っている CD には出さない(作り直した判定は、秒数より長い CD だけを構える)。
+            _cooldownReadyTracker = new CooldownReadyNotificationTracker(cooldownReadyTarget, cooldownReadyLeadSeconds);
+            _cooldownReadyTimer.Start();
         }
 
         var healthLow = notifications.Get(NotificationKind.HealthLow);
@@ -534,5 +563,10 @@ public sealed class NotificationMonitor
     private void TelegraphedSkillTimer_Tick(object? sender, EventArgs e)
     {
         _telegraphedSkillTracker?.Poll();
+    }
+
+    private void CooldownReadyTimer_Tick(object? sender, EventArgs e)
+    {
+        _cooldownReadyTracker?.Poll();
     }
 }

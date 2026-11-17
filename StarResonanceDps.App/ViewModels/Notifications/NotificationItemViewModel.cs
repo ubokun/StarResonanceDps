@@ -23,6 +23,10 @@ namespace StarResonanceDps.App.ViewModels.Notifications;
 public sealed partial class NotificationItemViewModel : ObservableObject
 {
     private readonly string? _labelResourceKey;
+
+    /// <summary>本体の項目の文章の決まり。バフ・デバフ効果切れの既定の文を通知条件で替えるのに使う。プラグインの項目は null。</summary>
+    private readonly HostNotificationTextSource? _hostTextSource;
+
     private readonly PluginNotificationGroup? _pluginGroup;
     private readonly PluginNotificationDefinition? _pluginDefinition;
     private readonly bool _isFirstInPluginGroup;
@@ -95,6 +99,10 @@ public sealed partial class NotificationItemViewModel : ObservableObject
     [ObservableProperty]
     private int _healthLowConditionIndex = AppConfigDefaults.DefaultHealthLowConditionIndex;
 
+    /// <summary>バフ・デバフ効果切れの通知条件の番号(<see cref="AppConfigDefaults.BuffExpiredLeadSeconds"/> の添字)。</summary>
+    [ObservableProperty]
+    private int _buffExpiredConditionIndex = AppConfigDefaults.DefaultBuffExpiredConditionIndex;
+
     /// <summary>薬剤・料理効果切れの通知条件の番号(<see cref="AppConfigDefaults.CuisinePotionLowMinutes"/> の添字)。</summary>
     [ObservableProperty]
     private int _cuisinePotionConditionIndex = AppConfigDefaults.DefaultCuisinePotionConditionIndex;
@@ -103,15 +111,19 @@ public sealed partial class NotificationItemViewModel : ObservableObject
     [ObservableProperty]
     private int _telegraphedSkillConditionIndex = AppConfigDefaults.DefaultTelegraphedSkillConditionIndex;
 
+    /// <summary>リキャスト完了の通知条件の番号(<see cref="AppConfigDefaults.CooldownReadyLeadSeconds"/> の添字)。</summary>
+    [ObservableProperty]
+    private int _cooldownReadyConditionIndex = AppConfigDefaults.DefaultCooldownReadyConditionIndex;
+
     /// <summary>
-    /// エンティティ詠唱・プレイヤー出現・エンティティ出現の対象の名前と、ワールドチャットの一致ワード(区切りで並べた複数、<see cref="NotificationTargetList"/>)。
+    /// エンティティ詠唱・リキャスト完了・プレイヤー出現・エンティティ出現の対象の名前と、ワールドチャットの一致ワード(区切りで並べた複数、<see cref="NotificationTargetList"/>)。
     /// 区切りは対象の名前が「|」、一致ワードが空白。打ったままの値で持ち、保存のときに分ける。
     /// </summary>
     [ObservableProperty]
     private string _targetName = string.Empty;
 
     /// <summary>
-    /// エンティティ詠唱・プレイヤー出現・エンティティ出現の対象のID(区切りで並べた複数)。打ったままの値で持ち、保存のときに分けて数にする。空なら入力なし。
+    /// エンティティ詠唱・リキャスト完了・プレイヤー出現・エンティティ出現の対象のID(区切りで並べた複数)。打ったままの値で持ち、保存のときに分けて数にする。空なら入力なし。
     /// 入力欄は数字と区切りだけを受け、区切りのあいだの桁は long に収まる長さまで(<see cref="Behaviors.DigitsOnlyInputBehavior"/>)。
     /// </summary>
     [ObservableProperty]
@@ -148,6 +160,7 @@ public sealed partial class NotificationItemViewModel : ObservableObject
 
     private NotificationItemViewModel(INotificationTextSource textSource, IReadOnlyList<PluginSettingViewModel> pluginSettings)
     {
+        _hostTextSource = textSource as HostNotificationTextSource;
         Text = new NotificationTextViewModel(textSource);
         Text.Changed += Text_Changed;
         PluginSettings = pluginSettings;
@@ -191,8 +204,10 @@ public sealed partial class NotificationItemViewModel : ObservableObject
 
     public NotificationTextViewModel Text { get; }
 
-    /// <summary>開いているバフ・デバフカードとバフ・デバフグループのバフだけを通知する項目か。右下に注意書きを出す。</summary>
-    public bool ShowsBuffWidgetNote => Kind == NotificationKind.BuffExpired;
+    /// <summary>
+    /// バフ・デバフ効果切れの項目か。右下に「通知条件」の行と、開いているバフ・デバフカードとバフ・デバフグループのバフだけを通知する注意書きを出す。
+    /// </summary>
+    public bool ShowsBuffExpiredSettings => Kind == NotificationKind.BuffExpired;
 
     /// <summary>HP低下の項目か。右下に「対象プレイヤー」「HP低下判定」「通知条件」の行を出す。</summary>
     public bool ShowsHealthLowSettings => Kind == NotificationKind.HealthLow;
@@ -206,8 +221,29 @@ public sealed partial class NotificationItemViewModel : ObservableObject
     /// <summary>予兆技の項目か。右下の先頭に「通知条件」の行を出す。</summary>
     public bool ShowsTelegraphedSkillCondition => Kind == NotificationKind.TelegraphedSkill;
 
-    /// <summary>エンティティ詠唱の項目か。右下の先頭に「対象スキル名」「対象スキルID」の行と注意書きを出す。</summary>
-    public bool ShowsTargetSkill => Kind == NotificationKind.EntityCast;
+    /// <summary>リキャスト完了の項目か。右下に「通知条件」の行と、自分のスキルだけを知らせる注意書きを出す。</summary>
+    public bool ShowsCooldownReadySettings => Kind == NotificationKind.CooldownReady;
+
+    /// <summary>エンティティ詠唱かリキャスト完了の項目か。右下の先頭に「対象スキル名」「対象スキルID」の行と注意書きを出す。</summary>
+    public bool ShowsTargetSkill => Kind is NotificationKind.EntityCast or NotificationKind.CooldownReady;
+
+    /// <summary>「対象スキル名」の入力欄の例。エンティティ詠唱は敵のスキル、リキャスト完了は自分のスキル。</summary>
+    public string TargetSkillNamePlaceholder => LocalizationManager.Instance.GetString(
+        Kind == NotificationKind.CooldownReady
+            ? "Notification_CooldownSkillName_Placeholder"
+            : "Notification_TargetSkillName_Placeholder");
+
+    /// <summary>「対象スキルID」の入力欄の例。</summary>
+    public string TargetSkillIdPlaceholder => LocalizationManager.Instance.GetString(
+        Kind == NotificationKind.CooldownReady
+            ? "Notification_CooldownSkillId_Placeholder"
+            : "Notification_TargetSkillId_Placeholder");
+
+    /// <summary>スキルのIDと名前を調べられる場所の注意書き。エンティティ詠唱はタイムライン、リキャスト完了はプレイヤーリスト。</summary>
+    public string TargetSkillIdSourceNote => LocalizationManager.Instance.GetString(
+        Kind == NotificationKind.CooldownReady
+            ? "Notification_CooldownSkillIdSourceNote"
+            : "Notification_TargetIdSourceNote");
 
     /// <summary>プレイヤー出現の項目か。右下の先頭に「対象プレイヤー名」「対象プレイヤーUID」の行と注意書きを出す。</summary>
     public bool ShowsTargetPlayerName => Kind == NotificationKind.PlayerAppeared;
@@ -265,8 +301,10 @@ public sealed partial class NotificationItemViewModel : ObservableObject
             TargetedConditionIndex = config.TargetedConditionIndex;
             HealthLowThresholdIndex = config.HealthLowThresholdIndex;
             HealthLowConditionIndex = config.HealthLowConditionIndex;
+            BuffExpiredConditionIndex = config.BuffExpiredConditionIndex;
             CuisinePotionConditionIndex = config.CuisinePotionConditionIndex;
             TelegraphedSkillConditionIndex = config.TelegraphedSkillConditionIndex;
+            CooldownReadyConditionIndex = config.CooldownReadyConditionIndex;
             TargetName = ShowsMatchWords
                 ? NotificationTargetList.JoinMatchWords(config.TargetNames)
                 : NotificationTargetList.JoinNames(config.TargetNames);
@@ -332,8 +370,10 @@ public sealed partial class NotificationItemViewModel : ObservableObject
             TargetedConditionIndex = TargetedConditionIndex,
             HealthLowThresholdIndex = HealthLowThresholdIndex,
             HealthLowConditionIndex = HealthLowConditionIndex,
+            BuffExpiredConditionIndex = BuffExpiredConditionIndex,
             CuisinePotionConditionIndex = CuisinePotionConditionIndex,
             TelegraphedSkillConditionIndex = TelegraphedSkillConditionIndex,
+            CooldownReadyConditionIndex = CooldownReadyConditionIndex,
             TargetNames = ShowsMatchWords
                 ? NotificationTargetList.SplitMatchWords(TargetName)
                 : NotificationTargetList.SplitNames(TargetName),
@@ -378,6 +418,9 @@ public sealed partial class NotificationItemViewModel : ObservableObject
 
         RebuildVoicevoxOptions();
         OnPropertyChanged(nameof(VoicevoxPolicyLinkText));
+        OnPropertyChanged(nameof(TargetSkillNamePlaceholder));
+        OnPropertyChanged(nameof(TargetSkillIdPlaceholder));
+        OnPropertyChanged(nameof(TargetSkillIdSourceNote));
     }
 
     /// <summary>行の名前と見出し。本体の項目は文言の鍵、プラグインの項目は定義の名前とプラグインの名前。</summary>
@@ -479,12 +522,36 @@ public sealed partial class NotificationItemViewModel : ObservableObject
         RaiseChanged();
     }
 
+    /// <summary>
+    /// 既定の文は通知条件で替わる(<see cref="NotificationTextFormatter.GetDefaultKey"/>)。読み込みでは文章の読み込みより前に入れるので、
+    /// 文章の決まりへ渡すだけにする。選び直したときは、入力欄が既定の文のままなら新しい既定の文に替えてから保存する。
+    /// </summary>
+    partial void OnBuffExpiredConditionIndexChanged(int value)
+    {
+        if (_hostTextSource is not null)
+        {
+            _hostTextSource.BuffExpiredConditionIndex = value;
+        }
+
+        if (!_isLoading)
+        {
+            Text.RefreshLocalizedText();
+        }
+
+        RaiseChanged();
+    }
+
     partial void OnCuisinePotionConditionIndexChanged(int value)
     {
         RaiseChanged();
     }
 
     partial void OnTelegraphedSkillConditionIndexChanged(int value)
+    {
+        RaiseChanged();
+    }
+
+    partial void OnCooldownReadyConditionIndexChanged(int value)
     {
         RaiseChanged();
     }

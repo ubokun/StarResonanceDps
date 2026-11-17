@@ -15,7 +15,15 @@ namespace StarResonanceDps.App.Models.Widgets;
 /// <param name="Before">リンクより前に発言した人が打った文。</param>
 /// <param name="After">リンクより後に発言した人が打った文。</param>
 /// <param name="Problem">解けなかった理由(ログに出す英語の文)。解けたときは null。</param>
-public readonly record struct ChatHyperlinkText(string? Text, string Before, string After, string? Problem);
+/// <param name="LinkStart"><paramref name="Text"/> の中の、リンクの文字の始まり。</param>
+/// <param name="LinkLength">リンクの文字の長さ。型にリンクのタグが無ければ 0。</param>
+public readonly record struct ChatHyperlinkText(
+    string? Text,
+    string Before,
+    string After,
+    string? Problem,
+    int LinkStart,
+    int LinkLength);
 
 /// <summary>
 /// リンクの発言の文。ゲームのチャットの窓と同じく、表 <c>ChatHyperlink</c> の文の型を差し込みの値で埋め、
@@ -135,11 +143,39 @@ public static partial class ChatHyperlinkFormatter
         var template = CombatDataCatalog.GetChatHyperlinkTemplate(hyperlink.ConfigId);
         if (template.Length == 0)
         {
-            return new ChatHyperlinkText(null, before, after, "no template");
+            return new ChatHyperlinkText(null, before, after, "no template", 0, 0);
         }
 
         string? missingKey = null;
-        var result = GetValueKeyRegex().Replace(GetTagRegex().Replace(template, string.Empty), match =>
+        var linkStart = 0;
+        var linkLength = 0;
+        string result;
+        var linkTag = GetLinkTagRegex().Match(template);
+        if (linkTag.Success)
+        {
+            // リンクのタグで3つに分けて埋め、押せる所の範囲を文字数で返す(押せるようにするのは座標のリンクだけ、ChatWidgetViewModel)。
+            var head = Fill(template[..linkTag.Index], values, ref missingKey);
+            var link = Fill(linkTag.Groups["inner"].Value, values, ref missingKey);
+            var tail = Fill(template[(linkTag.Index + linkTag.Length)..], values, ref missingKey);
+            result = head + link + tail;
+            linkStart = head.Length;
+            linkLength = link.Length;
+        }
+        else
+        {
+            result = Fill(template, values, ref missingKey);
+        }
+
+        return missingKey is null
+            ? new ChatHyperlinkText(result, before, after, null, linkStart, linkLength)
+            : new ChatHyperlinkText(null, before, after, $"no value for {missingKey}", 0, 0);
+    }
+
+    /// <summary>型(の一部)の書式のタグを外して差し込みの値を埋める。値の取れない差し込みがあれば、その最初の名前を控える。</summary>
+    private static string Fill(string template, Dictionary<string, string> values, ref string? missingKey)
+    {
+        var missing = missingKey;
+        var filled = GetValueKeyRegex().Replace(GetTagRegex().Replace(template, string.Empty), match =>
         {
             var key = match.Groups["key"].Value;
             if (values.TryGetValue(key, out var text))
@@ -147,13 +183,12 @@ public static partial class ChatHyperlinkFormatter
                 return text;
             }
 
-            missingKey ??= key;
+            missing ??= key;
             return match.Value;
         });
 
-        return missingKey is null
-            ? new ChatHyperlinkText(result, before, after, null)
-            : new ChatHyperlinkText(null, before, after, $"no value for {missingKey}");
+        missingKey = missing;
+        return filled;
     }
 
     /// <summary>名前の差し込み。空の名前は値として入れない(その差し込みは値の取れないものになる)。</summary>
@@ -200,6 +235,10 @@ public static partial class ChatHyperlinkFormatter
     /// <summary>型の書式のタグ(<c>&lt;u&gt;</c>・<c>&lt;link=1&gt;</c>・<c>&lt;style=…&gt;</c> とその閉じ)。</summary>
     [GeneratedRegex(@"<[^<>]*>")]
     private static partial Regex GetTagRegex();
+
+    /// <summary>リンクのタグ(<c>&lt;link=…&gt;</c> から <c>&lt;/link&gt;</c> まで)と、その中身。</summary>
+    [GeneratedRegex(@"<link=[^<>]*>(?<inner>.*?)</link>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex GetLinkTagRegex();
 
     /// <summary>顔文字の <c>&lt;sprite=N&gt;</c> 以外のタグ。</summary>
     [GeneratedRegex(@"<(?!sprite=\d+>)[^<>]*>", RegexOptions.IgnoreCase)]

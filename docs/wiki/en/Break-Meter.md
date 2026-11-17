@@ -19,7 +19,7 @@ It works the same way as the [DPS Meter](DPS-Meter), and the values are Resilien
 ## Controls
 
 - Click a row to open that player's [Skill Details (Break)](Skill-Details-(Break)).
-- Right-click a row to choose and open that player's "Skill Details (Break)" or "BPS Trend Graph".
+- Right-click a row to choose and open that player's "Skill Details (Break)", "BPS Trend Graph", or "Buff Uptime".
 - If the rows do not fit in the window, scroll with the mouse wheel or the scroll bar on the right.
 
 ## Settings

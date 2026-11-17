@@ -44,7 +44,7 @@ namespace StarResonanceDps.App.ViewModels;
 /// フッターの左は戦闘の時計の経過(メーターのタイマーと同じ)。行の左クリックと右クリックのメニュー(1項目)は、その人の被ダメ詳細を開く。
 /// </para>
 /// </summary>
-public sealed partial class DamageTakenLogWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource
+public sealed partial class DamageTakenLogWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, IWidgetWindowHiddenAware
 {
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromMilliseconds(250);
 
@@ -186,6 +186,19 @@ public sealed partial class DamageTakenLogWidgetViewModel : ViewModelBase, IDisp
         _widget.ElementColorSettingsChanged -= Widget_ElementColorSettingsChanged;
         _configManager.SettingsPreviewChanged -= ConfigManager_SettingsPreviewChanged;
         LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
+    }
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
     }
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)

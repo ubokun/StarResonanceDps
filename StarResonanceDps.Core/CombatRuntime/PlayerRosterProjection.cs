@@ -277,7 +277,9 @@ internal static class PlayerRosterProjection
             // 素性が履歴の記録か保持している前の回から来たか。どちらもHPは「その戦闘が終わった時点の値」で
             // いまの状態ではないので、表示では最大値に置く(下の useHistoryHealth)。
             var isMetadataFromHistory = false;
+            // 今ログインしているキャラの行は、履歴を開いていても記録の値を使わない(ライブの値だけで作る)。
             if (metadataEntity is null
+                && !(isSelf && ReferenceEquals(meterEncounter, AppState.OpenedHistoricalEncounter))
                 && metadataPlayersByCharacterId.TryGetValue(characterId, out metadataEntity))
             {
                 isMetadataFromHistory = !ReferenceEquals(meterEncounter, encounter);
@@ -315,6 +317,7 @@ internal static class PlayerRosterProjection
                 seasonId: isMetadataFromHistory ? meterEncounter?.ExData.SeasonId ?? 0 : null,
                 gameServer: isMetadataFromHistory ? meterEncounter?.ExData.GameServer ?? GameServer.Unknown : null,
                 recordedAvatar: isMetadataFromHistory ? metadataEntity?.RecordedAvatar : null,
+                recordedSelf: isFromRecord ? metadataEntity?.RecordedSelf : null,
                 isFromRecord: isFromRecord))
             {
                 if (nearbyEntity is not null)
@@ -413,6 +416,10 @@ internal static class PlayerRosterProjection
     /// 素性の出所が履歴の記録のとき、その回に保存した顔と名刺の写真のリンク(<see cref="Entity.RecordedAvatar"/>)。
     /// ライブの行は null で、名刺の店の今の値を使う。
     /// </param>
+    /// <param name="recordedSelf">
+    /// 開いている履歴の回の記録から来た行のとき、その回に保存した自分にしか届かない値(<see cref="Entity.RecordedSelf"/>。保存の時点でログインしていたキャラだけが持つ)。
+    /// 今ログインしているキャラの行は記録から作らないので、記録から来た行はいつも他のキャラの行。ライブの行は null。
+    /// </param>
     /// <param name="isFromRecord">
     /// 素性が開いている履歴の回の記録から来たとき true(<see cref="PlayerRosterEntry.IsFromRecord"/>)。
     /// 欠けの印は付けない(欠けは実行中にしか分からない印で決まり、記録の実体では意味を持たない)。
@@ -427,6 +434,7 @@ internal static class PlayerRosterProjection
         int? seasonId = null,
         GameServer? gameServer = null,
         SocialAvatarState? recordedAvatar = null,
+        RecordedSelfData? recordedSelf = null,
         bool isFromRecord = false)
     {
         if (characterId == 0)
@@ -499,7 +507,8 @@ internal static class PlayerRosterProjection
             isFromRecord,
             !useHistoryHealth && source.IsIncapacitated,
             source.TalentNodeIds,
-            source.LastReplaceableSkills);
+            source.LastReplaceableSkills,
+            RecordedSelf: recordedSelf);
 
         // 空の項目は名刺照会とチャットの値で埋める(名簿の外の人と同じ決まり)。記録から来た行はその回の値のまま。
         if (!isFromRecord)

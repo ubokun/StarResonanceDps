@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Windows;
@@ -49,6 +50,11 @@ public enum AppUpdateFailure
 ///
 /// <para>
 /// 更新があるかはバージョンの比較だけで決める。データだけの更新も、バージョンを上げて同じ経路で配る。
+/// </para>
+///
+/// <para>
+/// 取得は、zip の中の今のアプリのフォルダと違うファイルだけを範囲で取る(<see cref="AppUpdateDelta"/>)。
+/// サーバーが範囲の取得に応えない・読めない形の zip なら、zip を全部取って GitHub が返す SHA-256 と照らす。
 /// </para>
 /// </summary>
 public static class AppUpdateService
@@ -388,7 +394,6 @@ public static class AppUpdateService
         await _cleanUpTask;
 
         var workDirectory = CombatRuntimePaths.UpdateDirectory;
-        var packagePath = Path.Combine(workDirectory, "package.zip");
         var newDirectory = Path.Combine(workDirectory, "new");
         await Task.Run(() =>
         {
@@ -396,21 +401,137 @@ public static class AppUpdateService
             Directory.CreateDirectory(newDirectory);
         }, cancellationToken);
 
+        var plan = await PrepareDeltaAsync(window, release, newDirectory, cancellationToken);
+        if (plan is null)
+        {
+            await DownloadAndExtractPackageAsync(window, release, workDirectory, newDirectory, cancellationToken);
+        }
+        else
+        {
+            await DownloadAndExtractDeltaAsync(window, release, plan, workDirectory, newDirectory, cancellationToken);
+        }
+
+        if (!AppUpdateApplier.HasFileList(newDirectory))
+        {
+            throw new InvalidDataException($"The package has no {AppUpdateApplier.FileListName}.");
+        }
+
+        // ここから先は取り消せない。
+        window.DisableCancel();
+        return await StartNewVersionAsync(newDirectory);
+    }
+
+    /// <summary>
+    /// 差分の更新の段取りを作る。zip の末尾と中身の一覧を範囲で取り、アプリのフォルダと同じファイルは作業フォルダへ写す。
+    /// サーバーが範囲の取得に応えない・読めない形の zip なら、警告を書いて null(呼び出し側が zip を全部取り、更新は今までどおり動く)。
+    /// </summary>
+    private static async Task<AppUpdateDeltaPlan?> PrepareDeltaAsync(
+        UpdateProgressWindow window,
+        AppRelease release,
+        string newDirectory,
+        CancellationToken cancellationToken)
+    {
+        window.ShowStatus("Update_Progress_Comparing");
+        window.ShowProgress(0);
+
+        var tailLength = AppUpdateDelta.GetTailLength(release.PackageSize);
+        var tailStart = release.PackageSize - tailLength;
+        var tail = await ReadRangeAsync(release, tailStart, tailLength, cancellationToken);
+        if (tail is null)
+        {
+            Log.Warning("The server returned the whole package for a part request; downloading the whole package");
+            return null;
+        }
+
+        List<AppUpdatePackageEntry> entries;
+        try
+        {
+            var (offset, size, count) = AppUpdateDelta.FindDirectory(tail, tailStart);
+            ReadOnlyMemory<byte> directory;
+            if (offset >= tailStart)
+            {
+                directory = tail.AsMemory((int)(offset - tailStart), (int)size);
+            }
+            else
+            {
+                directory = await ReadRangeAsync(release, offset, size, cancellationToken)
+                    ?? throw new AppUpdateException(
+                        AppUpdateFailure.Server,
+                        new InvalidDataException("The server returned the whole package for a part request."));
+            }
+
+            entries = AppUpdateDelta.ReadDirectory(directory.Span, offset, count, newDirectory);
+        }
+        catch (NotSupportedException exception)
+        {
+            Log.Warning(exception, "The package cannot be read in parts; downloading the whole package");
+            return null;
+        }
+
+        var progress = new Progress<double>(ratio => window.ShowProgress(ratio));
+        var plan = await Task.Run(
+            () => AppUpdateDelta.CreatePlan(entries, CombatRuntimePaths.BaseDirectory, newDirectory, progress, cancellationToken),
+            cancellationToken);
+        Log.Information(
+            "Downloading {Count} changed files ({Size} bytes in {Parts} parts) of the package; copied {Copied} unchanged files from the application folder",
+            plan.DownloadCount,
+            plan.DownloadSize,
+            plan.Runs.Count,
+            plan.CopiedCount);
+        return plan;
+    }
+
+    /// <summary>差分の塊を順に1つのファイルへ取り、作業フォルダへ展開する。</summary>
+    private static async Task DownloadAndExtractDeltaAsync(
+        UpdateProgressWindow window,
+        AppRelease release,
+        AppUpdateDeltaPlan plan,
+        string workDirectory,
+        string newDirectory,
+        CancellationToken cancellationToken)
+    {
+        if (plan.Runs.Count == 0)
+        {
+            return;
+        }
+
+        var deltaPath = Path.Combine(workDirectory, "delta.bin");
+        window.ShowStatus("Update_Progress_Downloading");
+        window.ShowProgress(0, FormatDownloadSize(0, plan.DownloadSize));
+        var downloadProgress = CreateDownloadProgress(window);
+        await Task.Run(() => DownloadRunsAsync(release, plan, deltaPath, downloadProgress, cancellationToken), cancellationToken);
+
+        window.ShowStatus("Update_Progress_Extracting");
+        window.ShowProgress(0);
+        var extractProgress = new Progress<double>(ratio => window.ShowProgress(ratio));
+        await Task.Run(() => AppUpdateDelta.ExtractRuns(plan, deltaPath, newDirectory, extractProgress, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>zip を全部取って展開する(サーバーが範囲の取得に応えない・読めない形の zip のとき)。</summary>
+    private static async Task DownloadAndExtractPackageAsync(
+        UpdateProgressWindow window,
+        AppRelease release,
+        string workDirectory,
+        string newDirectory,
+        CancellationToken cancellationToken)
+    {
+        var packagePath = Path.Combine(workDirectory, "package.zip");
         window.ShowStatus("Update_Progress_Downloading");
         window.ShowProgress(0, FormatDownloadSize(0, release.PackageSize));
-        var downloadProgress = new Progress<(long Done, long Total)>(value => window.ShowProgress(
-            (double)value.Done / value.Total,
-            FormatDownloadSize(value.Done, value.Total)));
+        var downloadProgress = CreateDownloadProgress(window);
         await Task.Run(() => DownloadPackageAsync(release, packagePath, downloadProgress, cancellationToken), cancellationToken);
 
         window.ShowStatus("Update_Progress_Extracting");
         window.ShowProgress(0);
         var extractProgress = new Progress<double>(ratio => window.ShowProgress(ratio));
         await Task.Run(() => ExtractPackage(packagePath, newDirectory, extractProgress, cancellationToken), cancellationToken);
+    }
 
-        // ここから先は取り消せない。
-        window.DisableCancel();
-        return await StartNewVersionAsync(newDirectory);
+    private static IProgress<(long Done, long Total)> CreateDownloadProgress(UpdateProgressWindow window)
+    {
+        return new Progress<(long Done, long Total)>(value => window.ShowProgress(
+            (double)value.Done / value.Total,
+            FormatDownloadSize(value.Done, value.Total)));
     }
 
     private static string FormatDownloadSize(long done, long total)
@@ -436,8 +557,127 @@ public static class AppUpdateService
         await using var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, useAsync: true);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 
-        var buffer = new byte[BufferSize];
+        await CopyResponseAsync(source, file, hash, 0, total, progress, cancellationToken).ConfigureAwait(false);
+
+        var actual = Convert.ToHexString(hash.GetHashAndReset());
+        if (!string.Equals(actual, release.PackageSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new AppUpdateException(
+                AppUpdateFailure.Corrupt,
+                new InvalidDataException($"The SHA-256 of the package is {actual}, expected {release.PackageSha256}."));
+        }
+    }
+
+    /// <summary>差分の塊を zip の中の順に1つのファイルへ取る。塊ごとに、頼んだ範囲が返り、全部受け取ったかを確かめる。</summary>
+    private static async Task DownloadRunsAsync(
+        AppRelease release,
+        AppUpdateDeltaPlan plan,
+        string path,
+        IProgress<(long Done, long Total)> progress,
+        CancellationToken cancellationToken)
+    {
+        await using var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, useAsync: true);
         long done = 0;
+        foreach (var run in plan.Runs)
+        {
+            using var response = await SendRangeRequestAsync(release, run.Start, run.Length, cancellationToken).ConfigureAwait(false)
+                ?? throw new AppUpdateException(
+                    AppUpdateFailure.Server,
+                    new InvalidDataException("The server returned the whole package for a part request."));
+            await using var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+
+            var runStart = done;
+            done = await CopyResponseAsync(source, file, null, done, plan.DownloadSize, progress, cancellationToken).ConfigureAwait(false);
+            if (done - runStart != run.Length)
+            {
+                throw new AppUpdateException(
+                    AppUpdateFailure.Network,
+                    new IOException($"Received {done - runStart} of {run.Length} bytes of a part of the package."));
+            }
+        }
+    }
+
+    /// <summary>zip の一部を取ってそのまま返す。サーバーが範囲の取得に応えず全体を返したら null。</summary>
+    private static async Task<byte[]?> ReadRangeAsync(AppRelease release, long start, long length, CancellationToken cancellationToken)
+    {
+        using var response = await SendRangeRequestAsync(release, start, length, cancellationToken).ConfigureAwait(false);
+        if (response is null)
+        {
+            return null;
+        }
+
+        byte[] bytes;
+        try
+        {
+            bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException exception)
+        {
+            throw new AppUpdateException(AppUpdateFailure.Network, exception);
+        }
+
+        if (bytes.Length != length)
+        {
+            throw new AppUpdateException(
+                AppUpdateFailure.Network,
+                new IOException($"Received {bytes.Length} of {length} bytes of a part of the package."));
+        }
+
+        return bytes;
+    }
+
+    /// <summary>
+    /// zip の <paramref name="start"/> から <paramref name="length"/> バイトを頼んだ応答(中身はまだ読んでいない)。
+    /// サーバーが範囲の取得に応えず全体を返したら null。返った範囲が頼んだ範囲と違えば止める。
+    /// </summary>
+    private static async Task<HttpResponseMessage?> SendRangeRequestAsync(
+        AppRelease release,
+        long start,
+        long length,
+        CancellationToken cancellationToken)
+    {
+        var end = start + length - 1;
+        using var request = new HttpRequestMessage(HttpMethod.Get, release.PackageUrl);
+        request.Headers.Range = new RangeHeaderValue(start, end);
+        var response = await GitHubHttp.Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            if (response.StatusCode != HttpStatusCode.PartialContent)
+            {
+                response.Dispose();
+                return null;
+            }
+
+            var range = response.Content.Headers.ContentRange;
+            if (range is null || range.From != start || range.To != end || range.Length != release.PackageSize)
+            {
+                throw new InvalidDataException($"The server returned bytes {range} for the request {start}-{end}/{release.PackageSize}.");
+            }
+
+            return response;
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 応答の中身を終わりまで写し、写し終えた位置(<paramref name="done"/> に足したもの)を返す。読む途中で切れたら接続の失敗として知らせる。
+    /// 進み具合は <paramref name="total"/> に対する1%ごとに知らせる。
+    /// </summary>
+    private static async Task<long> CopyResponseAsync(
+        Stream source,
+        Stream destination,
+        IncrementalHash? hash,
+        long done,
+        long total,
+        IProgress<(long Done, long Total)> progress,
+        CancellationToken cancellationToken)
+    {
+        var buffer = new byte[BufferSize];
         var lastPercent = -1L;
         while (true)
         {
@@ -453,11 +693,11 @@ public static class AppUpdateService
 
             if (read == 0)
             {
-                break;
+                return done;
             }
 
-            hash.AppendData(buffer, 0, read);
-            await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+            hash?.AppendData(buffer, 0, read);
+            await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
             done += read;
 
             var percent = done * 100 / Math.Max(total, 1);
@@ -466,14 +706,6 @@ public static class AppUpdateService
                 lastPercent = percent;
                 progress.Report((done, Math.Max(total, done)));
             }
-        }
-
-        var actual = Convert.ToHexString(hash.GetHashAndReset());
-        if (!string.Equals(actual, release.PackageSha256, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new AppUpdateException(
-                AppUpdateFailure.Corrupt,
-                new InvalidDataException($"The SHA-256 of the package is {actual}, expected {release.PackageSha256}."));
         }
     }
 
@@ -509,11 +741,6 @@ public static class AppUpdateService
                 lastPercent = percent;
                 progress.Report((double)done / total);
             }
-        }
-
-        if (!AppUpdateApplier.HasFileList(directory))
-        {
-            throw new InvalidDataException($"The package has no {AppUpdateApplier.FileListName}.");
         }
     }
 

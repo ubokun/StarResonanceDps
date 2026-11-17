@@ -36,7 +36,7 @@ public sealed partial class EntityListEntry : ObservableObject
     private EntityListEntry(NearbyEntityEntry entity, int? fixedHateSlotCount)
     {
         EntityUuid = entity.EntityUuid;
-        Target = new EntityTargetInfo(entity.EntityUuid, entity.EntityId, entity.EntityType, ResolveName(entity), entity.Level);
+        Target = CreateTarget(entity);
         _fixedHateSlotCount = fixedHateSlotCount;
         HateSlots = new ReadOnlyObservableCollection<EntityHateSlot>(_hateSlots);
         for (var index = 0; index < fixedHateSlotCount; index++)
@@ -232,8 +232,7 @@ public sealed partial class EntityListEntry : ObservableObject
             : string.Empty;
         CampRelation = entity.CampRelation;
         ShowsCombatState = entity.IsInCombat && settings.ShowsCombatState;
-        var score = GetDisplayedScore(entity, showsScore);
-        ScoreText = score > 0 ? FormatScore(score) : string.Empty;
+        ScoreText = FormatDisplayedScore(entity, showsScore);
 
         var classColor = GetClassColor(settings, ClassificationKey);
         if (ClassBrush.Color != classColor)
@@ -318,6 +317,53 @@ public sealed partial class EntityListEntry : ObservableObject
         }
 
         return _hateSlots[index];
+    }
+
+    /// <summary>
+    /// 一覧に載せるか。エンティティリストと、エンティティリストに載る実体を出すマップが使う。
+    ///
+    /// <para>
+    /// <c>AttrId</c> が未着(種別IDが 0)の実体は載せる(名前は「未知の敵」。<see cref="ResolveName"/>)。
+    /// <c>AttrId</c> は出現の通知でしか届かないので、アプリの起動前から居た実体はずっと種別が分からない。
+    /// 種別IDを UUID の通し番号で代えない(個体の番号なので、表を引くと別のモンスターの名前・判定になる)。
+    /// </para>
+    ///
+    /// <para>
+    /// プレイヤーに見える HP バーを持つ実体は、名前が無くても載せる(名前は「敵」「味方」。<see cref="ResolveName"/>)。
+    /// HP バーを持たない実体は、名前があるときだけ載せる。名前は表示と同じ引き方(表示言語、空なら zh-CN)で見る。
+    /// </para>
+    ///
+    /// <para>
+    /// <b>表に行が無い実体は載せる</b>(名前は空欄で、内部ID注記だけ)。行が無いのはアプリの表が古いということで、
+    /// 消すと表の欠けに気付けない。
+    /// </para>
+    /// </summary>
+    public static bool IsListed(NearbyEntityEntry entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return entity.EntityId == 0
+            || entity.HasHpBar
+            || !CombatDataCatalog.HasEntityRow(entity.EntityType, entity.EntityId)
+            || CombatDataCatalog.HasEntityName(entity.EntityType, entity.EntityId);
+    }
+
+    /// <summary>
+    /// フィルター(エンティティリストの「フィルター」・マップの「エンティティ」)を通った後に出す実体。
+    /// 「オブジェクト以外」は、<see cref="IsListed"/> に加えてプレイヤーに見える HP バーを持つ実体だけを残す
+    /// (名前はあっても HP バーの見えない実体がいる)。
+    /// </summary>
+    public static bool IsShown(NearbyEntityEntry entity, EntityDisplayMode displayMode)
+    {
+        return IsListed(entity) && (displayMode != EntityDisplayMode.HideObjects || entity.HasHpBar);
+    }
+
+    /// <summary>周りの実体の値から、窓とカードが相手として持つ個体の値を作る(名前は <see cref="ResolveName"/>)。</summary>
+    public static EntityTargetInfo CreateTarget(NearbyEntityEntry entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new EntityTargetInfo(entity.EntityUuid, entity.EntityId, entity.EntityType, ResolveName(entity), entity.Level);
     }
 
     /// <summary>
@@ -520,7 +566,14 @@ public sealed partial class EntityListEntry : ObservableObject
         ShieldOverflowStartRatio = 1d - ShieldOverflowRatio;
     }
 
-    private static string GetClassificationKey(NearbyEntityEntry entity)
+    /// <summary>ボスか。</summary>
+    internal static bool IsBoss(NearbyEntityEntry entity)
+    {
+        return entity.EntityType == EEntityType.EntMonster && entity.MonsterType == MonsterClassification.Boss;
+    }
+
+    /// <summary>アイコンの形と色の鍵(敵の種類)。モンスター以外と、種類の分からないモンスターは不明。</summary>
+    internal static string GetClassificationKey(NearbyEntityEntry entity)
     {
         if (entity.EntityType == EEntityType.EntMonster)
         {
@@ -574,10 +627,18 @@ public sealed partial class EntityListEntry : ObservableObject
         return $"{currentValue}/{maxValue}";
     }
 
-    /// <summary>得点の文字(「○○pt」)。アイコンとフッターで使う。分からなければ「??pt」。</summary>
+    /// <summary>得点の文字(「○○pt」)。アイコンで使う(エンティティリストとマップ)。分からなければ「??pt」。</summary>
     internal static string FormatScore(int? score)
     {
         return LocalizationManager.Instance.Format(
+            "EntityList_ScoreFormat",
+            score?.ToString(CultureInfo.InvariantCulture) ?? UnknownScoreText);
+    }
+
+    /// <summary><see cref="FormatScore"/> と同じ得点を、フッターの数字と単位に分けて返す(エンティティリストとマップ)。</summary>
+    internal static FooterValue GetScoreFooterValue(int? score)
+    {
+        return FooterValue.FromFormat(
             "EntityList_ScoreFormat",
             score?.ToString(CultureInfo.InvariantCulture) ?? UnknownScoreText);
     }
@@ -590,6 +651,33 @@ public sealed partial class EntityListEntry : ObservableObject
     internal static int GetDisplayedScore(NearbyEntityEntry entity, bool isScoreRequested)
     {
         return isScoreRequested && entity.HasHpBar ? entity.Score : 0;
+    }
+
+    /// <summary>アイコンの中央の得点の文字(エンティティリストの行とマップの印)。出す得点が無ければ空。</summary>
+    /// <param name="isScoreRequested">今の場所が得点を求めているか(<see cref="Core.Services.DungeonScoreSnapshot.IsScoreRequested"/>)。</param>
+    internal static string FormatDisplayedScore(NearbyEntityEntry entity, bool isScoreRequested)
+    {
+        var score = GetDisplayedScore(entity, isScoreRequested);
+        return score > 0 ? FormatScore(score) : string.Empty;
+    }
+
+    /// <summary>
+    /// フッターの「交戦中」の得点(エンティティリストとマップ)。周りにいる敵(一覧の絞り込みの前)のうち、
+    /// 戦闘状態の敵のアイコンの得点の合計。今の場所が得点を求めている間だけ呼ぶ。
+    /// </summary>
+    internal static int GetCombatScore(IReadOnlyList<NearbyEntityEntry> nearbyEntities)
+    {
+        var total = 0;
+        for (var index = 0; index < nearbyEntities.Count; index++)
+        {
+            var entity = nearbyEntities[index];
+            if (entity.IsInCombat)
+            {
+                total += GetDisplayedScore(entity, isScoreRequested: true);
+            }
+        }
+
+        return total;
     }
 
     /// <summary>

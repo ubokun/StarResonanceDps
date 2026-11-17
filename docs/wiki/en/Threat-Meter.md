@@ -19,7 +19,7 @@ It works the same way as the [DPS Meter](DPS-Meter), and the values are threat.
 ## Controls
 
 - Click a row to open that player's [Skill Details (Threat)](Skill-Details-(Threat)).
-- Right-click a row to choose and open that player's "Skill Details (Threat)" or "TPS Trend Graph".
+- Right-click a row to choose and open that player's "Skill Details (Threat)", "TPS Trend Graph", or "Buff Uptime".
 - If the rows do not fit in the window, scroll with the mouse wheel or the scroll bar on the right.
 
 ## Settings

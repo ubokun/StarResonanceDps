@@ -25,6 +25,7 @@ namespace StarResonanceDps.App.Behaviors;
 /// <para>
 /// WPFは押すと自分が出したTIPSを閉じ、少し後に強制で閉じ直すので、押しても閉じないTIPSはWPFに開かせられない。
 /// 出す時機はWPFのまま: WPFが出す直前の知らせ(<see cref="ToolTipService.ToolTipOpeningEvent"/>)を処理済みにして止め、同じ瞬間に自分で開く。
+/// マウスを乗せてから出すまでの待ち時間(<see cref="ToolTipService.InitialShowDelayProperty"/>)は0にして、すぐ出す。
 /// 閉じる条件と、続けて出すときの待ち時間はWPFと同じ考え方で持つ(閉じたTIPSがWPFの物でないので、WPFの続けて出す動きは働かない)。
 /// </para>
 ///
@@ -58,6 +59,9 @@ public static class ToolTipBehavior
     /// マウスを動かし続けている間は待ち直す(TIPSへ向かって動かしている間に出し替えないため)。WPFの同じ待ち時間と同じ値。
     /// </summary>
     private const int ReplaceDelayMilliseconds = 73;
+
+    /// <summary>マウスを乗せてからTIPSを出すまでの待ち時間(ミリ秒)。WPFの既定(1000)を使わず、すぐ出す。</summary>
+    private const int InitialShowDelayMilliseconds = 250;
 
     private const uint GwOwner = 4;
     private const int GwlpHwndParent = -8;
@@ -106,6 +110,12 @@ public static class ToolTipBehavior
 
         if ((bool)e.NewValue)
         {
+            // 出すまでの待ち時間。要素が自分で値を持っていれば(XAMLで書いた値)、そちらを使う。
+            if (owner.ReadLocalValue(ToolTipService.InitialShowDelayProperty) == DependencyProperty.UnsetValue)
+            {
+                owner.SetCurrentValue(ToolTipService.InitialShowDelayProperty, InitialShowDelayMilliseconds);
+            }
+
             owner.AddHandler(ToolTipService.ToolTipOpeningEvent, new ToolTipEventHandler(Owner_ToolTipOpening), true);
             owner.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(Owner_PreviewMouseLeftButtonDown), true);
             owner.MouseEnter += Owner_MouseEnter;

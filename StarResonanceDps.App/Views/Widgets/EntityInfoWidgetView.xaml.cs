@@ -22,7 +22,7 @@ namespace StarResonanceDps.App.Views.Widgets;
 /// 文言(バフかデバフか、優先表示の項目は今の状態も)は開いた枠で決める(<see cref="EntityInfoWidgetViewModel.MenuEntry"/>)。
 /// </para>
 /// </summary>
-public partial class EntityInfoWidgetView : UserControl, IWidgetVerticalScrollContent
+public partial class EntityInfoWidgetView : UserControl, IWidgetVerticalScrollContent, IWidgetWindowHiddenAware
 {
     private const string BuffContextMenuStyleKey = "Menu.WidgetWindowEntityInfoContextMenu";
     private const string BuffContextMenuFirstItemStyleKey = "Menu.WidgetWindowEntityInfoContextMenuItem.First";
@@ -30,6 +30,9 @@ public partial class EntityInfoWidgetView : UserControl, IWidgetVerticalScrollCo
     private const string BuffContextMenuLastItemStyleKey = "Menu.WidgetWindowEntityInfoContextMenuItem.Last";
 
     private readonly DispatcherTimer _castRefreshTimer;
+
+    /// <summary>窓が隠れているか(全体設定「ゲーム非アクティブ時にウィジェットを隠す」)。隠れている間は詠唱のゲージを当て直さない。</summary>
+    private bool _isWindowHidden;
 
     private ContextMenu? _openBuffMenu;
     private PlayerBuffEntry? _openBuffEntry;
@@ -71,12 +74,11 @@ public partial class EntityInfoWidgetView : UserControl, IWidgetVerticalScrollCo
 
     private void EntityInfoWidgetView_Loaded(object sender, RoutedEventArgs e)
     {
-        if (DataContext is EntityInfoWidgetViewModel viewModel)
+        if (!_isWindowHidden)
         {
-            viewModel.ReapplyCast();
+            StartCastRefresh();
         }
 
-        _castRefreshTimer.Start();
         NotifyVerticalScrollMetricsChanged();
     }
 
@@ -84,6 +86,33 @@ public partial class EntityInfoWidgetView : UserControl, IWidgetVerticalScrollCo
     {
         _castRefreshTimer.Stop();
         CloseBuffMenu();
+    }
+
+    /// <summary>窓が隠れたら詠唱の定期の当て直しを止め、見えたら(読み込み済みなら)当て直してから再開する。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        _isWindowHidden = isHidden;
+        if (isHidden)
+        {
+            _castRefreshTimer.Stop();
+            return;
+        }
+
+        if (IsLoaded)
+        {
+            StartCastRefresh();
+        }
+    }
+
+    /// <summary>詠唱の文字とゲージを今の値で当て直し、定期の当て直しを始める。</summary>
+    private void StartCastRefresh()
+    {
+        if (DataContext is EntityInfoWidgetViewModel viewModel)
+        {
+            viewModel.ReapplyCast();
+        }
+
+        _castRefreshTimer.Start();
     }
 
     private void CastRefreshTimer_Tick(object? sender, EventArgs e)

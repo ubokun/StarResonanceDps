@@ -13,6 +13,7 @@ public enum NotificationKind
     PlayerAppeared,
     EntityAppeared,
     Targeted,
+    CooldownReady,
     BuffExpired,
     CuisinePotionLow,
     TelegraphedSkill,
@@ -159,6 +160,12 @@ public sealed class NotificationItemConfig
     public int HealthLowConditionIndex { get; set; } = AppConfigDefaults.DefaultHealthLowConditionIndex;
 
     /// <summary>
+    /// バフ・デバフが切れる何秒前に出すかの番号(<see cref="AppConfigDefaults.BuffExpiredLeadSeconds"/> の添字)。使うのは バフ・デバフ効果切れ だけ。
+    /// 0 秒(切れるとき)は消えたのを見てから出し、1〜3秒は切れる予定の時刻の前に出す(<see cref="Models.Notifications.BuffNotificationTracker"/>)。
+    /// </summary>
+    public int BuffExpiredConditionIndex { get; set; } = AppConfigDefaults.DefaultBuffExpiredConditionIndex;
+
+    /// <summary>
     /// 残り何分を下回ったら出すかの番号(<see cref="AppConfigDefaults.CuisinePotionLowMinutes"/> の添字)。使うのは 薬剤・料理効果切れ だけ。
     /// </summary>
     public int CuisinePotionConditionIndex { get; set; } = AppConfigDefaults.DefaultCuisinePotionConditionIndex;
@@ -169,15 +176,20 @@ public sealed class NotificationItemConfig
     public int TelegraphedSkillConditionIndex { get; set; } = AppConfigDefaults.DefaultTelegraphedSkillConditionIndex;
 
     /// <summary>
-    /// 対象の名前(どれかに当たれば通知する)。エンティティ詠唱は表示言語のスキル名、プレイヤー出現はゲームの中のプレイヤー名、エンティティ出現は表示言語のエンティティ名。
-    /// <see cref="TargetIds"/> が1つでもあれば使わない。使うのは エンティティ詠唱・プレイヤー出現・エンティティ出現 だけ(名前もIDも無ければ通知しない)。
+    /// 自分のスキルが使えるようになる何秒前に出すかの番号(<see cref="AppConfigDefaults.CooldownReadyLeadSeconds"/> の添字)。使うのは リキャスト完了 だけ。
+    /// </summary>
+    public int CooldownReadyConditionIndex { get; set; } = AppConfigDefaults.DefaultCooldownReadyConditionIndex;
+
+    /// <summary>
+    /// 対象の名前(どれかに当たれば通知する)。エンティティ詠唱とリキャスト完了は表示言語のスキル名、プレイヤー出現はゲームの中のプレイヤー名、エンティティ出現は表示言語のエンティティ名。
+    /// <see cref="TargetIds"/> が1つでもあれば使わない。使うのは エンティティ詠唱・リキャスト完了・プレイヤー出現・エンティティ出現 だけ(名前もIDも無ければ通知しない)。
     /// ワールドチャットは一致ワード(入力欄でスペースで区切った語。全部が発言の本文に含まれていれば通知する。無ければ通知しない)に使う。
     /// </summary>
     public List<string> TargetNames { get; set; } = [];
 
     /// <summary>
-    /// 対象のID(どれかに当たれば通知する)。エンティティ詠唱はスキルID、プレイヤー出現はUID(キャラクターID)、エンティティ出現はエンティティの種別ID。
-    /// 1つでもあれば <see cref="TargetNames"/> より優先する。使うのは エンティティ詠唱・プレイヤー出現・エンティティ出現 だけ。
+    /// 対象のID(どれかに当たれば通知する)。エンティティ詠唱とリキャスト完了はスキルID、プレイヤー出現はUID(キャラクターID)、エンティティ出現はエンティティの種別ID。
+    /// 1つでもあれば <see cref="TargetNames"/> より優先する。使うのは エンティティ詠唱・リキャスト完了・プレイヤー出現・エンティティ出現 だけ。
     /// </summary>
     public List<long> TargetIds { get; set; } = [];
 
@@ -212,8 +224,10 @@ public sealed class NotificationItemConfig
             TargetedConditionIndex = TargetedConditionIndex,
             HealthLowThresholdIndex = HealthLowThresholdIndex,
             HealthLowConditionIndex = HealthLowConditionIndex,
+            BuffExpiredConditionIndex = BuffExpiredConditionIndex,
             CuisinePotionConditionIndex = CuisinePotionConditionIndex,
             TelegraphedSkillConditionIndex = TelegraphedSkillConditionIndex,
+            CooldownReadyConditionIndex = CooldownReadyConditionIndex,
             TargetNames = [.. TargetNames],
             TargetIds = [.. TargetIds]
         };

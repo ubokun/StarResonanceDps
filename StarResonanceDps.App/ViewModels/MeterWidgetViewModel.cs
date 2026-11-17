@@ -15,7 +15,7 @@ using StarResonanceDps.Core.Services;
 
 namespace StarResonanceDps.App.ViewModels;
 
-public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource
+public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, IWidgetWindowHiddenAware
 {
     private readonly WidgetListItemViewModel _widget;
     private readonly MeterSnapshotKind _kind;
@@ -39,13 +39,13 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
     private string _partyMetricLabel = string.Empty;
 
     [ObservableProperty]
-    private string _partyMetricValueText = string.Empty;
+    private FooterValue _partyMetricValue = FooterValue.Empty;
 
     [ObservableProperty]
     private string _totalLabel = string.Empty;
 
     [ObservableProperty]
-    private string _totalValueText = string.Empty;
+    private FooterValue _totalValue = FooterValue.Empty;
 
     [ObservableProperty]
     private bool _isBenchmarkActive;
@@ -144,6 +144,22 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
         _ => throw new InvalidOperationException($"No graph for the meter kind {_kind}.")
     });
 
+    /// <summary>バフ稼働率の項目の文字。どのメーターでも同じ(回の記録を出すウィジェットとして、メーター4種のメニューの末尾に置く)。</summary>
+    public string BuffUptimeMenuText => LocalizationManager.Instance.GetString("Widget_BuffUptime");
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
+    }
+
     private void RefreshTimer_Tick(object? sender, EventArgs e)
     {
         Refresh();
@@ -164,6 +180,7 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
         OnPropertyChanged(nameof(SkillDetailMenuText));
         OnPropertyChanged(nameof(SummaryMenuText));
         OnPropertyChanged(nameof(GraphMenuText));
+        OnPropertyChanged(nameof(BuffUptimeMenuText));
         Refresh();
     }
 
@@ -198,9 +215,9 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
             _ => throw new InvalidOperationException($"No footer label for the meter kind {_kind}.")
         };
         PartyMetricLabel = $"{LocalizationManager.Instance.GetString(partyMetricLabelKey)}:";
-        PartyMetricValueText = MeterNumberFormatter.Format(snapshot.ValuePerSecond, numberDisplayFormatIndex);
+        PartyMetricValue = MeterNumberFormatter.FormatParts(snapshot.ValuePerSecond, numberDisplayFormatIndex);
         TotalLabel = $"{LocalizationManager.Instance.GetString("Meter_Total")}:";
-        TotalValueText = MeterNumberFormatter.Format(snapshot.TotalValue, numberDisplayFormatIndex);
+        TotalValue = MeterNumberFormatter.FormatParts(snapshot.TotalValue, numberDisplayFormatIndex);
 
         var activeCharacterIds = snapshot.Players
             .Select(player => player.CharacterId)
@@ -304,6 +321,11 @@ public sealed partial class MeterWidgetViewModel : ViewModelBase, IDisposable, I
     private void RequestPlayerSeasonTalent(MeterPlayerEntry? player) => RequestPlayerWindow(WidgetKind.PlayerSeasonTalent, player);
     [RelayCommand]
     private void RequestPlayerModule(MeterPlayerEntry? player) => RequestPlayerWindow(WidgetKind.PlayerModule, player);
+    [RelayCommand]
+    private void RequestBuffUptime(MeterPlayerEntry? player)
+    {
+        RequestPlayerWindow(WidgetKind.BuffUptime, player);
+    }
 
     private void RequestPlayerWindow(WidgetKind widgetKind, MeterPlayerEntry? player)
     {

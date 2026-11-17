@@ -87,6 +87,15 @@ public sealed class GlobalHotkeyService : IDisposable
     /// <summary>補助が動いていて、ホットキーを登録できるか。false の間はホットキーは無効(全体設定のホットキーの節も隠す)。</summary>
     public bool IsAvailable => _helper is not null;
 
+    /// <summary>
+    /// ゲームが前面かの判定に使うプロセス名。全体設定でゲームの種類をプレビューしている間はプレビューの値、それ以外は保存してある設定。
+    /// ホットキーの補助と、ゲームのアクティブ時のみウィジェットを出す判定(<see cref="GameForegroundWatcher"/>)が同じ一覧を使う。
+    /// </summary>
+    public IReadOnlyList<string> GameProcessNames => ResolveGameProcessNames();
+
+    /// <summary><see cref="GameProcessNames"/> が変わったかもしれない(プレビュー・保存)。UI スレッドで上がる。</summary>
+    public event EventHandler? GameProcessNamesChanged;
+
     public bool IsRegistered(HotkeyAction action)
     {
         return _registeredActions.Contains(action);
@@ -151,6 +160,7 @@ public sealed class GlobalHotkeyService : IDisposable
         _gameProcessNames = ResolveGameProcessNames();
         var failures = RegisterAgain();
         RegistrationChanged?.Invoke(this, EventArgs.Empty);
+        GameProcessNamesChanged?.Invoke(this, EventArgs.Empty);
         return failures;
     }
 
@@ -162,6 +172,7 @@ public sealed class GlobalHotkeyService : IDisposable
     {
         _previewGameProcessNames = names;
         _gameProcessNames = ResolveGameProcessNames();
+        GameProcessNamesChanged?.Invoke(this, EventArgs.Empty);
         if (_helper is null)
         {
             return;

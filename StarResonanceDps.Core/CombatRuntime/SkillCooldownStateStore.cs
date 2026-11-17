@@ -293,6 +293,57 @@ public static class SkillCooldownStateStore
         }
     }
 
+    /// <summary>控えに CD がある自分の技の番号(普通の CD は終わるまで、チャージは回数が満ちるまで)を足す。自分でなければ何も足さない。</summary>
+    public static void CopySelfCooldownSkillIds(long uuid, ICollection<int> destination)
+    {
+        lock (Sync)
+        {
+            if (uuid == 0 || uuid != _selfUuid)
+            {
+                return;
+            }
+
+            foreach (var skillId in SelfCooldowns.Keys)
+            {
+                destination.Add(skillId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 自分のその技が使えるようになるまでの秒数。今使えるなら 0(控えに CD が無いときも)。
+    /// チャージの技は、残りの回数が 0 の間だけ次の1回までの秒数で、1回以上残っていれば 0。
+    /// 自分がまだ分からない・ほかの人の UUID なら null(控えを消した後と、キャラクターが替わった後も)。
+    /// </summary>
+    public static double? GetSelfSecondsUntilUsable(long uuid, int skillId)
+    {
+        if (uuid == 0 || skillId <= 0)
+        {
+            return null;
+        }
+
+        var nowTimestamp = Stopwatch.GetTimestamp();
+
+        lock (Sync)
+        {
+            if (uuid != _selfUuid)
+            {
+                return null;
+            }
+
+            if (!SelfCooldowns.TryGetValue(skillId, out var cooldown))
+            {
+                return 0d;
+            }
+
+            // 済んだ割合は、普通の CD は 1 で終わり、チャージは 1 ごとに1回ぶん。どちらも 1 に届けば1回使える。
+            var doneFraction = GetDoneFraction(cooldown, nowTimestamp);
+            return doneFraction >= 1d
+                ? 0d
+                : (1d - doneFraction) * GetReducedLengthMilliseconds(cooldown) / 1000d;
+        }
+    }
+
     private static void UpdateNormalCooldown(
         int skillId,
         SkillCD cooldown,

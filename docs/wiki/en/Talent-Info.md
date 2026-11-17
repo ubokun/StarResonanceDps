@@ -38,5 +38,5 @@ There are only the window settings and theme ([Common Widget Settings](Common-Wi
 - The talents you have taken arrive when you log in, change maps, or change talents. If you start the app while the game is already running, they are determined the same way as for other players until you change maps.
 - Other players' data arrives while they are around you. It does not arrive through party information.
 - For people who have left the Player List, the last known values remain. They are cleared when you log out.
-- While a history entry is open, the values from that time are shown for the people who were in that battle.
+- While a history entry is open, the values from that time are shown for people who were in that battle and are not around you now.
 - At the default size, the tree does not fit vertically. Make the window taller or scroll to see it.

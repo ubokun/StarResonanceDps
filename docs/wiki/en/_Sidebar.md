@@ -25,8 +25,9 @@
 
 - [Player List](Player-List)
 - [Entity List](Entity-List)
+- [Map](Map)
 - [Player Info](Player-Info)
-- [Entity Info](Entity-Info)
+- [Target Info](Target-Info)
 - [Status](Status)
 - [Equipment Info](Equipment-Info)
 - [Talent Info](Talent-Info)
@@ -34,6 +35,7 @@
 - [Module Info](Module-Info)
 - [Buff List](Buff-List)
 - [Debuff List](Debuff-List)
+- [Buff Uptime](Buff-Uptime)
 - [Buff & Debuff Card](Buff-&-Debuff-Card)
 - [Buff & Debuff Group](Buff-&-Debuff-Group)
 - [Revive List](Revive-List)

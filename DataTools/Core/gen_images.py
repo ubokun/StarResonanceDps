@@ -14,6 +14,8 @@
 - スタンプ(`Stickers`): `Raw/ChatStickersTable.json`の種類3・4の`Res`。ゲームの資源`ui/textures/chat_emoji/<Res>`が無い行は対象外。
   言語別の資源`ui/localizetextures/<japanese|korean|english>/chat_emoji/<Res>`がある言語は`Stickers/<ja-JP|ko-KR|en-US>`も要る
 - 顔のアイコン(`Avatars`): `Raw/ProfileImageTable.json`の種類1で、ゲームで選べないもの(`IsHide`)と番号0・1(写真の人)を除いたもの
+- 地図(`Maps`): `Generated/Maps.json`の地図の画像(基本の画像と階層の画像)。ファイル名は表の`File`で、取り出す元は表の`Address`。
+  地図の画像は元の大きさのまま置く。`--before`の写しに`Maps.json`が無ければ、写しの地図は0件として数える
 
 ファイルはフォルダの中をパスの最後の部分で探し、拡張子が無ければ`.png` / `.jpg` / `.jpeg` / `.webp`を試す(アプリと同じ)。
 
@@ -80,15 +82,29 @@ def buff_folder(icon):
     return "Buffs"
 
 
-def needed(data_dir):
-    """`data_dir`(`Data`かその写し)のテーブルが使う画像。(フォルダ, 画像の名前) → {"uses": 使う所, "sources": 探す順}。"""
+def map_images(maps):
+    """`Maps.json`の地図の画像。ファイル名 → アドレス。"""
+    images = {}
+    for entry in (maps.get("Maps") or {}).values():
+        for image in [entry["Image"]] + list(entry.get("Layers") or []):
+            images[image["File"]] = image["Address"]
+    return images
+
+
+def needed(data_dir, requires_maps=True):
+    """
+    `data_dir`(`Data`かその写し)のテーブルが使う画像。
+    (フォルダ, ファイルの名前) → {"uses": 使う所, "sources": 探す順, "icon": 取り出す元の画像の名前}。
+    ファイルの名前は、地図は表の`File`、ほかは画像の名前そのもの。
+    `requires_maps`が偽なら、`Maps.json`が無くても止まらず、地図を0件として数える(差し替える前の写し用)。
+    """
     raw = os.path.join(data_dir, "Raw")
     need = {}
 
-    def add(folder, icon, use, sources=DEFAULT_SOURCES):
+    def add(folder, icon, use, sources=DEFAULT_SOURCES, name=None):
         icon = (icon or "").strip()
         if icon:
-            need.setdefault((folder, icon), {"uses": [], "sources": sources})["uses"].append(use)
+            need.setdefault((folder, name or icon), {"uses": [], "sources": sources, "icon": icon})["uses"].append(use)
 
     rows = {key: dict(row) for key, row in read(os.path.join(raw, "BuffTable.json")).items()}
     for key, entry in read(os.path.join(data_dir, "Overrides", "BuffOverrides.json")).items():
@@ -162,6 +178,11 @@ def needed(data_dir):
     for row in read(os.path.join(raw, "ProfileImageTable.json")).values():
         if row.get("Type") == AVATAR_TYPE and not row.get("IsHide") and row.get("Id") not in PHOTO_AVATAR_IDS:
             add("Avatars", row.get("Image"), "顔のアイコン %s" % row["Id"])
+
+    maps_path = os.path.join(data_dir, "Generated", "Maps.json")
+    maps = read(maps_path) if requires_maps else (load(maps_path) or {})
+    for name, address in sorted(map_images(maps).items()):
+        add("Maps", address, "地図 %s" % name, name=name)
     return need
 
 
@@ -176,7 +197,7 @@ def exists(folder, icon):
 
 
 def uses_text(uses):
-    return " / ".join(uses[:3]) + ("(ほか%d)" % (len(uses) - 3) if len(uses) > 3 else "")
+    return " / ".join(uses[:3]) + ("(他%d)" % (len(uses) - 3) if len(uses) > 3 else "")
 
 
 def write_missing(targets, need):
@@ -184,8 +205,7 @@ def write_missing(targets, need):
     plans = {}
     not_found = []
     for key in targets:
-        folder, icon = key
-        source, candidates = image_candidates(icon, need[key]["sources"])
+        source, candidates = image_candidates(need[key]["icon"], need[key]["sources"])
         if source is None:
             not_found.append(key)
         else:
@@ -230,9 +250,20 @@ def compare_existing():
                 if name.lower().endswith(IMAGE_EXTENSIONS):
                     files.append((label, os.path.relpath(os.path.join(directory, name), root), os.path.join(directory, name)))
 
+    maps = read(os.path.join(DATA, "Generated", "Maps.json"))
+    map_addresses = map_images(maps)
+
     plans = {}
     for label, relative, path in files:
         stem = os.path.splitext(os.path.basename(relative))[0]
+        folder = os.path.dirname(relative).replace(os.sep, "/")
+        if label == "Data/Images" and folder == "Maps":
+            # 地図はファイル名がアドレスと違うので、表のアドレスで引く
+            address = map_addresses.get(stem)
+            plans[(label, relative, path)] = [
+                ((source, "texture", addresses_of(source)[address], address.rsplit("/", 1)[-1]), address)
+                for source in DEFAULT_SOURCES if address in addresses_of(source)]
+            continue
         lookup = stem
         if not any(stem.lower() in image_index(source) for source in DEFAULT_SOURCES):
             # 同じ名前を書き出したときの連番(末尾の「_数字」)を外して引く
@@ -292,7 +323,7 @@ def main():
 
     need = needed(DATA)
     missing = sorted(key for key in need if not exists(*key))
-    before = needed(args.before) if args.before else {}
+    before = needed(args.before, requires_maps=False) if args.before else {}
     old = [key for key in missing if key in before]
     new = [key for key in missing if key not in before]
 

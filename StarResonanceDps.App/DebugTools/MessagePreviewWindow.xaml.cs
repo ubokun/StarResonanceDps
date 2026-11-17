@@ -31,6 +31,10 @@ public partial class MessagePreviewWindow : Window
     private const double SampleUpdateDoneMegabytes = 21.8;
     private const double SampleUpdateTotalMegabytes = 54.6;
 
+    // 更新のファイルが使用中の窓を出すための試しの値。
+    private const string SampleFileInUseProgram = "Windows PowerShell 5.1";
+    private const string SampleFileInUse = "e_sqlite3.dll";
+
     // プラグインの更新の窓を出すための試しの値。
     private const string SamplePluginVersion = "2.0.1";
 
@@ -134,6 +138,18 @@ public partial class MessagePreviewWindow : Window
     private void UpdateRestartFailedNotUpdated_Click(object sender, RoutedEventArgs e)
     {
         UpdateFailureMessage.ShowRestartFailed(this, isUpdated: false);
+    }
+
+    // 本物: 更新のモード(置き換えるファイルをほかのプログラムが開いていたとき)
+    private void UpdateFileInUse_Click(object sender, RoutedEventArgs e)
+    {
+        _ = UpdateFileInUseMessage.Show(this, [SampleFileInUseProgram], SampleFileInUse);
+    }
+
+    // 本物: 更新のモード(開いているプログラムが分からなかったとき)
+    private void UpdateFileInUseUnknownProgram_Click(object sender, RoutedEventArgs e)
+    {
+        _ = UpdateFileInUseMessage.Show(this, [], SampleFileInUse);
     }
 
     // 本物: フィードバックタブの「選んだ項目を報告」で、投稿画面を1つ開いたとき

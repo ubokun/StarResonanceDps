@@ -64,4 +64,7 @@ public sealed record PlayerRosterEntry(
     // バフを付けないアビリティの節の技の置き換えに出てくる技の、元の技 → 最後に使ったほう(元の技か置き換え後の技)。
     // どれもまだ使っていなければ null。履歴の行はその回に保存した値。
     IReadOnlyDictionary<int, int>? LastReplaceableSkills = null,
-    RecordedPlayerBuildSnapshot? RecordedBuild = null);
+    RecordedPlayerBuildSnapshot? RecordedBuild = null,
+    // 開いている履歴の回の記録から来た行で、その回に保存した自分にしか届かない値(Entity.RecordedSelf)を持つ人の行だけ。
+    // 今ログインしているキャラの行(IsSelf)は記録から作らないので、いつも null(ライブの値を使う)。
+    RecordedSelfData? RecordedSelf = null);

@@ -125,9 +125,10 @@ public sealed class WidgetStateManager
     }
 
     /// <summary>
-    /// 開いていた窓の対象一覧を保存する。窓が増減したときだけ呼ぶ。
+    /// 開いていた窓の対象一覧を保存する。窓が増減したときと、窓の相手の素性が変わったときに呼ぶ。
+    /// <c>null</c> は記録なし、空の一覧は「窓はあったが戻せるものが無い」(<see cref="WidgetOpenTargetConfig"/>)。
     /// </summary>
-    public void SaveWidgetOpenTargets(WidgetKey key, IReadOnlyList<WidgetOpenTargetConfig> targets)
+    public void SaveWidgetOpenTargets(WidgetKey key, IReadOnlyList<WidgetOpenTargetConfig>? targets)
     {
         if (!key.IsPlugin && !WidgetConfigDefaults.SupportsOpenTargets(key.Kind))
         {
@@ -137,9 +138,7 @@ public sealed class WidgetStateManager
         lock (_syncRoot)
         {
             var config = GetOrCreateWidgetConfig(key);
-            config.OpenTargets = targets.Count == 0
-                ? null
-                : targets.Select(target => target.Clone()).ToList();
+            config.OpenTargets = targets?.Select(target => target.Clone()).ToList();
             WidgetConfigDefaults.Normalize(key.Kind, config);
             SaveCore();
         }
@@ -269,6 +268,42 @@ public sealed class WidgetStateManager
             var config = GetOrCreateWidgetConfig(kind);
             config.EntityInfo ??= WidgetConfigDefaults.CreateEntityInfoSettings();
             config.EntityInfo.PriorityBuffs = [.. priorityBuffs.Select(entry => entry.Clone())];
+            WidgetConfigDefaults.Normalize(kind, config);
+            SaveCore();
+        }
+    }
+
+    /// <summary>バフ稼働率の非表示のバフだけを保存する。行の右クリックで非表示にしたときに呼ぶ(バフ・デバフ一覧と同じく、この項目だけを書く)。</summary>
+    public void SaveBuffUptimeHiddenBuffs(WidgetKind kind, IReadOnlyList<int> hiddenBuffIds)
+    {
+        if (!WidgetConfigDefaults.SupportsBuffUptimeSettings(kind))
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            var config = GetOrCreateWidgetConfig(kind);
+            config.BuffUptime ??= WidgetConfigDefaults.CreateBuffUptimeSettings();
+            config.BuffUptime.HiddenBuffIds = [.. hiddenBuffIds];
+            WidgetConfigDefaults.Normalize(kind, config);
+            SaveCore();
+        }
+    }
+
+    /// <summary>バフ稼働率の優先表示リストだけを保存する。行の右クリックで優先表示にした・やめたときに呼ぶ(バフ・デバフ一覧と同じく、この項目だけを書く)。</summary>
+    public void SaveBuffUptimePriorityBuffs(WidgetKind kind, IReadOnlyList<BuffDebuffGroupEntryConfig> priorityBuffs)
+    {
+        if (!WidgetConfigDefaults.SupportsBuffUptimeSettings(kind))
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            var config = GetOrCreateWidgetConfig(kind);
+            config.BuffUptime ??= WidgetConfigDefaults.CreateBuffUptimeSettings();
+            config.BuffUptime.PriorityBuffs = [.. priorityBuffs.Select(entry => entry.Clone())];
             WidgetConfigDefaults.Normalize(kind, config);
             SaveCore();
         }

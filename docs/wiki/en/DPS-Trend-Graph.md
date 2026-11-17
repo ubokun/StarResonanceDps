@@ -4,7 +4,7 @@ This widget shows one player's damage per second as a line graph over the battle
 
 ## How to open
 
-- On the "DPS Trend Graph" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [DPS Meter](DPS-Meter), following the DPS Meter's "Filter settings" (the default is yourself).
+- On the "DPS Trend Graph" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [DPS Meter](DPS-Meter), following the DPS Meter's "Filter settings" (the default is the person at the top).
 - You can also open it by right-clicking a row in the [DPS Meter](DPS-Meter) and choosing "DPS Trend Graph".
 - A window is opened per target. If a window for the same target is already open, that window is brought to the front.
 

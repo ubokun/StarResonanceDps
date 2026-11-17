@@ -15,7 +15,7 @@ public partial class MetricGraphColorSettingsView : UserControl
         InitializeComponent();
     }
 
-    private MetricGraphWidgetSettingsViewModel ViewModel => (MetricGraphWidgetSettingsViewModel)DataContext;
+    private GraphColorSettingsViewModel ViewModel => (GraphColorSettingsViewModel)DataContext;
 
     private void ColorOptionRadioButton_Click(object sender, RoutedEventArgs e)
     {
@@ -33,7 +33,7 @@ public partial class MetricGraphColorSettingsView : UserControl
         }
 
         var owner = Window.GetWindow(this);
-        var window = new ColorPickerWindow(ViewModel.GetSelectedClassColor(classKey));
+        var window = new ColorPickerWindow(ViewModel.GetSelectedColor(classKey));
         if (owner is not null)
         {
             window.Owner = owner;
@@ -43,7 +43,7 @@ public partial class MetricGraphColorSettingsView : UserControl
         {
             if (window.IsConfirmed)
             {
-                ViewModel.ApplyClassColor(classKey, window.SelectedColor);
+                ViewModel.ApplyColor(classKey, window.SelectedColor);
             }
         });
     }

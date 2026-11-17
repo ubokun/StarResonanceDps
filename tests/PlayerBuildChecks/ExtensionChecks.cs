@@ -129,7 +129,7 @@ internal static class ExtensionChecks
   var window = new CombatTimelineWindow();
   var skillIcon = Directory.EnumerateFiles(Path.Combine(CombatRuntimePaths.DataDirectory,"Images","Skills"),"*.png").First();
   var factorIcon = Directory.EnumerateFiles(Path.Combine(CombatRuntimePaths.DataDirectory,"Images","Factors"),"*.png").First();
-  var snapshot = new CombatTimelineSnapshot(123, 180, "PT DPS · 検証クエスト · クエスト時間", [new(60,61,100),new(70,71,300),new(100,101,150)],
+  var snapshot = new CombatTimelineSnapshot(123, 180, "PT DPS · 検証クエスト · クエスト時間", [new(61,100),new(71,300),new(101,150)],
    [new(70,"スキル",1,"検証プレイヤー","スキルA",skillIcon),new(80,"イマジン",1,"検証プレイヤー","イマジンB",skillIcon),new(90,"因子効果",1,"検証プレイヤー","因子C",factorIcon),new(100,"敵行動",2,"検証ボス","敵の大技")],
    [new(1,"検証プレイヤー"),new(2,"検証ボス",true),new(3,"待機中の敵",true)]);
   var set = typeof(CombatTimelineWindow).GetMethod("SetSnapshot", BindingFlags.NonPublic | BindingFlags.Instance)!;

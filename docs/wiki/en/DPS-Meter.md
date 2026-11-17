@@ -17,7 +17,7 @@ Click the start button on the "DPS Meter" card in "[Widgets](Widgets)".
 ## Controls
 
 - Click a row to open that player's [Skill Details (Damage)](Skill-Details-(Damage)).
-- Right-click a row to choose and open that player's "Skill Details (Damage)", "Damage Details", or "DPS Trend Graph".
+- Right-click a row to choose and open that player's "Skill Details (Damage)", "Damage Details", "DPS Trend Graph", or "Buff Uptime".
 - If the rows do not fit in the window, scroll with the mouse wheel or the scroll bar on the right.
 
 ## Settings

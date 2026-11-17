@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
+using Serilog;
 using StarResonanceDps.App.Config;
 using StarResonanceDps.App.Localization;
 using StarResonanceDps.App.Models.Widgets;
@@ -48,6 +49,21 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     /// <summary>開いている被ダメログの窓の中身。顔ぶれを当てる先(<see cref="UpdateListWidgetRosters"/>)。閉じていれば null。</summary>
     private DamageTakenLogWidgetViewModel? _damageTakenLogViewModel;
 
+    /// <summary>
+    /// マップのカード。プレイヤー情報の現在地(<see cref="ShowPlayerOnMap"/>)とチャットの座標のリンク
+    /// (<see cref="ShowSharedPositionOnMap"/>)からマップを開くのに使う。
+    /// </summary>
+    private WidgetListItemViewModel? _mapWidget;
+
+    /// <summary>開いているマップの窓の中身。閉じていれば null。</summary>
+    private MapWidgetViewModel? _mapViewModel;
+
+    /// <summary>ターゲット情報(内部名はエンティティ情報)のカード。エンティティリストとマップから敵を選んで開くのに使う(<see cref="ShowEntityInTargetInfo"/>)。</summary>
+    private WidgetListItemViewModel? _entityInfoWidget;
+
+    /// <summary>開いているターゲット情報の窓の中身。周りの実体と名簿を当てる先。閉じていれば null。</summary>
+    private EntityInfoWidgetViewModel? _entityInfoViewModel;
+
     private Window? _managerWindow;
     private bool _isManagerClosing;
 
@@ -72,6 +88,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         {
             ReleaseEntityWindows();
             ResetPlayerWindowsToStartup();
+            _entityInfoViewModel?.ResetToStartup();
         });
     }
 
@@ -105,12 +122,101 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
     public static WidgetWindowManager Instance { get; } = new();
 
-    public void RegisterPlayerWindowWidget(WidgetListItemViewModel widget)
+    /// <summary>
+    /// カードを作ったときに呼ぶ。人の窓の種別のカードと、マップのカード(現在地から開くため)と、
+    /// ターゲット情報のカード(エンティティリストとマップから敵を選んで開くため)を控える。
+    /// </summary>
+    public void RegisterWidget(WidgetListItemViewModel widget)
     {
-        if (IsPlayerWindowWidget(widget.Kind))
+        if (WidgetConfigDefaults.IsPlayerWindowKind(widget.Kind))
         {
             TrackPlayerWidget(widget);
         }
+
+        if (widget.Kind == WidgetKind.Map)
+        {
+            _mapWidget = widget;
+        }
+
+        if (widget.Kind == WidgetKind.EntityInfo)
+        {
+            _entityInfoWidget = widget;
+        }
+    }
+
+    /// <summary>
+    /// エンティティリストの行・マップの敵の印から敵を選んだ。ターゲット情報の窓を開くか前に出し、その敵を映す(<see cref="EntityInfoWidgetViewModel.ShowEntity"/>)。
+    /// 起動していないカードは起動する(窓はその場で開く)。
+    /// </summary>
+    public void ShowEntityInTargetInfo(EntityTargetInfo entity)
+    {
+        if (_entityInfoWidget is null)
+        {
+            return;
+        }
+
+        if (_entityInfoWidget.State != WidgetState.Running)
+        {
+            _entityInfoWidget.State = WidgetState.Running;
+        }
+        else if (_openSingleWindows.TryGetValue(_entityInfoWidget, out var window))
+        {
+            RestoreAndActivate(window);
+        }
+        else
+        {
+            Open(_entityInfoWidget);
+        }
+
+        _entityInfoViewModel?.ShowEntity(entity);
+    }
+
+    /// <summary>
+    /// プレイヤー情報の現在地を押した。マップの窓を開くか前に出し、その人を中心に出す(<see cref="MapWidgetViewModel.ShowPlayer"/>)。
+    /// 起動していないカードは起動する(窓はその場で開く)。
+    /// </summary>
+    public void ShowPlayerOnMap(long characterId)
+    {
+        if (TryOpenMap())
+        {
+            _mapViewModel?.ShowPlayer(characterId);
+        }
+    }
+
+    /// <summary>
+    /// チャットの座標のリンクを押した。マップの窓を開くか前に出し、その場所を中心に出して印を置く
+    /// (<see cref="MapWidgetViewModel.ShowSharedPosition"/>)。
+    /// </summary>
+    public void ShowSharedPositionOnMap(MapSharedPosition position)
+    {
+        if (TryOpenMap())
+        {
+            _mapViewModel?.ShowSharedPosition(position);
+        }
+    }
+
+    /// <summary>マップの窓を開くか前に出す。起動していないカードは起動する(窓はその場で開く)。カードが無ければ偽。</summary>
+    private bool TryOpenMap()
+    {
+        if (_mapWidget is null)
+        {
+            return false;
+        }
+
+        if (_mapWidget.State != WidgetState.Running)
+        {
+            _mapWidget.State = WidgetState.Running;
+        }
+        else if (_openSingleWindows.TryGetValue(_mapWidget, out var window))
+        {
+            RestoreAndActivate(window);
+        }
+        else
+        {
+            Open(_mapWidget);
+        }
+
+        return true;
     }
 
     public bool CanAdd(BuffEntryKey key)
@@ -183,8 +289,9 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         if (selfCharacterId != 0 && FindFirstBuffRow(selfCharacterId) is { } row)
         {
             var card = CreateSelfBuffCardOption(row.Kind, row.Snapshot);
-            OpenTarget(widget, self, card);
+            // 知らせは開く前(開いたときの当て直しが「指定なし」をほかの項目に置き換える前に、決まったカードへ替える)。
             UnspecifiedBuffCardResolved?.Invoke(widget, card);
+            OpenTarget(widget, self, card);
             return;
         }
 
@@ -193,8 +300,8 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     }
 
     /// <summary>
-    /// 「指定なし」で開くカードが決まった(引数はウィジェットとそのカードの項目)。起動ボタンで1行目のカードを開いたか前に出したとき、
-    /// 待っていた窓がバフに入ったか、そのカードがもう開いていて待っていた窓を閉じたときに上がる。メイン画面のカードが選択を置き換える。
+    /// 「指定なし」で開くカードが決まった(引数はウィジェットとそのカードの項目)。起動ボタンで1行目のカードを開く(前に出す)とき、
+    /// 待っていた窓がバフに入るとき、そのカードがもう開いていて待っていた窓を閉じるときに、窓を開け閉めする前に上がる。メイン画面のカードが選択を置き換える。
     /// </summary>
     public event Action<WidgetListItemViewModel, WidgetTargetOption>? UnspecifiedBuffCardResolved;
 
@@ -226,7 +333,12 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         }
 
         var option = CreateSelfBuffCardOption(kind, snapshot);
-        if (FindTargetWindow(session.Widget, WidgetTargetOption.CreateSelf(AppState.PlayerUID), option) is not null)
+        var isAlreadyOpen = FindTargetWindow(session.Widget, WidgetTargetOption.CreateSelf(AppState.PlayerUID), option) is not null;
+
+        // 知らせは閉じる・入れる前(閉じたときの当て直しが「指定なし」をほかの項目に置き換える前に、決まったカードへ替える)。
+        UnspecifiedBuffCardResolved?.Invoke(session.Widget, option);
+
+        if (isAlreadyOpen)
         {
             session.Window.Close();
         }
@@ -234,8 +346,6 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         {
             card.Enter(option.BuffListKind, snapshot.CardKey, option.BuffGroup);
         }
-
-        UnspecifiedBuffCardResolved?.Invoke(session.Widget, option);
     }
 
     public void OpenPlayerWindow(WidgetKind kind, long characterId)
@@ -246,31 +356,37 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         }
     }
 
-    /// <summary>エンティティリスト(とエンティティ情報の枠)から、その個体のバフリスト・デバフリスト・エンティティ情報を開く。もう開いていれば前に出す。</summary>
+    /// <summary>
+    /// エンティティリスト(とターゲット情報の枠)から、その個体のバフリスト・デバフリストを開く。もう開いていれば前に出す。
+    /// ターゲット情報は1枚だけの窓で、その敵を映す(<see cref="ShowEntityInTargetInfo"/>)。
+    /// </summary>
     public void OpenEntityWindow(WidgetKind kind, EntityTargetInfo entity)
     {
-        if (kind is not (WidgetKind.BuffList or WidgetKind.DebuffList or WidgetKind.EntityInfo)
+        if (kind == WidgetKind.EntityInfo)
+        {
+            ShowEntityInTargetInfo(entity);
+            return;
+        }
+
+        if (kind is not (WidgetKind.BuffList or WidgetKind.DebuffList)
             || !_trackedPlayerWidgets.TryGetValue(kind, out var widget))
         {
             return;
         }
 
-        TrackPlayerWidget(widget);
-
-        var existingWindow = _openEntityWindows
-            .FirstOrDefault(session =>
-                ReferenceEquals(session.Widget, widget)
-                && RepresentsEntity(session.ViewModel, entity));
+        var existingWindow = FindEntityWindow(widget, entity, buff: null);
 
         if (existingWindow is not null)
         {
             existingWindow.ViewModel.TryApplyEntity(entity);
             existingWindow.Window.SetHeaderText(existingWindow.ViewModel.HeaderText);
             RestoreAndActivate(existingWindow.Window);
+            RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(existingWindow));
             return;
         }
 
-        CreateEntityTargetWindow(widget, new EntityWindowTarget(entity));
+        var createdSession = CreateEntityBuffWindow(widget, new EntityWindowTarget(entity));
+        RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(createdSession));
     }
 
     /// <summary>
@@ -281,8 +397,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
     /// <summary>
     /// 相手(人・敵)と、バフ・デバフカードならバフを指定して、開いている窓を探す。開いていなければ null。
-    /// 人は、自分なら自分を映す窓(相手の指定なしで開いた窓を含む)、それ以外は UID で探す。
-    /// 敵は実体で探し、捕まえていない窓(復元直後)は種類と種別IDでも探す。敵を選んでいない項目は敵を待つ窓を探す。
+    /// 人は、自分(バフ・デバフカードの自分のカード)なら自分を映す窓(相手の指定なしで開いた窓を含む)、相手を選んでいない項目なら相手を持たない空の窓、
+    /// それ以外は UID で探す。
+    /// 敵は、その1体を映している窓、無ければその1体を捕まえてよい捕まえていない窓(<see cref="FindEntityWindow"/>)を探す。
+    /// 捕まえていない窓の項目は、種類と種別IDが同じ捕まえていない窓を探す。
     /// チャットはチャンネル(プライベートトークは相手)で、プラグインの相手は相手の ID で探す。
     /// </summary>
     public WidgetWindow? FindTargetWindow(
@@ -292,11 +410,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     {
         if (person.Kind == WidgetTargetOptionKind.Plugin)
         {
-            return _openPluginWindows
-                .FirstOrDefault(session =>
-                    ReferenceEquals(session.Widget, widget)
-                    && string.Equals(session.TargetId, person.PluginTargetId, StringComparison.OrdinalIgnoreCase))
-                ?.Window;
+            return FindPluginWindow(widget, person.PluginTargetId)?.Window;
         }
 
         if (person.Kind == WidgetTargetOptionKind.Chat)
@@ -310,31 +424,50 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
         if (person.Kind == WidgetTargetOptionKind.Entity)
         {
+            if (person.Entity is { } entity)
+            {
+                return FindEntityWindow(widget, entity, buff)?.Window;
+            }
+
+            // 捕まえていない窓の項目は、まだ捕まえていない窓だけに当てる(捕まえた窓は捕まえた敵の項目で指す)。
             return _openEntityWindows
                 .FirstOrDefault(session =>
                     ReferenceEquals(session.Widget, widget)
-                    && RepresentsEntityOption(session.ViewModel, person)
-                    && (buff is null
-                        || (session.ViewModel is EntityBuffDebuffCardWidgetViewModel card
-                            && card.RepresentsBuff(buff.BuffListKind, buff.BuffKey, buff.BuffGroup))))
+                    && !session.ViewModel.IsEntityAcquired
+                    && session.ViewModel.EntityId == person.UnacquiredEntityId
+                    && session.ViewModel.EntityType == person.UnacquiredEntityType
+                    && RepresentsEntityBuff(session.ViewModel, buff))
                 ?.Window;
         }
 
+        return FindPlayerWindow(widget, person, buff)?.Window;
+    }
+
+    /// <summary>
+    /// 人の窓を探す。自分(バフ・デバフカードの自分のカード)なら自分を映す窓、相手を選んでいない項目なら相手を持たない空の窓、
+    /// それ以外は UID で探す。バフ・デバフカードは、そのバフのカードだけを探す(<paramref name="buff"/>)。
+    /// </summary>
+    private PlayerWidgetWindowSession? FindPlayerWindow(
+        WidgetListItemViewModel widget,
+        WidgetTargetOption person,
+        WidgetTargetOption? buff)
+    {
         return _openPlayerWindows
             .FirstOrDefault(session =>
                 ReferenceEquals(session.Widget, widget)
                 && (person.IsSelf
                     ? session.ViewModel.RepresentsSelf()
-                    : session.ViewModel.RepresentsPlayer(person.CharacterId))
+                    : person.IsUnselectedPlayer
+                        ? buff is null && session.ViewModel.IsAwaitingPlayer
+                        : session.ViewModel.RepresentsPlayer(person.CharacterId))
                 && (buff is null
                     || (session.ViewModel is BuffDebuffCardWidgetViewModel card
-                        && card.RepresentsBuff(buff.BuffListKind, buff.BuffKey, buff.BuffGroup))))
-            ?.Window;
+                        && card.RepresentsBuff(buff.BuffListKind, buff.BuffKey, buff.BuffGroup))));
     }
 
     /// <summary>
     /// 相手(と、バフ・デバフカードならバフ)の窓を開く。もう開いていれば前に出す。
-    /// 自分は相手の指定なしで開く(カードの起動ボタンで開いていた既定の窓と同じ)。
+    /// 人は相手の UID で開き、相手を選んでいない項目なら相手を持たない空の窓を開く。バフ・デバフカードの自分のカードは相手の指定なしで開く。
     /// </summary>
     public void OpenTarget(
         WidgetListItemViewModel widget,
@@ -355,8 +488,6 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             return;
         }
 
-        TrackPlayerWidget(widget);
-
         if (FindTargetWindow(widget, person, buff) is { } existingWindow)
         {
             RestoreAndActivate(existingWindow);
@@ -373,13 +504,11 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         {
             var target = person.Entity is { } entity
                 ? new EntityWindowTarget(entity)
-                : person.IsUnselectedEntity
-                    ? EntityWindowTarget.CreateWaiting()
-                    : new EntityWindowTarget(person.UnacquiredEntityId, person.UnacquiredEntityType, person.UnacquiredEntityName);
+                : new EntityWindowTarget(person.UnacquiredEntityId, person.UnacquiredEntityType, person.UnacquiredEntityName);
 
             if (buff is null)
             {
-                CreateEntityTargetWindow(widget, target);
+                CreateEntityBuffWindow(widget, target);
             }
             else
             {
@@ -389,7 +518,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             return;
         }
 
-        long? requestedCharacterId = person.IsSelf ? null : person.CharacterId;
+        long? requestedCharacterId = person.IsSelf || person.IsUnselectedPlayer ? null : person.CharacterId;
         if (buff is null)
         {
             CreatePlayerWindow(widget, requestedCharacterId);
@@ -410,121 +539,260 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     }
 
     /// <summary>
+    /// そのウィジェットに、相手を持たない空の窓(<see cref="PlayerWidgetWindowViewModel.IsAwaitingPlayer"/>)が開いているか。
+    /// </summary>
+    public bool HasAwaitingPlayerWindow(WidgetListItemViewModel widget)
+    {
+        return FindAwaitingPlayerWindow(widget) is not null;
+    }
+
+    /// <summary>
+    /// 空の窓のある一覧にプレイヤーが出た(引数は一覧で先頭のプレイヤーの UID)。空の窓をその人の窓にする。
+    /// その人の窓がもう別の窓で開いていれば、空の窓を閉じる(もう開いている窓は前に出さない。ゲーム中に勝手に前面へ出ると
+    /// ゲームの操作を奪うため)。どちらもその人の窓の項目で <see cref="TargetOpenedFromWidget"/> を上げ、カードがその人を選ぶ。
+    /// バフ・デバフカードの待っている窓(<see cref="BuffCardViewModel_FirstBuffRowFound"/>)と同じ形。
+    /// </summary>
+    public void EnterAwaitingPlayerWindow(WidgetListItemViewModel widget, long characterId)
+    {
+        if (characterId == 0 || FindAwaitingPlayerWindow(widget) is not { } session)
+        {
+            return;
+        }
+
+        var existing = _openPlayerWindows.FirstOrDefault(other =>
+            !ReferenceEquals(other, session)
+            && ReferenceEquals(other.Widget, widget)
+            && other.ViewModel.RepresentsPlayer(characterId));
+        if (existing is not null)
+        {
+            // 閉じてから知らせる(先に知らせると、知らせの当て直しがまだ開いている空の窓でここへ戻ってくる)。
+            session.Window.Close();
+            RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(existing));
+            return;
+        }
+
+        session.ViewModel.EnterPlayer(characterId);
+        if (_latestPlayerWindowRoster is { } latest)
+        {
+            session.ViewModel.UpdatePlayerFromRoster(latest.PlayersByCharacterId, latest.SelfPlayer);
+        }
+
+        session.Window.SetHeaderText(session.ViewModel.HeaderText);
+        RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(session));
+    }
+
+    private PlayerWidgetWindowSession? FindAwaitingPlayerWindow(WidgetListItemViewModel widget)
+    {
+        return _openPlayerWindows.FirstOrDefault(session =>
+            ReferenceEquals(session.Widget, widget) && session.ViewModel.IsAwaitingPlayer);
+    }
+
+    /// <summary>
     /// 開いている窓の相手(と、バフ・デバフカードならバフ)。メイン画面のカードの選択リストに、名簿などから外れた相手も並べるのに使う。
     /// 項目は相手を指す値だけを持ち、表示の文字は持たない。実体を捕まえていない敵の窓は種類と種別IDで指す。
-    /// 敵を待つ窓は敵を選んでいない項目、最初に付いたものを待つカードは「指定なし」、プラグインの空の窓は相手を選んでいない項目で指す。
+    /// 人の空の窓とプラグインの空の窓は相手を選んでいない項目、最初に付いたものを待つカードは「指定なし」で指す。
     /// </summary>
     public IReadOnlyList<(WidgetTargetOption Person, WidgetTargetOption? Buff)> GetOpenTargets(WidgetListItemViewModel widget)
     {
         var targets = new List<(WidgetTargetOption Person, WidgetTargetOption? Buff)>();
-
-        foreach (var session in _openPlayerWindows)
+        foreach (var session in EnumerateTargetSessions(widget))
         {
-            if (!ReferenceEquals(session.Widget, widget))
-            {
-                continue;
-            }
-
-            var viewModel = session.ViewModel;
-            var person = viewModel.RequestedCharacterId is { } characterId
-                ? new WidgetTargetOption { Kind = WidgetTargetOptionKind.Player, CharacterId = characterId }
-                : WidgetTargetOption.CreateSelf(viewModel.LastKnownPlayerUid);
-            var buff = viewModel switch
-            {
-                // 最初に付いたものを待っている窓は「指定なし」。
-                BuffDebuffCardWidgetViewModel { IsWaiting: true } => WidgetTargetOption.CreateUnspecifiedBuffCard(),
-                BuffDebuffCardWidgetViewModel card => new WidgetTargetOption
-                {
-                    Kind = WidgetTargetOptionKind.Buff,
-                    IsSelf = person.IsSelf && card.Group != BuffGroup.None,
-                    BuffListKind = card.BuffListKind,
-                    BuffKey = card.RequestedBuffKey,
-                    BuffGroup = card.Group,
-                    BuffName = card.LastKnownBuffName ?? string.Empty,
-                    BuffPerson = person
-                },
-                _ => null
-            };
-            targets.Add((person, buff));
-        }
-
-        foreach (var session in _openEntityWindows)
-        {
-            if (!ReferenceEquals(session.Widget, widget))
-            {
-                continue;
-            }
-
-            var viewModel = session.ViewModel;
-            var person = viewModel.Entity is { } entity
-                ? new WidgetTargetOption { Kind = WidgetTargetOptionKind.Entity, Entity = entity }
-                : new WidgetTargetOption
-                {
-                    Kind = WidgetTargetOptionKind.Entity,
-                    UnacquiredEntityId = viewModel.EntityId,
-                    UnacquiredEntityType = viewModel.EntityType,
-                    UnacquiredEntityName = viewModel.TargetName
-                };
-            var buff = viewModel is EntityBuffDebuffCardWidgetViewModel card
-                ? new WidgetTargetOption
-                {
-                    Kind = WidgetTargetOptionKind.Buff,
-                    BuffListKind = card.BuffListKind,
-                    BuffKey = card.RequestedBuffKey,
-                    BuffGroup = card.Group,
-                    BuffName = card.LastKnownBuffName ?? string.Empty,
-                    BuffPerson = person
-                }
-                : null;
-            targets.Add((person, buff));
-        }
-
-        foreach (var session in _openChatWindows)
-        {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                targets.Add((WidgetTargetOption.CreateChat(session.ViewModel.Channel, session.ViewModel.PartnerId), null));
-            }
-        }
-
-        foreach (var session in _openPluginWindows)
-        {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                targets.Add((
-                    new WidgetTargetOption
-                    {
-                        Kind = WidgetTargetOptionKind.Plugin,
-                        PluginTargetId = session.TargetId,
-                        PluginTargetNames = session.TargetNames
-                    },
-                    null));
-            }
+            targets.Add(CreateOpenTarget(session));
         }
 
         return targets;
     }
 
-    /// <summary>敵の窓がその実体を映すか。捕まえていない窓(復元直後)は、種類と種別IDが一致すれば映す。</summary>
-    private static bool RepresentsEntity(IEntityWidgetWindowViewModel viewModel, EntityTargetInfo entity)
+    /// <summary>開いている窓1枚の相手(と、バフ・デバフカードならバフ)。種類ごとの作り方へ振り分ける。</summary>
+    private static (WidgetTargetOption Person, WidgetTargetOption? Buff) CreateOpenTarget(TargetWindowSession session)
     {
-        return viewModel.RepresentsEntity(entity.EntityUuid)
-            || (!viewModel.IsEntityAcquired
-                && viewModel.EntityId == entity.EntityId
-                && viewModel.EntityType == entity.EntityType);
+        return session switch
+        {
+            PlayerWidgetWindowSession player => CreateOpenTarget(player),
+            EntityWindowSession entity => CreateOpenTarget(entity),
+            ChatWindowSession chat => (WidgetTargetOption.CreateChat(chat.ViewModel.Channel, chat.ViewModel.PartnerId), null),
+            PluginTargetWindowSession plugin => (
+                new WidgetTargetOption
+                {
+                    Kind = WidgetTargetOptionKind.Plugin,
+                    PluginTargetId = plugin.TargetId,
+                    PluginTargetNames = plugin.TargetNames
+                },
+                null),
+            _ => throw new ArgumentOutOfRangeException(nameof(session), session, null)
+        };
     }
 
-    /// <summary>敵の窓がその項目の相手か。実体を持たない項目は、敵を選んでいなければ敵を待つ窓、それ以外は種類と種別IDが一致する窓。</summary>
-    private static bool RepresentsEntityOption(IEntityWidgetWindowViewModel viewModel, WidgetTargetOption option)
+    /// <summary>
+    /// 開いている複数開けるウィジェットの窓(人・敵・チャット・プラグイン、この並び)。<paramref name="widget"/> を渡すと、そのウィジェットの窓だけ。
+    /// 回している間に窓を開け閉めする所は、先に写し(<c>ToArray</c>)を作る。
+    /// </summary>
+    private IEnumerable<TargetWindowSession> EnumerateTargetSessions(WidgetListItemViewModel? widget = null)
     {
-        if (option.Entity is { } entity)
+        foreach (var session in _openPlayerWindows)
         {
-            return RepresentsEntity(viewModel, entity);
+            if (widget is null || ReferenceEquals(session.Widget, widget))
+            {
+                yield return session;
+            }
         }
 
-        return option.IsUnselectedEntity
-            ? viewModel.IsWaitingForEntity
-            : viewModel.EntityId == option.UnacquiredEntityId && viewModel.EntityType == option.UnacquiredEntityType;
+        foreach (var session in _openEntityWindows)
+        {
+            if (widget is null || ReferenceEquals(session.Widget, widget))
+            {
+                yield return session;
+            }
+        }
+
+        foreach (var session in _openChatWindows)
+        {
+            if (widget is null || ReferenceEquals(session.Widget, widget))
+            {
+                yield return session;
+            }
+        }
+
+        foreach (var session in _openPluginWindows)
+        {
+            if (widget is null || ReferenceEquals(session.Widget, widget))
+            {
+                yield return session;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 開いている人の窓1枚の相手(と、バフ・デバフカードならバフ)。選択リストに並べる項目と同じ値。
+    /// 人は相手の UID の項目で、相手を持たない空の窓は相手を選んでいない項目。バフ・デバフカードの相手の指定なしの窓は自分(自分のカード)。
+    /// </summary>
+    private static (WidgetTargetOption Person, WidgetTargetOption? Buff) CreateOpenTarget(PlayerWidgetWindowSession session)
+    {
+        var viewModel = session.ViewModel;
+        if (viewModel is not BuffDebuffCardWidgetViewModel card)
+        {
+            return (viewModel.RequestedCharacterId is { } requestedCharacterId
+                ? WidgetTargetOption.CreatePlayer(requestedCharacterId)
+                : WidgetTargetOption.CreateUnselectedPlayer(), null);
+        }
+
+        var person = viewModel.RequestedCharacterId is { } characterId
+            ? WidgetTargetOption.CreatePlayer(characterId)
+            : WidgetTargetOption.CreateSelf(viewModel.LastKnownPlayerUid);
+
+        // 最初に付いたものを待っている窓は「指定なし」。
+        var buff = card.IsWaiting
+            ? WidgetTargetOption.CreateUnspecifiedBuffCard()
+            : new WidgetTargetOption
+            {
+                Kind = WidgetTargetOptionKind.Buff,
+                IsSelf = person.IsSelf,
+                BuffListKind = card.BuffListKind,
+                BuffKey = card.RequestedBuffKey,
+                BuffGroup = card.Group,
+                BuffName = card.LastKnownBuffName ?? string.Empty,
+                BuffPerson = person
+            };
+        return (person, buff);
+    }
+
+    /// <summary>開いている敵の窓1枚の相手(と、バフ・デバフカードならバフ)。選択リストに並べる項目と同じ値。</summary>
+    private static (WidgetTargetOption Person, WidgetTargetOption? Buff) CreateOpenTarget(EntityWindowSession session)
+    {
+        var viewModel = session.ViewModel;
+        var person = viewModel.Entity is { } entity
+            ? new WidgetTargetOption { Kind = WidgetTargetOptionKind.Entity, Entity = entity }
+            : new WidgetTargetOption
+            {
+                Kind = WidgetTargetOptionKind.Entity,
+                UnacquiredEntityId = viewModel.EntityId,
+                UnacquiredEntityType = viewModel.EntityType,
+                UnacquiredEntityName = viewModel.TargetName
+            };
+        var buff = viewModel is EntityBuffDebuffCardWidgetViewModel card
+            ? new WidgetTargetOption
+            {
+                Kind = WidgetTargetOptionKind.Buff,
+                BuffListKind = card.BuffListKind,
+                BuffKey = card.RequestedBuffKey,
+                BuffGroup = card.Group,
+                BuffName = card.LastKnownBuffName ?? string.Empty,
+                BuffPerson = person
+            }
+            : null;
+        return (person, buff);
+    }
+
+    /// <summary>
+    /// カード以外(ほかのウィジェットの行・メニュー)から、複数開けるウィジェットの窓を開いたか、開いている窓を前に出した
+    /// (引数はウィジェットと、その窓の選択リストの項目)。空の窓がその人の窓になったときと、その人の窓がもう開いていて
+    /// 空の窓を閉じたとき(<see cref="EnterAwaitingPlayerWindow"/>)も上げる。メイン画面のカードがその項目を選ぶ。
+    /// </summary>
+    public event Action<WidgetListItemViewModel, WidgetTargetOption>? TargetOpenedFromWidget;
+
+    /// <summary>その窓の項目で <see cref="TargetOpenedFromWidget"/> を上げる。バフ・デバフカードはカードの項目、ほかは相手の項目。</summary>
+    private void RaiseTargetOpenedFromWidget(
+        WidgetListItemViewModel widget,
+        (WidgetTargetOption Person, WidgetTargetOption? Buff) target)
+    {
+        var option = widget.Kind == WidgetKind.BuffDebuffCard ? target.Buff : target.Person;
+        if (option is not null)
+        {
+            TargetOpenedFromWidget?.Invoke(widget, option);
+        }
+    }
+
+    /// <summary>
+    /// 敵の1体を映す窓。その1体を映している窓を先に探し、無ければ、その1体を捕まえてよい、まだ捕まえていない窓(<see cref="CanCaptureEntity"/>)。
+    /// バフ・デバフカードは、そのバフのカードだけを探す(<paramref name="buff"/>)。
+    /// </summary>
+    private EntityWindowSession? FindEntityWindow(
+        WidgetListItemViewModel widget,
+        EntityTargetInfo entity,
+        WidgetTargetOption? buff)
+    {
+        return _openEntityWindows.FirstOrDefault(session =>
+                ReferenceEquals(session.Widget, widget)
+                && session.ViewModel.RepresentsEntity(entity.EntityUuid)
+                && RepresentsEntityBuff(session.ViewModel, buff))
+            ?? _openEntityWindows.FirstOrDefault(session =>
+                ReferenceEquals(session.Widget, widget)
+                && RepresentsEntityBuff(session.ViewModel, buff)
+                && CanCaptureEntity(session, entity));
+    }
+
+    /// <summary>
+    /// まだ捕まえていない敵の窓が、その1体を捕まえてよいか。種類と種別IDが合い、同じウィジェットのほかの窓
+    /// (バフ・デバフカードは同じバフのカード)がその1体を映していないこと。
+    /// </summary>
+    private bool CanCaptureEntity(EntityWindowSession session, EntityTargetInfo entity)
+    {
+        return session.ViewModel.CanCaptureEntity(entity)
+            && !_openEntityWindows.Any(other =>
+                !ReferenceEquals(other, session)
+                && ReferenceEquals(other.Widget, session.Widget)
+                && other.ViewModel.RepresentsEntity(entity.EntityUuid)
+                && IsSameEntityWindowBuff(other.ViewModel, session.ViewModel));
+    }
+
+    /// <summary>敵の窓がそのバフの窓か。バフを指定しなければ、どの窓も当たる。</summary>
+    private static bool RepresentsEntityBuff(IEntityWidgetWindowViewModel viewModel, WidgetTargetOption? buff)
+    {
+        return buff is null
+            || (viewModel is EntityBuffDebuffCardWidgetViewModel card
+                && card.RepresentsBuff(buff.BuffListKind, buff.BuffKey, buff.BuffGroup));
+    }
+
+    /// <summary>敵の窓2枚が同じバフの窓か。バフリスト・デバフリストの窓どうしは同じ、バフ・デバフカードは同じバフのカードどうし。</summary>
+    private static bool IsSameEntityWindowBuff(IEntityWidgetWindowViewModel left, IEntityWidgetWindowViewModel right)
+    {
+        return (left, right) switch
+        {
+            (EntityBuffDebuffCardWidgetViewModel leftCard, EntityBuffDebuffCardWidgetViewModel rightCard)
+                => leftCard.RepresentsBuff(rightCard.BuffListKind, rightCard.RequestedBuffKey, rightCard.Group),
+            (EntityBuffDebuffCardWidgetViewModel, _) or (_, EntityBuffDebuffCardWidgetViewModel) => false,
+            _ => true
+        };
     }
 
     public void ApplyWidgetState(WidgetListItemViewModel widget)
@@ -535,7 +803,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             return;
         }
 
-        if (IsPlayerWindowWidget(widget.Kind))
+        if (WidgetConfigDefaults.IsPlayerWindowKind(widget.Kind))
         {
             ApplyPlayerWindowWidgetState(widget);
             return;
@@ -574,7 +842,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         }
     }
 
-    public void ApplyWidgetPinState(WidgetListItemViewModel widget, bool bringToFront)
+    public void ApplyWidgetPinState(WidgetListItemViewModel widget)
     {
         // ピン留め中はアクティブにしない。WS_EX_NOACTIVATE が防ぐのは
         // クリックによるアクティブ化で、ここで Activate() を呼ぶと
@@ -587,12 +855,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
     public void OpenPlayerWindow(WidgetListItemViewModel playerWidget, long characterId)
     {
-        if (!IsPlayerWindowWidget(playerWidget.Kind))
+        if (!WidgetConfigDefaults.IsPlayerWindowKind(playerWidget.Kind))
         {
             return;
         }
-
-        TrackPlayerWidget(playerWidget);
 
         if (WidgetConfigDefaults.IsSelfOnlyPlayerWindowKind(playerWidget.Kind))
         {
@@ -609,18 +875,17 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             return;
         }
 
-        var existingWindow = _openPlayerWindows
-            .FirstOrDefault(session =>
-                ReferenceEquals(session.Widget, playerWidget)
-                && session.ViewModel.RepresentsPlayer(characterId));
+        var existingWindow = FindPlayerWindow(playerWidget, WidgetTargetOption.CreatePlayer(characterId), buff: null);
 
         if (existingWindow is not null)
         {
             RestoreAndActivate(existingWindow.Window);
+            RaiseTargetOpenedFromWidget(playerWidget, CreateOpenTarget(existingWindow));
             return;
         }
 
-        CreatePlayerWindow(playerWidget, characterId);
+        var createdSession = CreatePlayerWindow(playerWidget, characterId);
+        RaiseTargetOpenedFromWidget(playerWidget, CreateOpenTarget(createdSession));
     }
 
     /// <summary>
@@ -681,22 +946,17 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             return;
         }
 
-        TrackPlayerWidget(widget);
-
-        var existingWindow = _openPlayerWindows
-            .FirstOrDefault(session =>
-                ReferenceEquals(session.Widget, widget)
-                && session.ViewModel is BuffDebuffCardWidgetViewModel card
-                && card.RepresentsPlayer(characterId)
-                && card.RepresentsBuff(kind, buffKey, group));
+        var existingWindow = FindPlayerWindow(widget, WidgetTargetOption.CreatePlayer(characterId), WidgetTargetOption.CreateBuff(kind, buffKey, group));
 
         if (existingWindow is not null)
         {
             RestoreAndActivate(existingWindow.Window);
+            RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(existingWindow));
             return;
         }
 
-        CreatePlayerWindow(widget, characterId, kind, buffKey, buffGroup: group, savedBuffName: savedBuffName);
+        var createdSession = CreatePlayerWindow(widget, characterId, kind, buffKey, buffGroup: group, savedBuffName: savedBuffName);
+        RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(createdSession));
     }
 
     /// <summary>モンスターのバフ/デバフ一覧の行から開く版。1ウィンドウ = 1体 × 1バフ。</summary>
@@ -713,26 +973,21 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             return;
         }
 
-        TrackPlayerWidget(widget);
-
         var group = CombatDataCatalog.GetBuffGroup(baseId);
 
-        var existingWindow = _openEntityWindows
-            .FirstOrDefault(session =>
-                ReferenceEquals(session.Widget, widget)
-                && session.ViewModel is EntityBuffDebuffCardWidgetViewModel card
-                && card.RepresentsBuff(kind, buffKey, group)
-                && RepresentsEntity(card, entity));
+        var existingWindow = FindEntityWindow(widget, entity, WidgetTargetOption.CreateBuff(kind, buffKey, group));
 
         if (existingWindow is not null)
         {
             existingWindow.ViewModel.TryApplyEntity(entity);
             existingWindow.Window.SetHeaderText(existingWindow.ViewModel.HeaderText);
             RestoreAndActivate(existingWindow.Window);
+            RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(existingWindow));
             return;
         }
 
-        CreateEntityBuffCardWindow(widget, new EntityWindowTarget(entity), kind, buffKey, group);
+        var createdSession = CreateEntityBuffCardWindow(widget, new EntityWindowTarget(entity), kind, buffKey, group);
+        RaiseTargetOpenedFromWidget(widget, CreateOpenTarget(createdSession));
     }
 
     /// <summary>
@@ -740,8 +995,14 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     ///
     /// <para>
     /// 実体の窓は<b>未捕獲の状態</b>で開く。実体IDは再起動で消えるため、
-    /// 種類と種別が一致する個体がAOIに現れた時点で
+    /// 種類と種別が一致する個体(同じウィジェットのほかの窓が映していないもの)がAOIに現れた時点で
     /// <see cref="UpdateEntityWindowPresentations"/> が捕まえる。
+    /// </para>
+    ///
+    /// <para>
+    /// 同じ相手の窓がもう開いていれば開かない(人・チャット。敵の窓は同じ種類の窓が別々の個体を捕まえるので除く)。
+    /// 前の版のファイルには、自分の窓(相手の指定なし、最後の相手 X)と X の窓が両方入っていることがあり、どちらも X の窓として開くため。
+    /// 値が壊れていて戻せない項目は、ログに書いて飛ばす。
     /// </para>
     /// </summary>
     private void RestoreTargetWindow(WidgetListItemViewModel widget, WidgetOpenTargetConfig target)
@@ -752,6 +1013,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
                 || !Enum.IsDefined(typeof(Zproto.ChitChatChannelType), chatChannelValue)
                 || !ChatMessageStore.IsKeptChannel((Zproto.ChitChatChannelType)chatChannelValue))
             {
+                Log.Warning(
+                    "Skipped a saved {WidgetKey} window: the chat channel {ChatChannel} cannot be restored",
+                    widget.Key.DocumentKey,
+                    target.ChatChannel);
                 return;
             }
 
@@ -759,17 +1024,18 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             var partnerId = chatChannel == Zproto.ChitChatChannelType.ChannelPrivate ? target.CharacterId ?? 0 : 0;
             if (chatChannel == Zproto.ChitChatChannelType.ChannelPrivate && partnerId == 0)
             {
+                Log.Warning(
+                    "Skipped a saved {WidgetKey} window: the private chat has no partner",
+                    widget.Key.DocumentKey);
+                return;
+            }
+
+            if (FindTargetWindow(widget, WidgetTargetOption.CreateChat(chatChannel, partnerId), buff: null) is not null)
+            {
                 return;
             }
 
             CreateChatWindow(widget, chatChannel, partnerId, target.Name, target.Window);
-            return;
-        }
-
-        // エンティティ情報にプレイヤーの窓は無い。種別IDの無い保存は敵を待つ空の窓。
-        if (widget.Kind == WidgetKind.EntityInfo && !target.IsEntity)
-        {
-            CreateEntityTargetWindow(widget, EntityWindowTarget.CreateWaiting(), target.Window);
             return;
         }
 
@@ -785,16 +1051,36 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
         if (!target.IsEntity)
         {
+            // 相手の指定なしで保存した人の窓(前の版の自分の窓)は、最後に映した相手の窓として開く。最後の相手が無ければ空の窓。
+            // バフ・デバフカードの相手の指定なしは自分のカードなので、そのまま。
+            var requestedCharacterId = target.CharacterId is null && widget.Kind != WidgetKind.BuffDebuffCard
+                ? target.ResolvedCharacterId
+                : target.CharacterId;
+            var person = requestedCharacterId is { } characterId
+                ? WidgetTargetOption.CreatePlayer(characterId)
+                : widget.Kind == WidgetKind.BuffDebuffCard
+                    ? WidgetTargetOption.CreateSelf(AppState.PlayerUID)
+                    : WidgetTargetOption.CreateUnselectedPlayer();
+            var buff = widget.Kind == WidgetKind.BuffDebuffCard
+                ? WidgetTargetOption.CreateBuff(buffListKind ?? PlayerBuffListKind.Buff, target.BuffKey, buffGroup)
+                : null;
+            if (FindTargetWindow(widget, person, buff) is not null)
+            {
+                return;
+            }
+
             CreatePlayerWindow(
                 widget,
-                target.CharacterId,
+                requestedCharacterId,
                 buffListKind,
                 target.BuffKey,
                 target.Name,
                 buffGroup,
                 target.ResolvedCharacterId,
                 target.BuffName,
-                target.Window);
+                target.Window,
+                target.IsNpc == true,
+                target.ProfessionId ?? 0);
             return;
         }
 
@@ -805,12 +1091,15 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
         if (widget.Kind != WidgetKind.BuffDebuffCard)
         {
-            CreateEntityTargetWindow(widget, entityTarget, target.Window);
+            CreateEntityBuffWindow(widget, entityTarget, target.Window);
             return;
         }
 
         if (buffGroup == BuffGroup.None && string.IsNullOrWhiteSpace(target.BuffKey))
         {
+            Log.Warning(
+                "Skipped a saved {WidgetKey} window: the enemy buff card has no buff",
+                widget.Key.DocumentKey);
             return;
         }
 
@@ -831,6 +1120,11 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     /// アプリ終了時とプラグインを止めたときは呼ばない。どちらも全部の窓を閉じるので、
     /// <b>そこで保存すると次回に復元するものが消える。</b>
     /// </para>
+    ///
+    /// <para>
+    /// 窓が無ければ記録なし(<c>null</c>)。窓はあるのにどれも保存できない(種別ID 0 の未知の敵の窓だけ)ときは空の一覧で、
+    /// 次の起動で既定の窓を開かない(<see cref="ApplyPlayerWindowWidgetState"/>)。
+    /// </para>
     /// </summary>
     private void SaveOpenTargets(WidgetListItemViewModel widget)
     {
@@ -840,95 +1134,99 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         }
 
         var targets = new List<WidgetOpenTargetConfig>();
-
-        foreach (var session in _openPlayerWindows)
+        foreach (var session in EnumerateTargetSessions(widget))
         {
-            if (!ReferenceEquals(session.Widget, widget))
+            if (CreateSavedTarget(session) is { } target)
             {
-                continue;
+                targets.Add(target);
             }
-
-            var card = session.ViewModel as BuffDebuffCardWidgetViewModel;
-            targets.Add(new WidgetOpenTargetConfig
-            {
-                CharacterId = session.ViewModel.RequestedCharacterId,
-                Name = session.ViewModel.LastKnownPlayerName,
-                ResolvedCharacterId = session.ViewModel.LastKnownPlayerUid == 0
-                    ? null
-                    : session.ViewModel.LastKnownPlayerUid,
-                BuffListKind = card is null ? null : (int)card.BuffListKind,
-                BuffKey = card?.RequestedBuffKey,
-                BuffName = card?.LastKnownBuffName,
-                BuffGroup = card is null ? null : (int)card.Group,
-                Window = session.Window.GetCurrentBounds()
-            });
         }
 
-        foreach (var session in _openEntityWindows)
+        WidgetStateManager.Instance.SaveWidgetOpenTargets(
+            widget.Key,
+            targets.Count == 0 && !HasOpenTargetWindows(widget) ? null : targets);
+    }
+
+    /// <summary>窓1枚の保存する値。保存できない窓(種別ID 0 の未知の敵の窓)は null。</summary>
+    private static WidgetOpenTargetConfig? CreateSavedTarget(TargetWindowSession session)
+    {
+        switch (session)
         {
-            if (!ReferenceEquals(session.Widget, widget))
+            case PlayerWidgetWindowSession player:
             {
-                continue;
-            }
-
-            // 種別ID 0(未知の敵)の窓は保存しない。復元は種類と種別IDで個体を捕まえるので、
-            // 0 のまま戻すと次の起動で別の未知の個体を捕まえる。敵を待つ窓は種別IDが無いまま保存する。
-            if (session.ViewModel.EntityId == 0 && !session.ViewModel.IsWaitingForEntity)
-            {
-                continue;
-            }
-
-            var card = session.ViewModel as EntityBuffDebuffCardWidgetViewModel;
-            targets.Add(new WidgetOpenTargetConfig
-            {
-                EntityId = session.ViewModel.EntityId,
-                EntityType = session.ViewModel.EntityType is { } entityType ? (int)entityType : null,
-                Name = session.ViewModel.TargetName,
-                BuffListKind = card is null ? null : (int)card.BuffListKind,
-                BuffKey = card?.RequestedBuffKey,
-                BuffName = card?.LastKnownBuffName,
-                BuffGroup = card is null ? null : (int)card.Group,
-                Window = session.Window.GetCurrentBounds()
-            });
-        }
-
-        foreach (var session in _openChatWindows)
-        {
-            if (!ReferenceEquals(session.Widget, widget))
-            {
-                continue;
-            }
-
-            var isPrivate = session.ViewModel.Channel == Zproto.ChitChatChannelType.ChannelPrivate;
-            targets.Add(new WidgetOpenTargetConfig
-            {
-                ChatChannel = (int)session.ViewModel.Channel,
-                CharacterId = isPrivate ? session.ViewModel.PartnerId : null,
-                Name = isPrivate ? session.ViewModel.LastKnownPartnerName : null,
-                Window = session.Window.GetCurrentBounds()
-            });
-        }
-
-        foreach (var session in _openPluginWindows)
-        {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                targets.Add(new WidgetOpenTargetConfig
+                var viewModel = player.ViewModel;
+                var card = viewModel as BuffDebuffCardWidgetViewModel;
+                return new WidgetOpenTargetConfig
                 {
-                    PluginTargetId = session.TargetId,
-                    Name = session.TargetName,
-                    Window = session.Window.GetCurrentBounds()
-                });
+                    CharacterId = viewModel.RequestedCharacterId,
+                    Name = viewModel.LastKnownPlayerName,
+                    ResolvedCharacterId = viewModel.LastKnownPlayerUid == 0
+                        ? null
+                        : viewModel.LastKnownPlayerUid,
+                    IsNpc = viewModel.LastKnownIsNpc ? true : null,
+                    ProfessionId = viewModel.LastKnownProfessionId == 0
+                        ? null
+                        : viewModel.LastKnownProfessionId,
+                    BuffListKind = card is null ? null : (int)card.BuffListKind,
+                    BuffKey = card?.RequestedBuffKey,
+                    BuffName = card?.LastKnownBuffName,
+                    BuffGroup = card is null ? null : (int)card.Group,
+                    Window = player.Window.GetCurrentBounds()
+                };
             }
-        }
 
-        WidgetStateManager.Instance.SaveWidgetOpenTargets(widget.Key, targets);
+            case EntityWindowSession entity:
+            {
+                var viewModel = entity.ViewModel;
+
+                // 種別ID 0(未知の敵)の窓は保存しない。復元は種類と種別IDで個体を捕まえるので、
+                // 0 のまま戻すと次の起動で別の未知の個体を捕まえる。
+                if (viewModel.EntityId == 0)
+                {
+                    return null;
+                }
+
+                var card = viewModel as EntityBuffDebuffCardWidgetViewModel;
+                return new WidgetOpenTargetConfig
+                {
+                    EntityId = viewModel.EntityId,
+                    EntityType = viewModel.EntityType is { } entityType ? (int)entityType : null,
+                    Name = viewModel.TargetName,
+                    BuffListKind = card is null ? null : (int)card.BuffListKind,
+                    BuffKey = card?.RequestedBuffKey,
+                    BuffName = card?.LastKnownBuffName,
+                    BuffGroup = card is null ? null : (int)card.Group,
+                    Window = entity.Window.GetCurrentBounds()
+                };
+            }
+
+            case ChatWindowSession chat:
+            {
+                var isPrivate = chat.ViewModel.Channel == Zproto.ChitChatChannelType.ChannelPrivate;
+                return new WidgetOpenTargetConfig
+                {
+                    ChatChannel = (int)chat.ViewModel.Channel,
+                    CharacterId = isPrivate ? chat.ViewModel.PartnerId : null,
+                    Name = isPrivate ? chat.ViewModel.LastKnownPartnerName : null,
+                    Window = chat.Window.GetCurrentBounds()
+                };
+            }
+
+            case PluginTargetWindowSession plugin:
+                return new WidgetOpenTargetConfig
+                {
+                    PluginTargetId = plugin.TargetId,
+                    Name = plugin.TargetName,
+                    Window = plugin.Window.GetCurrentBounds()
+                };
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(session), session, null);
+        }
     }
 
     private void ApplyPlayerWindowWidgetState(WidgetListItemViewModel widget)
     {
-        TrackPlayerWidget(widget);
-
         if (widget.State == WidgetState.Running)
         {
             if (HasOpenTargetWindows(widget))
@@ -941,24 +1239,35 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
                 .GetWidgetSnapshot(widget.Kind)
                 .OpenTargets;
 
-            if (savedTargets is { Count: > 0 })
+            if (savedTargets is not null)
             {
                 foreach (var target in savedTargets)
                 {
                     RestoreTargetWindow(widget, target);
                 }
 
+                // 戻せる窓が無かった(保存できない窓だけを開いていた、または全部戻せなかった)。既定の窓は開かずに止め、記録も消す
+                // (残すと「すべてを起動」などで起動しても毎回ここで止まる。記録が無ければ下の記録の無い経路になる)。
+                if (!HasOpenTargetWindows(widget))
+                {
+                    // 空の一覧は保存できない窓だけを開いていた形(設計どおり)。項目があったのに1枚も戻せなかったときだけ書く。
+                    if (savedTargets.Count > 0)
+                    {
+                        Log.Warning(
+                            "Stopped {WidgetKey}: none of the {Count} saved windows could be restored; cleared the saved windows",
+                            widget.Key.DocumentKey,
+                            savedTargets.Count);
+                    }
+
+                    WidgetStateManager.Instance.SaveWidgetOpenTargets(widget.Key, null);
+                    widget.State = WidgetState.Stopped;
+                }
+
                 return;
             }
 
-            // 対象の記録が無い。ここはウィジェットカードから初めて起動したときの経路。
-            // エンティティ情報は個体を選んで開くもので、相手の指定なしの既定の窓が無い。敵を待つ窓を開く。
-            if (widget.Kind == WidgetKind.EntityInfo)
-            {
-                CreateEntityTargetWindow(widget, EntityWindowTarget.CreateWaiting());
-                return;
-            }
-
+            // 対象の記録が無い。お気に入りの一括起動などで、記録の無いまま起動中になったときの経路
+            // (カードの起動ボタンは選んでいる項目の窓を開く別の経路で、ここを通らない)。
             // チャットはカードの既定と同じチャンネル。
             if (widget.Kind == WidgetKind.Chat)
             {
@@ -981,6 +1290,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
                 return;
             }
 
+            // 人の窓とメーターの種類は相手を持たない空の窓(一覧にプレイヤーが出たらその人の窓になる)、1枚だけの窓は自分の窓。
             CreatePlayerWindow(widget, requestedCharacterId: null);
             return;
         }
@@ -1013,9 +1323,16 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         {
             foreach (var target in savedTargets)
             {
+                // 同じ相手(空の窓どうしも)の窓は2枚開かない。
+                var targetId = string.IsNullOrWhiteSpace(target.PluginTargetId) ? null : target.PluginTargetId;
+                if (FindPluginWindow(widget, targetId) is not null)
+                {
+                    continue;
+                }
+
                 CreatePluginTargetWindow(
                     widget,
-                    string.IsNullOrWhiteSpace(target.PluginTargetId) ? null : target.PluginTargetId,
+                    targetId,
                     CreateSavedTargetNames(target.Name),
                     target.Window);
             }
@@ -1038,7 +1355,15 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     /// <summary>プラグインの空の窓が開いているか。開いている間は、相手が出るのを見るために一覧を読み続ける。</summary>
     public bool HasEmptyPluginWindow(WidgetListItemViewModel widget)
     {
-        return _openPluginWindows.Any(session => ReferenceEquals(session.Widget, widget) && session.TargetId is null);
+        return FindPluginWindow(widget, targetId: null) is not null;
+    }
+
+    /// <summary>プラグインの窓を相手の ID で探す。<c>null</c> は空の窓(相手が出たら中身を入れる窓)。</summary>
+    private PluginTargetWindowSession? FindPluginWindow(WidgetListItemViewModel widget, string? targetId)
+    {
+        return _openPluginWindows.FirstOrDefault(session =>
+            ReferenceEquals(session.Widget, widget)
+            && WidgetTargetOption.IsSamePluginTargetId(session.TargetId, targetId));
     }
 
     /// <summary>読んだ相手の一覧を、開いている窓へ当てる(名前と、空の窓の相手)。</summary>
@@ -1054,15 +1379,13 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     private void FillEmptyPluginWindow(WidgetListItemViewModel widget, IReadOnlyList<PluginSdk.PluginWidgetTarget> targets)
     {
         if (targets.Count == 0
-            || _openPluginWindows.FirstOrDefault(session => ReferenceEquals(session.Widget, widget) && session.TargetId is null) is not { } empty)
+            || FindPluginWindow(widget, targetId: null) is not { } empty)
         {
             return;
         }
 
         var target = targets.FirstOrDefault(candidate => candidate.IsDefault) ?? targets[0];
-        if (_openPluginWindows.Any(session =>
-                ReferenceEquals(session.Widget, widget)
-                && string.Equals(session.TargetId, target.Id, StringComparison.OrdinalIgnoreCase)))
+        if (FindPluginWindow(widget, target.Id) is not null)
         {
             empty.Window.Close();
             return;
@@ -1112,7 +1435,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             }
 
             var target = targets.FirstOrDefault(
-                candidate => string.Equals(candidate.Id, session.TargetId, StringComparison.OrdinalIgnoreCase));
+                candidate => WidgetTargetOption.IsSamePluginTargetId(candidate.Id, session.TargetId));
             if (target is null)
             {
                 continue;
@@ -1195,10 +1518,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
         _openSingleWindows.Add(widget, window);
         UpdateCardDataStatus(widget);
-        window.Show();
+        window.ShowRespectingForeground();
     }
 
-    private void CreatePlayerWindow(
+    private PlayerWidgetWindowSession CreatePlayerWindow(
         WidgetListItemViewModel playerWidget,
         long? requestedCharacterId,
         PlayerBuffListKind? requestedBuffListKind = null,
@@ -1207,7 +1530,9 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         BuffGroup buffGroup = BuffGroup.None,
         long? savedPlayerUid = null,
         string? savedBuffName = null,
-        WidgetWindowConfig? savedWindowBounds = null)
+        WidgetWindowConfig? savedWindowBounds = null,
+        bool savedIsNpc = false,
+        int savedProfessionId = 0)
     {
         var owner = Application.Current?.MainWindow;
         TrackManagerWindow(owner);
@@ -1225,7 +1550,9 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         // なので、それを条件にすると一度も種が入らない。
         playerWindowViewModel.SeedLastKnownPlayer(
             savedPlayerName,
-            savedPlayerUid ?? requestedCharacterId ?? 0);
+            savedPlayerUid ?? requestedCharacterId ?? 0,
+            savedIsNpc,
+            savedProfessionId);
 
         if (playerWindowViewModel is BuffDebuffCardWidgetViewModel seededCard)
         {
@@ -1266,60 +1593,27 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             ApplyPlayerWindowCascade(window, CountOpenTargetWindows(playerWidget));
         }
 
-        _openPlayerWindows.Add(new PlayerWidgetWindowSession(playerWidget, playerWindowViewModel, window));
-        UpdatePlayerWindowCount(playerWidget);
-        UpdateCardDataStatus(playerWidget);
-        SaveOpenTargets(playerWidget);
+        // 一覧へ足すのは Show の前(Show の中で上がる知らせが窓を引く)。カードへの知らせ(UpdatePlayerWindowCount)は Show の後
+        // (知らせの当て直しが窓を閉じることがあり、見せる前に閉じた窓は Show できない)。保存は知らせより先(当て直しの中で窓が閉じたときの保存を上書きしない)。
+        var session = new PlayerWidgetWindowSession(playerWidget, playerWindowViewModel, window);
+        _openPlayerWindows.Add(session);
 
-        window.Show();
+        window.ShowRespectingForeground();
+
+        SaveOpenTargets(playerWidget);
+        UpdateCardDataStatus(playerWidget);
+        UpdatePlayerWindowCount(playerWidget);
 
         if (playerWidget.State != WidgetState.Running)
         {
             playerWidget.State = WidgetState.Running;
         }
+
+        return session;
     }
 
-    /// <summary>個体1つを映す窓(バフリスト・デバフリスト・エンティティ情報)を開く。バフ・デバフカードは <see cref="CreateEntityBuffCardWindow"/>。</summary>
-    private void CreateEntityTargetWindow(
-        WidgetListItemViewModel widget,
-        EntityWindowTarget target,
-        WidgetWindowConfig? savedWindowBounds = null)
-    {
-        if (widget.Kind == WidgetKind.EntityInfo)
-        {
-            CreateEntityInfoWindow(widget, target, savedWindowBounds);
-            return;
-        }
-
-        CreateEntityBuffWindow(widget, target, savedWindowBounds);
-    }
-
-    private void CreateEntityInfoWindow(
-        WidgetListItemViewModel widget,
-        EntityWindowTarget target,
-        WidgetWindowConfig? savedWindowBounds)
-    {
-        var viewModel = new EntityInfoWidgetViewModel(
-            widget,
-            target,
-            PlayerRosterPresentationStore.Instance.Current.Entries,
-            NearbyEntityStore.Instance.Current.Entries,
-            OpenEntityWindow,
-            OpenBuffCardForEntity);
-
-        CreateEntityWindow(
-            widget,
-            viewModel,
-            new EntityInfoWidgetView
-            {
-                DataContext = viewModel
-            },
-            headerActions: null,
-            headerChromeActions: null,
-            savedWindowBounds);
-    }
-
-    private void CreateEntityBuffWindow(
+    /// <summary>個体1つを映す窓(バフリスト・デバフリスト)を開く。バフ・デバフカードは <see cref="CreateEntityBuffCardWindow"/>。</summary>
+    private EntityWindowSession CreateEntityBuffWindow(
         WidgetListItemViewModel widget,
         EntityWindowTarget target,
         WidgetWindowConfig? savedWindowBounds = null)
@@ -1329,7 +1623,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             : PlayerBuffListKind.Debuff;
         var viewModel = new EntityBuffListWidgetViewModel(widget, target, kind, OpenBuffCardForEntity);
 
-        CreateEntityWindow(
+        return CreateEntityWindow(
             widget,
             viewModel,
             new PlayerBuffListWidgetView
@@ -1341,7 +1635,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             savedWindowBounds);
     }
 
-    private void CreateEntityBuffCardWindow(
+    private EntityWindowSession CreateEntityBuffCardWindow(
         WidgetListItemViewModel widget,
         EntityWindowTarget target,
         PlayerBuffListKind kind,
@@ -1354,7 +1648,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         viewModel.SeedLastKnownBuffName(savedBuffName);
         viewModel.SavedTargetInfoResolved += EntityBuffCardViewModel_SavedTargetInfoResolved;
 
-        CreateEntityWindow(
+        return CreateEntityWindow(
             widget,
             viewModel,
             new BuffDebuffCardWidgetView
@@ -1372,7 +1666,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             savedWindowBounds);
     }
 
-    private void CreateEntityWindow(
+    private EntityWindowSession CreateEntityWindow(
         WidgetListItemViewModel widget,
         IEntityWidgetWindowViewModel viewModel,
         FrameworkElement content,
@@ -1404,17 +1698,22 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             ApplyPlayerWindowCascade(window, CountOpenTargetWindows(widget));
         }
 
-        _openEntityWindows.Add(new EntityWindowSession(widget, viewModel, window));
-        UpdatePlayerWindowCount(widget);
-        UpdateCardDataStatus(widget);
-        SaveOpenTargets(widget);
+        // 知らせと保存の順は CreatePlayerWindow と同じ(知らせは Show の後)。
+        var session = new EntityWindowSession(widget, viewModel, window);
+        _openEntityWindows.Add(session);
 
-        window.Show();
+        window.ShowRespectingForeground();
+
+        SaveOpenTargets(widget);
+        UpdateCardDataStatus(widget);
+        UpdatePlayerWindowCount(widget);
 
         if (widget.State != WidgetState.Running)
         {
             widget.State = WidgetState.Running;
         }
+
+        return session;
     }
 
     /// <summary>チャットの窓(チャンネル1つか、プライベートトークの相手1人)を開く。</summary>
@@ -1430,7 +1729,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         var owner = Application.Current?.MainWindow;
         TrackManagerWindow(owner);
 
-        var viewModel = new ChatWidgetViewModel(widget, channel, partnerId, savedPartnerName);
+        var viewModel = new ChatWidgetViewModel(widget, channel, partnerId, savedPartnerName, ShowSharedPositionOnMap);
         var savedBounds = savedWindowBounds
             ?? WidgetStateManager.Instance.GetWidgetSnapshot(widget.Kind).Window;
         var window = new WidgetWindow(
@@ -1453,12 +1752,14 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             ApplyPlayerWindowCascade(window, CountOpenTargetWindows(widget));
         }
 
+        // 知らせと保存の順は CreatePlayerWindow と同じ(知らせは Show の後)。
         _openChatWindows.Add(new ChatWindowSession(widget, viewModel, window));
-        UpdatePlayerWindowCount(widget);
-        UpdateCardDataStatus(widget);
-        SaveOpenTargets(widget);
 
-        window.Show();
+        window.ShowRespectingForeground();
+
+        SaveOpenTargets(widget);
+        UpdateCardDataStatus(widget);
+        UpdatePlayerWindowCount(widget);
 
         if (widget.State != WidgetState.Running)
         {
@@ -1531,11 +1832,12 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             widget.PlayerWindowPresentationChanged += PlayerWidget_PresentationChanged;
         }
 
-        UpdatePlayerWindowCount(widget);
-        UpdateCardDataStatus(widget);
-        SaveOpenTargets(widget);
+        // 知らせと保存の順は CreatePlayerWindow と同じ(知らせは Show の後)。
+        window.ShowRespectingForeground();
 
-        window.Show();
+        SaveOpenTargets(widget);
+        UpdateCardDataStatus(widget);
+        UpdatePlayerWindowCount(widget);
 
         if (widget.State != WidgetState.Running)
         {
@@ -1543,7 +1845,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         }
     }
 
-    private static PlayerWidgetWindowViewModel CreatePlayerWindowViewModel(
+    private PlayerWidgetWindowViewModel CreatePlayerWindowViewModel(
         WidgetListItemViewModel playerWidget,
         long? requestedCharacterId,
         PlayerRosterEntry? initialPlayer,
@@ -1556,7 +1858,8 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             WidgetKind.PlayerInfo => new PlayerInfoWidgetViewModel(
                 playerWidget,
                 requestedCharacterId,
-                initialPlayer),
+                initialPlayer,
+                ShowPlayerOnMap),
             WidgetKind.PlayerStatus => new PlayerStatusWidgetViewModel(
                 playerWidget,
                 requestedCharacterId,
@@ -1675,6 +1978,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
                 requestedCharacterId,
                 initialPlayer,
                 PlayerMetricSummaryKind.DamageTaken),
+            WidgetKind.BuffUptime => new BuffUptimeWidgetViewModel(
+                playerWidget,
+                requestedCharacterId,
+                initialPlayer),
             _ => throw new ArgumentOutOfRangeException(nameof(playerWidget))
         };
     }
@@ -1726,6 +2033,10 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             PlayerMetricWidgetViewModel metricViewModel => new PlayerMetricGraphWidgetView
             {
                 DataContext = metricViewModel
+            },
+            BuffUptimeWidgetViewModel buffUptimeViewModel => new BuffUptimeWidgetView
+            {
+                DataContext = buffUptimeViewModel
             },
             _ => throw new ArgumentOutOfRangeException(nameof(playerWindowViewModel))
         };
@@ -1794,8 +2105,68 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             WidgetKind.Timeline => CreateTimelineComposition(widget),
             WidgetKind.ReviveList => CreateReviveListComposition(widget),
             WidgetKind.DamageTakenLog => CreateDamageTakenLogComposition(widget),
+            WidgetKind.Map => CreateMapComposition(widget),
+            WidgetKind.EntityInfo => CreateEntityInfoComposition(widget),
             _ => throw new InvalidOperationException($"Widget {widget.Kind} has no single-window content.")
         };
+    }
+
+    /// <summary>
+    /// ターゲット情報(内部名はエンティティ情報)。タイトルはほかの1枚だけ開く窓と同じくウィジェット名だけで、敵の名前は1行目に出す。
+    /// ヘッダーの「ターゲットに戻る」はマップの「自分のいるマップに戻る」と同じく2層で1組。
+    /// </summary>
+    private WidgetWindowComposition CreateEntityInfoComposition(WidgetListItemViewModel widget)
+    {
+        var viewModel = new EntityInfoWidgetViewModel(
+            widget,
+            PlayerRosterPresentationStore.Instance.Current.Entries,
+            NearbyEntityStore.Instance.Current.Entries,
+            OpenEntityWindow,
+            OpenBuffCardForEntity);
+        _entityInfoViewModel = viewModel;
+        return new WidgetWindowComposition(
+            new EntityInfoWidgetView
+            {
+                DataContext = viewModel
+            },
+            viewModel,
+            new EntityInfoWidgetHeaderLabelsView
+            {
+                DataContext = viewModel
+            },
+            new EntityInfoWidgetHeaderActionsView
+            {
+                DataContext = viewModel
+            },
+            null);
+    }
+
+    /// <summary>
+    /// マップ。タイトルはほかの1枚だけ開く窓と同じくウィジェット名だけで、マップの名前とチャンネルはフッターの左に出す。
+    /// ヘッダーの「自分のいるマップに戻る」は被ダメログの文字ボタンと同じく2層で1組。
+    /// </summary>
+    private WidgetWindowComposition CreateMapComposition(WidgetListItemViewModel widget)
+    {
+        var viewModel = new MapWidgetViewModel(widget, OpenPlayerWindow, ShowEntityInTargetInfo);
+        _mapViewModel = viewModel;
+        return new WidgetWindowComposition(
+            new MapWidgetView
+            {
+                DataContext = viewModel
+            },
+            viewModel,
+            new MapWidgetHeaderLabelsView
+            {
+                DataContext = viewModel
+            },
+            new MapWidgetHeaderActionsView
+            {
+                DataContext = viewModel
+            },
+            new ListWidgetFooterView
+            {
+                DataContext = viewModel
+            });
     }
 
     /// <summary>
@@ -1944,21 +2315,9 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
     private void ClosePlayerWindows(WidgetListItemViewModel playerWidget)
     {
-        foreach (var targetWindow in _openPlayerWindows
-                     .Where(session => ReferenceEquals(session.Widget, playerWidget))
-                     .Select(session => session.Window)
-                     .Concat(_openEntityWindows
-                         .Where(session => ReferenceEquals(session.Widget, playerWidget))
-                         .Select(session => session.Window))
-                     .Concat(_openChatWindows
-                         .Where(session => ReferenceEquals(session.Widget, playerWidget))
-                         .Select(session => session.Window))
-                     .Concat(_openPluginWindows
-                         .Where(session => ReferenceEquals(session.Widget, playerWidget))
-                         .Select(session => session.Window))
-                     .ToArray())
+        foreach (var session in EnumerateTargetSessions(playerWidget).ToArray())
         {
-            targetWindow.Close();
+            session.Window.Close();
         }
 
         UpdatePlayerWindowCount(playerWidget);
@@ -2094,27 +2453,20 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
     /// <summary>
     /// 周りの実体が変わった。実体の窓に、エンティティリストの行で個体を捕まえ直させ(<paramref name="entities"/>)、
-    /// エンティティ情報の窓には周りの実体の値(<paramref name="nearbyEntities"/>)を渡す。
+    /// ターゲット情報の窓には周りの実体の値(<paramref name="nearbyEntities"/>)を渡す。
     /// </summary>
     public void UpdateEntityWindowPresentations(
         IReadOnlyList<EntityListEntry> entities,
         IReadOnlyList<NearbyEntityEntry> nearbyEntities)
     {
         ApplyEntityTargets(entities);
-
-        // 捕まえた直後の窓にも、同じ一覧で値を当てる。
-        foreach (var entityWindow in _openEntityWindows.ToArray())
-        {
-            if (entityWindow.ViewModel is EntityInfoWidgetViewModel entityInfo)
-            {
-                entityInfo.UpdateNearbyEntities(nearbyEntities);
-            }
-        }
+        _entityInfoViewModel?.UpdateNearbyEntities(nearbyEntities);
     }
 
     /// <summary>
     /// 実体の窓に、エンティティリストの行で個体を捕まえ直させ、捕まえている個体の値(名前・レベル)を当て直させる。
     /// 行の値が変わったとき(言語や表示設定の変更を含む)に呼ぶ。
+    /// まだ捕まえていない窓が捕まえたら <see cref="EntityWindowAcquired"/> を上げる。
     /// </summary>
     public void ApplyEntityTargets(IReadOnlyList<EntityListEntry> entities)
     {
@@ -2123,71 +2475,56 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         foreach (var entityWindow in _openEntityWindows.ToArray())
         {
             var viewModel = entityWindow.ViewModel;
-            EntityListEntry? entity;
 
-            if (viewModel.IsWaitingForEntity)
+            if (viewModel.IsEntityAcquired)
+            {
+                if (entitiesByUuid.TryGetValue(viewModel.EntityUuid, out var held))
+                {
+                    viewModel.TryApplyEntity(held.Target);
+                    entityWindow.Window.SetHeaderText(viewModel.HeaderText);
+                }
+
+                continue;
+            }
+
+            // 設定から復元した直後かログアウトの後の窓。捕まえてよい個体(種類と種別が一致し、同じウィジェットのほかの窓が映していない)を1体だけ捕まえる。
+            // 前の窓が捕まえた個体も避けるので、同じ種類の窓が2枚あれば別の1体になる。
+            var candidate = entities.FirstOrDefault(entity => CanCaptureEntity(entityWindow, entity.Target));
+            if (candidate is null)
             {
                 continue;
             }
 
-            if (viewModel.IsEntityAcquired)
-            {
-                entitiesByUuid.TryGetValue(viewModel.EntityUuid, out entity);
-            }
-            else
-            {
-                // 設定から復元した直後の窓。種類と種別が一致する個体を1体だけ捕まえる。
-                entity = entities.FirstOrDefault(
-                    candidate => candidate.EntityId == viewModel.EntityId
-                        && candidate.EntityType == viewModel.EntityType);
-            }
-
-            if (entity is not null)
-            {
-                viewModel.TryApplyEntity(entity.Target);
-                entityWindow.Window.SetHeaderText(viewModel.HeaderText);
-            }
-        }
-
-        // 復元した窓が個体を捕まえた後で、敵を待つ窓を当てる(同じ個体の窓を2枚にしない)。
-        if (entities.Count > 0)
-        {
-            ApplyFirstEntityToWaitingWindows(entities[0].Target);
+            var before = CreateOpenTarget(entityWindow);
+            viewModel.TryApplyEntity(candidate.Target);
+            entityWindow.Window.SetHeaderText(viewModel.HeaderText);
+            RaiseEntityWindowAcquired(entityWindow.Widget, before, CreateOpenTarget(entityWindow));
         }
     }
 
     /// <summary>
-    /// エンティティリストに敵が出た。敵を待つ窓に1番目の敵を映させる。その敵の窓がもう開いていれば、敵を待つ窓を閉じる。
+    /// まだ捕まえていなかった敵の窓が、エンティティリストの1体を捕まえた(引数はウィジェット、捕まえる前の項目、捕まえた後の項目)。
+    /// 項目はバフ・デバフカードならカードの項目、ほかは相手の項目。メイン画面のカードが、捕まえる前の項目を選んでいれば捕まえた後の項目に置き換える。
     /// </summary>
-    private void ApplyFirstEntityToWaitingWindows(EntityTargetInfo first)
-    {
-        foreach (var waiting in _openEntityWindows.Where(session => session.ViewModel.IsWaitingForEntity).ToArray())
-        {
-            if (_openEntityWindows.Any(other =>
-                    !ReferenceEquals(other, waiting)
-                    && ReferenceEquals(other.Widget, waiting.Widget)
-                    && RepresentsEntity(other.ViewModel, first)))
-            {
-                waiting.Window.Close();
-                continue;
-            }
+    public event Action<WidgetListItemViewModel, WidgetTargetOption, WidgetTargetOption>? EntityWindowAcquired;
 
-            waiting.ViewModel.TryApplyEntity(first);
-            waiting.Window.SetHeaderText(waiting.ViewModel.HeaderText);
-            SaveOpenTargets(waiting.Widget);
+    private void RaiseEntityWindowAcquired(
+        WidgetListItemViewModel widget,
+        (WidgetTargetOption Person, WidgetTargetOption? Buff) before,
+        (WidgetTargetOption Person, WidgetTargetOption? Buff) after)
+    {
+        var isCard = widget.Kind == WidgetKind.BuffDebuffCard;
+        if ((isCard ? before.Buff : before.Person) is { } beforeOption
+            && (isCard ? after.Buff : after.Person) is { } afterOption)
+        {
+            EntityWindowAcquired?.Invoke(widget, beforeOption, afterOption);
         }
     }
 
-    /// <summary>名簿が変わった。エンティティ情報の窓のヘイトの枠(名前・クラス・特化)を引き直させる。</summary>
+    /// <summary>名簿が変わった。ターゲット情報の窓のヘイトの枠(名前・クラス・特化)を引き直させる。</summary>
     public void UpdateEntityInfoRosters(IReadOnlyList<PlayerRosterEntry> roster)
     {
-        foreach (var entityWindow in _openEntityWindows.ToArray())
-        {
-            if (entityWindow.ViewModel is EntityInfoWidgetViewModel entityInfo)
-            {
-                entityInfo.UpdateRoster(roster);
-            }
-        }
+        _entityInfoViewModel?.UpdateRoster(roster);
     }
 
     private void PlayerWindowViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -2334,43 +2671,29 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
     private int CountOpenTargetWindows(WidgetListItemViewModel widget)
     {
-        return _openPlayerWindows.Count(session => ReferenceEquals(session.Widget, widget))
-            + _openEntityWindows.Count(session => ReferenceEquals(session.Widget, widget))
-            + _openChatWindows.Count(session => ReferenceEquals(session.Widget, widget))
-            + _openPluginWindows.Count(session => ReferenceEquals(session.Widget, widget));
+        return EnumerateTargetSessions(widget).Count();
     }
 
     private bool HasOpenTargetWindows(WidgetListItemViewModel widget)
     {
-        return CountOpenTargetWindows(widget) > 0;
+        return EnumerateTargetSessions(widget).Any();
     }
 
-    private static bool IsPlayerWindowWidget(WidgetKind kind)
+    /// <summary>
+    /// そのウィジェットで、相手を持つ窓が1枚でも開いているか(一覧を作らずに数える)。カードの選択リストに並べるものがあるかに使う。
+    /// 人の空の窓とプラグインの空の窓は数えない(相手を選んでいない既定の項目と同じもので、起動ボタンで開け閉めできる)。
+    /// </summary>
+    public bool HasFilledTargetWindows(WidgetListItemViewModel widget)
     {
-        return kind is WidgetKind.PlayerInfo
-            or WidgetKind.PlayerStatus
-            or WidgetKind.BuffDebuffGroup
-            or WidgetKind.PlayerEquipment
-            or WidgetKind.PlayerTalent
-            or WidgetKind.PlayerSeasonTalent
-            or WidgetKind.PlayerModule
-            or WidgetKind.BuffList
-            or WidgetKind.DebuffList
-            or WidgetKind.BuffDebuffCard
-            or WidgetKind.DamageSkillDetail
-            or WidgetKind.DamageSummary
-            or WidgetKind.DpsGraph
-            or WidgetKind.HealingSkillDetail
-            or WidgetKind.HealingSummary
-            or WidgetKind.HpsGraph
-            or WidgetKind.HateSkillDetail
-            or WidgetKind.HateGraph
-            or WidgetKind.BreakSkillDetail
-            or WidgetKind.BreakGraph
-            or WidgetKind.DamageTakenSummary
-            or WidgetKind.EntityInfo
-            or WidgetKind.Chat;
+        return EnumerateTargetSessions(widget).Any(session => session switch
+        {
+            // バフ・デバフカードの相手の指定なしは自分のカード(空の窓ではない)。
+            PlayerWidgetWindowSession player => player.ViewModel is BuffDebuffCardWidgetViewModel || !player.ViewModel.IsAwaitingPlayer,
+            PluginTargetWindowSession plugin => plugin.TargetId is not null,
+            _ => true
+        });
     }
+
 
     private static void RestoreAndActivate(WidgetWindow window)
     {
@@ -2425,10 +2748,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         _isManagerClosing = true;
 
         foreach (var window in _openSingleWindows.Values
-                     .Concat(_openPlayerWindows.Select(session => session.Window))
-                     .Concat(_openEntityWindows.Select(session => session.Window))
-                     .Concat(_openChatWindows.Select(session => session.Window))
-                     .Concat(_openPluginWindows.Select(session => session.Window))
+                     .Concat(EnumerateTargetSessions().Select(session => session.Window))
                      .ToArray())
         {
             window.Close();
@@ -2445,104 +2765,23 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         window.Closed -= WidgetWindow_Closed;
         window.DataStatusChanged -= WidgetWindow_DataStatusChanged;
 
-        var playerWindow = _openPlayerWindows.FirstOrDefault(
+        var targetSession = EnumerateTargetSessions().FirstOrDefault(
             session => ReferenceEquals(session.Window, window));
 
-        if (playerWindow is not null)
+        if (targetSession is not null)
         {
-            playerWindow.ViewModel.PropertyChanged -= PlayerWindowViewModel_PropertyChanged;
-            playerWindow.ViewModel.SavedTargetInfoResolved -= PlayerWindowViewModel_SavedTargetInfoResolved;
-            if (playerWindow.ViewModel is BuffDebuffCardWidgetViewModel card)
-            {
-                card.FirstBuffRowFound -= BuffCardViewModel_FirstBuffRowFound;
-            }
-
-            if (playerWindow.ViewModel is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-
-            _openPlayerWindows.Remove(playerWindow);
-            _playerWindowsAwaitingRoster.Remove(playerWindow);
-            UpdatePlayerWindowCount(playerWindow.Widget);
-            UpdateCardDataStatus(playerWindow.Widget);
-            SaveOpenTargets(playerWindow.Widget);
-
-            if (!_isManagerClosing
-                && playerWindow.Widget.State == WidgetState.Running
-                && !HasOpenTargetWindows(playerWindow.Widget))
-            {
-                playerWindow.Widget.State = WidgetState.Stopped;
-            }
-
-            return;
-        }
-
-        var entityWindow = _openEntityWindows.FirstOrDefault(
-            session => ReferenceEquals(session.Window, window));
-
-        if (entityWindow is not null)
-        {
-            entityWindow.ViewModel.PropertyChanged -= EntityWindowViewModel_PropertyChanged;
-            if (entityWindow.ViewModel is EntityBuffDebuffCardWidgetViewModel entityCard)
-            {
-                entityCard.SavedTargetInfoResolved -= EntityBuffCardViewModel_SavedTargetInfoResolved;
-            }
-
-            entityWindow.ViewModel.Dispose();
-            _openEntityWindows.Remove(entityWindow);
-            UpdatePlayerWindowCount(entityWindow.Widget);
-            UpdateCardDataStatus(entityWindow.Widget);
-            SaveOpenTargets(entityWindow.Widget);
-
-            if (!_isManagerClosing
-                && entityWindow.Widget.State == WidgetState.Running
-                && !HasOpenTargetWindows(entityWindow.Widget))
-            {
-                entityWindow.Widget.State = WidgetState.Stopped;
-            }
-
-            return;
-        }
-
-        var chatWindow = _openChatWindows.FirstOrDefault(
-            session => ReferenceEquals(session.Window, window));
-
-        if (chatWindow is not null)
-        {
-            chatWindow.ViewModel.PropertyChanged -= ChatWindowViewModel_PropertyChanged;
-            chatWindow.ViewModel.Dispose();
-            _openChatWindows.Remove(chatWindow);
-            UpdatePlayerWindowCount(chatWindow.Widget);
-            UpdateCardDataStatus(chatWindow.Widget);
-            SaveOpenTargets(chatWindow.Widget);
-
-            if (!_isManagerClosing
-                && chatWindow.Widget.State == WidgetState.Running
-                && !HasOpenTargetWindows(chatWindow.Widget))
-            {
-                chatWindow.Widget.State = WidgetState.Stopped;
-            }
-
-            return;
-        }
-
-        var pluginWindow = _openPluginWindows.FirstOrDefault(
-            session => ReferenceEquals(session.Window, window));
-
-        if (pluginWindow is not null)
-        {
-            _openPluginWindows.Remove(pluginWindow);
-            UpdatePlayerWindowCount(pluginWindow.Widget);
-            UpdateCardDataStatus(pluginWindow.Widget);
-            SaveOpenTargets(pluginWindow.Widget);
+            DetachTargetSession(targetSession);
+            var widget = targetSession.Widget;
+            UpdatePlayerWindowCount(widget);
+            UpdateCardDataStatus(widget);
+            SaveOpenTargets(widget);
 
             if (!_isManagerClosing
                 && !_isClosingKeepingState
-                && pluginWindow.Widget.State == WidgetState.Running
-                && !HasOpenTargetWindows(pluginWindow.Widget))
+                && widget.State == WidgetState.Running
+                && !HasOpenTargetWindows(widget))
             {
-                pluginWindow.Widget.State = WidgetState.Stopped;
+                widget.State = WidgetState.Stopped;
             }
 
             return;
@@ -2559,11 +2798,65 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             _damageTakenLogViewModel = null;
         }
 
+        if (window.Widget.Kind == WidgetKind.Map)
+        {
+            _mapViewModel = null;
+        }
+
+        if (window.Widget.Kind == WidgetKind.EntityInfo)
+        {
+            _entityInfoViewModel = null;
+        }
+
         UpdateCardDataStatus(window.Widget);
 
         if (!_isManagerClosing && !_isClosingKeepingState && window.Widget.State == WidgetState.Running)
         {
             window.Widget.State = WidgetState.Stopped;
+        }
+    }
+
+    /// <summary>
+    /// 相手ごとの窓を閉じたときの、種類ごとの後始末(購読の解除・Dispose・一覧から外す)。
+    /// </summary>
+    private void DetachTargetSession(TargetWindowSession session)
+    {
+        switch (session)
+        {
+            case PlayerWidgetWindowSession player:
+                player.ViewModel.PropertyChanged -= PlayerWindowViewModel_PropertyChanged;
+                player.ViewModel.SavedTargetInfoResolved -= PlayerWindowViewModel_SavedTargetInfoResolved;
+                if (player.ViewModel is BuffDebuffCardWidgetViewModel card)
+                {
+                    card.FirstBuffRowFound -= BuffCardViewModel_FirstBuffRowFound;
+                }
+
+                if (player.ViewModel is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+
+                _openPlayerWindows.Remove(player);
+                _playerWindowsAwaitingRoster.Remove(player);
+                break;
+            case EntityWindowSession entity:
+                entity.ViewModel.PropertyChanged -= EntityWindowViewModel_PropertyChanged;
+                if (entity.ViewModel is EntityBuffDebuffCardWidgetViewModel entityCard)
+                {
+                    entityCard.SavedTargetInfoResolved -= EntityBuffCardViewModel_SavedTargetInfoResolved;
+                }
+
+                entity.ViewModel.Dispose();
+                _openEntityWindows.Remove(entity);
+                break;
+            case ChatWindowSession chat:
+                chat.ViewModel.PropertyChanged -= ChatWindowViewModel_PropertyChanged;
+                chat.ViewModel.Dispose();
+                _openChatWindows.Remove(chat);
+                break;
+            case PluginTargetWindowSession plugin:
+                _openPluginWindows.Remove(plugin);
+                break;
         }
     }
 
@@ -2593,7 +2886,7 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         widget.CardDataStatusLevel = worst;
     }
 
-    /// <summary>そのウィジェットの開いている窓(1枚だけの窓・プレイヤーの窓・実体の窓・チャットの窓・プラグインの相手の窓)。</summary>
+    /// <summary>そのウィジェットの開いている窓(1枚だけの窓と、複数開けるウィジェットの窓)。</summary>
     private IEnumerable<WidgetWindow> EnumerateOpenWindows(WidgetListItemViewModel widget)
     {
         if (_openSingleWindows.TryGetValue(widget, out var singleWindow))
@@ -2601,36 +2894,9 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             yield return singleWindow;
         }
 
-        foreach (var session in _openPlayerWindows)
+        foreach (var session in EnumerateTargetSessions(widget))
         {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                yield return session.Window;
-            }
-        }
-
-        foreach (var session in _openEntityWindows)
-        {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                yield return session.Window;
-            }
-        }
-
-        foreach (var session in _openChatWindows)
-        {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                yield return session.Window;
-            }
-        }
-
-        foreach (var session in _openPluginWindows)
-        {
-            if (ReferenceEquals(session.Widget, widget))
-            {
-                yield return session.Window;
-            }
+            yield return session.Window;
         }
     }
 
@@ -2643,7 +2909,9 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
     {
         Application.Current?.Dispatcher.InvokeAsync(() =>
         {
-            foreach (var window in _openSingleWindows.Values.ToArray())
+            foreach (var window in _openSingleWindows.Values
+                         .Concat(EnumerateTargetSessions().Select(session => session.Window))
+                         .ToArray())
             {
                 window.RefreshDataStatus();
             }
@@ -2652,22 +2920,6 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             {
                 session.ViewModel.RefreshBuildContext();
                 session.Window.SetHeaderText(session.ViewModel.HeaderText);
-                session.Window.RefreshDataStatus();
-            }
-
-            foreach (var session in _openEntityWindows.ToArray())
-            {
-                session.Window.RefreshDataStatus();
-            }
-
-            foreach (var session in _openChatWindows.ToArray())
-            {
-                session.Window.RefreshDataStatus();
-            }
-
-            foreach (var session in _openPluginWindows.ToArray())
-            {
-                session.Window.RefreshDataStatus();
             }
         });
     }
@@ -2677,65 +2929,67 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
         IReadOnlyDictionary<long, PlayerRosterEntry> PlayersByCharacterId,
         PlayerRosterEntry? SelfPlayer);
 
-    private sealed class PlayerWidgetWindowSession
+    /// <summary>
+    /// 複数開けるウィジェットの窓1枚の記録(人・敵・チャット・プラグイン)の共通の土台。4つの一覧をまとめて回すのに使う
+    /// (<see cref="EnumerateTargetSessions"/>)。種類ごとの処理は、それぞれの一覧と型で行う。
+    /// </summary>
+    private abstract class TargetWindowSession
+    {
+        protected TargetWindowSession(WidgetListItemViewModel widget, WidgetWindow window)
+        {
+            Widget = widget;
+            Window = window;
+        }
+
+        public WidgetListItemViewModel Widget { get; }
+
+        public WidgetWindow Window { get; }
+    }
+
+    private sealed class PlayerWidgetWindowSession : TargetWindowSession
     {
         public PlayerWidgetWindowSession(
             WidgetListItemViewModel widget,
             PlayerWidgetWindowViewModel viewModel,
             WidgetWindow window)
+            : base(widget, window)
         {
-            Widget = widget;
             ViewModel = viewModel;
-            Window = window;
         }
 
-        public WidgetListItemViewModel Widget { get; }
-
         public PlayerWidgetWindowViewModel ViewModel { get; }
-
-        public WidgetWindow Window { get; }
     }
 
-    private sealed class EntityWindowSession
+    private sealed class EntityWindowSession : TargetWindowSession
     {
         public EntityWindowSession(
             WidgetListItemViewModel widget,
             IEntityWidgetWindowViewModel viewModel,
             WidgetWindow window)
+            : base(widget, window)
         {
-            Widget = widget;
             ViewModel = viewModel;
-            Window = window;
         }
 
-        public WidgetListItemViewModel Widget { get; }
-
         public IEntityWidgetWindowViewModel ViewModel { get; }
-
-        public WidgetWindow Window { get; }
     }
 
-    private sealed class ChatWindowSession
+    private sealed class ChatWindowSession : TargetWindowSession
     {
         public ChatWindowSession(
             WidgetListItemViewModel widget,
             ChatWidgetViewModel viewModel,
             WidgetWindow window)
+            : base(widget, window)
         {
-            Widget = widget;
             ViewModel = viewModel;
-            Window = window;
         }
 
-        public WidgetListItemViewModel Widget { get; }
-
         public ChatWidgetViewModel ViewModel { get; }
-
-        public WidgetWindow Window { get; }
     }
 
     /// <summary>プラグインの複数起動のウィジェットの窓1枚。中身はプラグインが持ち、後始末は窓が中身の DataContext に行う。</summary>
-    private sealed class PluginTargetWindowSession
+    private sealed class PluginTargetWindowSession : TargetWindowSession
     {
         public PluginTargetWindowSession(
             WidgetListItemViewModel widget,
@@ -2745,17 +2999,14 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
             PluginWidgetWindowViewModel viewModel,
             IPluginWidgetElementHost bodyHost,
             IPluginWidgetElementHost? footerHost)
+            : base(widget, window)
         {
-            Widget = widget;
             TargetId = targetId;
             TargetNames = targetNames;
-            Window = window;
             ViewModel = viewModel;
             BodyHost = bodyHost;
             FooterHost = footerHost;
         }
-
-        public WidgetListItemViewModel Widget { get; }
 
         /// <summary>相手の ID。null は空の窓で、相手が出たら入る。</summary>
         public string? TargetId { get; set; }
@@ -2768,8 +3019,6 @@ public sealed class WidgetWindowManager : IBuffDebuffGroupEntryAdder, IBuffCardS
 
         /// <summary>相手の名前(言語ごと)。一覧に居る間は一覧の値、一覧から消えた後は最後に分かっていた値、復元の直後は保存しておいた値。</summary>
         public IReadOnlyDictionary<string, string> TargetNames { get; set; }
-
-        public WidgetWindow Window { get; }
 
         public string? TargetName => PluginTexts.Resolve(TargetNames, LocalizationManager.Instance.CurrentCulture);
 

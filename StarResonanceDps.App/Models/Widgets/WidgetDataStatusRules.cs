@@ -359,6 +359,19 @@ public static class WidgetDataStatusRules
     }
 
     /// <summary>
+    /// マップ(いつもライブ)。動かない実体の位置は周りに現れたときにしか届かないので、自分のいるマップは、
+    /// 途中起動の間は起動の前から周りにいた相手の位置が欠ける。パーティの人の位置は同期のたびに届くので、別のマップを見ている間は数えない。
+    /// </summary>
+    /// <param name="isCurrentMap">自分のいるマップを見ているか。</param>
+    /// <param name="isImageUnreadable">地図の画像があるはずなのに読めなかった(ファイルが無い・壊れている)。</param>
+    public static WidgetDataStatus ForMap(GameReceptionSnapshot reception, bool isCurrentMap, bool isImageUnreadable)
+    {
+        return WidgetDataStatus.Complete
+            .WithIf(isImageUnreadable, Unreadable)
+            .WithIf(isCurrentMap && reception.IsMidLaunch, MapOrRelogin);
+    }
+
+    /// <summary>
     /// 窓の相手が見つからない。ゲームの情報が届き始めた後でだけ数える(<see cref="GameReceptionSnapshot.HasSessionStarted"/>)。
     /// 起動の直後に、前回開いていた窓の相手がまだ一覧にいないのは欠けではない。
     /// </summary>

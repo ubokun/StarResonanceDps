@@ -2,6 +2,7 @@
 <UserControl x:Class="StarResonanceDps.App.Views.Widgets.MeterWidgetFooterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:StarResonanceDps.App.Controls"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
     <Grid>
@@ -30,48 +31,24 @@
                        Visibility="{Binding IsBenchmarkActive, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </StackPanel>
 
-        <Grid Grid.Column="2"
-              Margin="8,0,10,0"
-              VerticalAlignment="Center">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="32" />
-                <ColumnDefinition Width="72" />
-                <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="42" />
-                <ColumnDefinition Width="72" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Column="0"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding PartyMetricLabel}" />
-
-            <TextBlock Grid.Column="1"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding PartyMetricValueText}"
-                       TextAlignment="Right"
-                       TextTrimming="CharacterEllipsis" />
-
-            <TextBlock Grid.Column="3"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding TotalLabel}" />
-
-            <TextBlock Grid.Column="4"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding TotalValueText}"
-                       TextAlignment="Right"
-                       TextTrimming="CharacterEllipsis" />
-        </Grid>
+        <!--
+            右の2組(DPS・HPS・ヘイト・ブレイクのメーター)。見出しのコロンから数字の右端までの間隔は数字の欄の幅で、
+            日本語の DPS メーターで K の付く値(見出しの欄 32・値の欄 72 に右寄せしていたとき)と同じ 69 と 77。
+            単位は値の大きさで変わるので、単位の欄をいちばん広い単位の幅で取っておく(変わるたびに後ろの組が動かない)。
+        -->
+        <StackPanel Grid.Column="2"
+                    Margin="8,0,10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+            <controls:FooterValuePair Label="{Binding PartyMetricLabel}"
+                                      Value="{Binding PartyMetricValue}"
+                                      NumberWidth="69"
+                                      ReservesNumberUnitWidth="True" />
+            <controls:FooterValuePair Margin="16,0,0,0"
+                                      Label="{Binding TotalLabel}"
+                                      Value="{Binding TotalValue}"
+                                      NumberWidth="77"
+                                      ReservesNumberUnitWidth="True" />
+        </StackPanel>
     </Grid>
 </UserControl>

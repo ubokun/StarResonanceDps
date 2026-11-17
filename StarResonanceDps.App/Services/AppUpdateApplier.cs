@@ -89,8 +89,9 @@ internal static class AppUpdateApplier
     }
 
     /// <summary>
-    /// 更新のモードの本体。今のバージョンと二重起動の印とファイルが空くのを待ち(時間の上限なし)、置き換えて起動し直す。
-    /// キャンセルしたら何も変えずに元のバージョンを起動し直す。今のバージョンは閉じる途中で止められないので、閉じるのは待つ。
+    /// 更新のモードの本体。今のバージョンと二重起動の印が空くのを待ち(時間の上限なし)、置き換えて起動し直す。
+    /// 置き換えるファイルをほかのプログラムが開いていれば、閉じてから続けるかを確認の窓で聞く。
+    /// キャンセルか「いいえ」なら何も変えずに元のバージョンを起動し直す。今のバージョンは閉じる途中で止められないので、閉じるのは待つ。
     /// </summary>
     public static async Task RunAsync(AppUpdateApplyRequest request, Func<bool> tryAcquireInstance, Action releaseInstance)
     {
@@ -117,8 +118,7 @@ internal static class AppUpdateApplier
         CombatRuntimeHost.ConfigureLogging();
         Log.Information("Applying the update to {Directory}", request.TargetDirectory);
 
-        var failure = await ReplaceFilesAsync(window, request, tryAcquireInstance, cancellation.Token);
-        var isUpdated = failure is null && !cancellation.IsCancellationRequested;
+        var (isUpdated, failure) = await ReplaceFilesAsync(window, request, tryAcquireInstance, cancellation.Token);
 
         window.CloseNow();
         if (failure is { } value)
@@ -135,7 +135,8 @@ internal static class AppUpdateApplier
         }
     }
 
-    private static async Task<AppUpdateFailure?> ReplaceFilesAsync(
+    /// <summary>置き換える。置き換えたか(キャンセル・「いいえ」・失敗なら false)と、失敗の種類(失敗でなければ null)を返す。</summary>
+    private static async Task<(bool IsReplaced, AppUpdateFailure? Failure)> ReplaceFilesAsync(
         UpdateProgressWindow window,
         AppUpdateApplyRequest request,
         Func<bool> tryAcquireInstance,
@@ -149,23 +150,28 @@ internal static class AppUpdateApplier
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             Log.Error(exception, "Could not read the update file lists");
-            return AppUpdateFailure.Replace;
+            return (false, AppUpdateFailure.Replace);
         }
 
         if (!await WaitUntilReadyAsync(window, plan, tryAcquireInstance, cancellationToken))
         {
             Log.Information("The update was cancelled before replacing any file");
-            return null;
+            return (false, null);
         }
 
         window.DisableCancel();
         window.ShowStatus("Update_Progress_Replacing");
         window.ShowProgress(0);
         var progress = new Progress<double>(ratio => window.ShowProgress(ratio));
-        return await Task.Run(() => plan.Apply(progress));
+        var failure = await Task.Run(() => plan.Apply(progress));
+        return (failure is null, failure);
     }
 
-    /// <summary>二重起動の印を取り、置き換えるファイルが全部空くのを待つ。キャンセルされたら false。</summary>
+    /// <summary>
+    /// 二重起動の印を取り(時間の上限なし)、置き換えるファイルが全部改名できるかを確かめる。改名できないファイルがあれば、
+    /// そのファイルと開いているプログラムをログに書き、プログラムを閉じてから続けるかを確認の窓で聞く。
+    /// 「はい」ならもう一度確かめ、「いいえ」かキャンセルなら false。閉じたかは「はい」が押されたときに確かめ、自分では待たない。
+    /// </summary>
     private static async Task<bool> WaitUntilReadyAsync(
         UpdateProgressWindow window,
         ReplacePlan plan,
@@ -179,12 +185,38 @@ internal static class AppUpdateApplier
                 await Task.Delay(WaitPollMilliseconds, cancellationToken);
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
-
-            while (await Task.Run(plan.HasFileInUse, cancellationToken))
+            var hasAsked = false;
+            while (true)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                var filesInUse = await Task.Run(plan.FindFilesInUse, cancellationToken);
+                if (filesInUse.Count == 0)
+                {
+                    if (hasAsked)
+                    {
+                        Log.Information("The files in use were released; continuing the update");
+                    }
+
+                    break;
+                }
+
+                var programs = await Task.Run(
+                    () => FileUsage.FindUsers(filesInUse.Select(plan.GetFullPath).ToList()),
+                    cancellationToken);
+                Log.Warning(
+                    "{Count} files are in use ({Files}); held by {Programs}",
+                    filesInUse.Count,
+                    string.Join(", ", filesInUse),
+                    programs.Count == 0 ? "unknown programs" : string.Join(", ", programs));
+
+                cancellationToken.ThrowIfCancellationRequested();
                 window.ShowStatus("Update_Progress_WaitingForFiles");
-                await Task.Delay(WaitPollMilliseconds, cancellationToken);
+                hasAsked = true;
+                if (!await ConfirmContinueAsync(window, programs, filesInUse[0]))
+                {
+                    Log.Information("The user stopped the update because files were in use");
+                    return false;
+                }
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -194,6 +226,15 @@ internal static class AppUpdateApplier
         {
             return false;
         }
+    }
+
+    /// <summary>ファイルを開いているプログラムを閉じてから続けるかを聞く。閉じるまで待つ窓なので、窓の移動の最中なら終わってから出す。</summary>
+    private static Task<bool> ConfirmContinueAsync(UpdateProgressWindow owner, IReadOnlyList<string> programs, string file)
+    {
+        var completion = new TaskCompletionSource<bool>();
+        OwnerModalWindow.RunWhenNotMovingOrSizing(
+            () => completion.SetResult(UpdateFileInUseMessage.Show(owner, programs, file)));
+        return completion.Task;
     }
 
     private static void RestartApplication(string targetDirectory, bool isUpdated)
@@ -316,32 +357,20 @@ internal static class AppUpdateApplier
             return files;
         }
 
-        public bool HasFileInUse()
+        /// <summary>
+        /// ほかのプロセスに開かれていて、今は改名できないファイル(アプリのフォルダからの相対パス)。置き換え(<see cref="Apply"/>)は改名なので、
+        /// 判定も改名と同じ条件にする(<see cref="FileUsage.IsInUse"/>。改名を許す開き方で開かれているだけのファイルは待たない)。
+        /// </summary>
+        public List<string> FindFilesInUse()
         {
             return _filesToInstall.Concat(_filesToRemove)
-                .Any(file => IsInUse(Path.Combine(_targetDirectory, file)));
+                .Where(file => FileUsage.IsInUse(Path.Combine(_targetDirectory, file)))
+                .ToList();
         }
 
-        private static bool IsInUse(string path)
+        public string GetFullPath(string file)
         {
-            try
-            {
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                return false;
-            }
-            catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // 権限の問題は待っても直らない。置き換えの失敗として知らせる。
-                return false;
-            }
-            catch (IOException)
-            {
-                return true;
-            }
+            return Path.Combine(_targetDirectory, file);
         }
 
         /// <summary>置き換える。失敗したら全部戻す。成功なら null。</summary>

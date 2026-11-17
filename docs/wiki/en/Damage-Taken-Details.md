@@ -4,7 +4,7 @@ This widget shows the damage taken by one player in a table split into normal, c
 
 ## How to open
 
-- On the "Damage Taken Details" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people who have records of taking damage, from the most damage taken (the default is yourself).
+- On the "Damage Taken Details" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people who have records of taking damage, from the most damage taken (the default is the person at the top).
 - You can also open it by clicking a row in the [Damage Taken Log](Damage-Taken-Log), or by right-clicking a row and choosing "Damage Taken Details".
 - A window is opened per target. If a window for the same target is already open, that window is brought to the front.
 

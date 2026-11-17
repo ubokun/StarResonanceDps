@@ -35,7 +35,7 @@ internal static class Program
    dashboard.Loaded += (_, _) =>
    {
     ((System.Windows.Threading.DispatcherTimer)typeof(StarResonanceDps.App.Views.CombatTimelineWindow).GetField("_timer", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(dashboard)!).Stop();
-    var demo = new CombatTimelineSnapshot(123, 180, "検証データ · PT DPS · クエスト時間", [new(60,61,100),new(70,71,300),new(100,101,150)],
+    var demo = new CombatTimelineSnapshot(123, 180, "検証データ · PT DPS · クエスト時間", [new(61,100),new(71,300),new(101,150)],
       [new(70,"スキル",1,"検証プレイヤー","スキルA"),new(80,"イマジン",1,"検証プレイヤー","イマジンB"),new(90,"因子効果",1,"検証プレイヤー","因子C"),new(100,"敵行動",2,"検証ボス","敵の大技")],
       [new(1,"検証プレイヤー"),new(2,"検証ボス")]);
     typeof(StarResonanceDps.App.Views.CombatTimelineWindow).GetMethod("SetSnapshot", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(dashboard, [demo]);

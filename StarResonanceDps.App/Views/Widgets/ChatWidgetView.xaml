@@ -26,6 +26,11 @@
             <Setter Property="Foreground" Value="#DDDDDD" />
         </Style>
 
+        <!-- 位置を共有したリンク。下線と手の形だけで、色はテキストカラー「メッセージ」のまま(URL とは別で、外へは出ない)。 -->
+        <Style x:Key="Chat.PositionLink" TargetType="Hyperlink" BasedOn="{StaticResource Hyperlink.Base}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+
         <!-- 本文に混ぜる顔文字。書体の色の層で描き、大きさと色は行の文字のまま。選んだ文字とコピーでは絵文字の文字として数える。 -->
         <DataTemplate DataType="{x:Type viewModels:ChatEmojiSegment}">
             <controls:ColorEmoji Emoji="{Binding Emoji}"
@@ -203,6 +208,7 @@
                                    Foreground="{Binding MessageBrush}"
                                    TextWrapping="Wrap"
                                    behaviors:TextSegmentsBehavior.LinkStyle="{StaticResource Chat.Link}"
+                                   behaviors:TextSegmentsBehavior.ActionLinkStyle="{StaticResource Chat.PositionLink}"
                                    behaviors:TextSegmentsBehavior.Segments="{Binding Segments}" />
                     </StackPanel>
                 </Grid>

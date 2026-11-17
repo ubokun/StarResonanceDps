@@ -4,7 +4,7 @@ This widget shows one player's healing per second as a line graph over the battl
 
 ## How to open
 
-- On the "HPS Trend Graph" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [HPS Meter](HPS-Meter), following the HPS Meter's "Filter settings" (the default is yourself).
+- On the "HPS Trend Graph" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [HPS Meter](HPS-Meter), following the HPS Meter's "Filter settings" (the default is the person at the top).
 - You can also open it by right-clicking a row in the [HPS Meter](HPS-Meter) and choosing "HPS Trend Graph".
 - A window is opened per target. If a window for the same target is already open, that window is brought to the front.
 

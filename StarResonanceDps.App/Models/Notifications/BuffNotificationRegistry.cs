@@ -1,5 +1,6 @@
 // This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 
+using System.Windows.Threading;
 using StarResonanceDps.Core.CombatRuntime;
 
 namespace StarResonanceDps.App.Models.Notifications;
@@ -22,12 +23,23 @@ public readonly record struct BuffNotificationTarget(bool IsEntity, long Id)
 /// バフ・デバフ効果切れは、窓(カード・グループ)が見ている間だけ、そのバフがその窓の種類の設定の「通知対象」に入っているときに出す。
 /// 通知対象でない窓と見張りは、効果切れを出さない借り方をする(<c>notifiesExpiry</c>)。同じバフを見ている窓のどれかが出す借り方なら出す。
 /// </para>
+///
+/// <para>
+/// 通知条件が「切れる1〜3秒前」のとき、窓の観測は1秒ごとなので、切れる予定の時刻の N秒前を過ぎたかを <see cref="ExpiryLeadPollInterval"/> ごとに確かめる
+/// (<see cref="BuffNotificationTracker.PollExpiryLead"/>)。確かめるのは、N秒前を待っている判定がある間だけ。
+/// </para>
 /// </summary>
 public sealed class BuffNotificationRegistry
 {
     private const string GroupKeyPrefix = "group:";
 
+    /// <summary>効果切れの N秒前を確かめる間隔。予兆技・リキャスト完了と同じ間隔。</summary>
+    private static readonly TimeSpan ExpiryLeadPollInterval = TimeSpan.FromMilliseconds(250);
+
     private readonly Dictionary<(BuffNotificationTarget Target, string BuffKey), Entry> _entries = [];
+
+    /// <summary>効果切れの N秒前を確かめる時計。初めて待つ判定ができたとき(画面のスレッド)に作る。</summary>
+    private DispatcherTimer? _expiryLeadTimer;
 
     public static BuffNotificationRegistry Instance { get; } = new();
 
@@ -80,6 +92,42 @@ public sealed class BuffNotificationRegistry
         }
     }
 
+    /// <summary>判定が効果切れの N秒前を待ち始めたら、確かめる時計を動かす。</summary>
+    internal void OnObserved(Entry entry)
+    {
+        if (!entry.Tracker.IsExpiryLeadArmed || _expiryLeadTimer is { IsEnabled: true })
+        {
+            return;
+        }
+
+        if (_expiryLeadTimer is null)
+        {
+            _expiryLeadTimer = new DispatcherTimer
+            {
+                Interval = ExpiryLeadPollInterval
+            };
+            _expiryLeadTimer.Tick += ExpiryLeadTimer_Tick;
+        }
+
+        _expiryLeadTimer.Start();
+    }
+
+    private void ExpiryLeadTimer_Tick(object? sender, EventArgs e)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var anyArmed = false;
+        foreach (var entry in _entries.Values)
+        {
+            entry.Tracker.PollExpiryLead(nowUtc, entry.ExpiryWatchCount > 0);
+            anyArmed |= entry.Tracker.IsExpiryLeadArmed;
+        }
+
+        if (!anyArmed)
+        {
+            _expiryLeadTimer!.Stop();
+        }
+    }
+
     internal sealed class Entry
     {
         public BuffNotificationTracker Tracker { get; } = new();
@@ -127,6 +175,7 @@ public sealed class BuffNotificationWatch : IDisposable
         if (!_isDisposed)
         {
             _entry.Tracker.Observe(snapshot, targetName, _entry.ExpiryWatchCount > 0);
+            _registry.OnObserved(_entry);
         }
     }
 

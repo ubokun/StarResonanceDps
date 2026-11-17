@@ -14,7 +14,8 @@ namespace StarResonanceDps.App.Models.Notifications;
 /// 差し込める項目は、バフ・デバフ効果切れが {TargetName}(対象の名前)と {BuffName}(カードのバフ名)と {CasterName}(付与者プレイヤー名)、
 /// 薬剤・料理効果切れが {TargetName} と {BuffName}、
 /// 予兆技が {EntityName}(タイムラインの行と同じ名前)と {SkillName}、入場確認が {Content}(マッチング先のコンテンツ名か、パーティで入る場所の名前)、
-/// HP低下とプレイヤー出現が {PlayerName}(プレイヤーリストの行と同じ名前)、エンティティ出現が {EntityName}(内部IDの注記なしのエンティティ名)、
+/// HP低下とプレイヤー出現が {PlayerName}(プレイヤーリストの行と同じ名前)、リキャスト完了が {SkillName}(使えるようになった自分のスキル)、
+/// エンティティ出現が {EntityName}(内部IDの注記なしのエンティティ名)、
 /// 狙われるプレイヤーが {PlayerName} と {EntityName}、エンティティ詠唱が {EntityName}(詠唱した敵の名前)、
 /// プライベートトークが {PlayerName}(送った人の名前。チャットの窓のタイトルと同じ規則)、
 /// ワールドチャットが {PlayerName}(発言した人の名前。プライベートトークと同じ規則)。
@@ -22,14 +23,20 @@ namespace StarResonanceDps.App.Models.Notifications;
 /// </summary>
 public static partial class NotificationTextFormatter
 {
-    /// <summary>項目の既定の文の鍵。</summary>
-    public static string GetDefaultKey(NotificationKind kind)
+    /// <summary>
+    /// 項目の既定の文の鍵。バフ・デバフ効果切れは通知条件(<paramref name="buffExpiredConditionIndex"/>)で替える
+    /// (切れるときは切れた後に出すので「切れました」、切れる1〜3秒前は「切れそうです」)。ほかの項目は使わない。
+    /// </summary>
+    public static string GetDefaultKey(NotificationKind kind, int buffExpiredConditionIndex)
     {
         return kind switch
         {
+            NotificationKind.BuffExpired when AppConfigDefaults.BuffExpiredLeadSeconds[buffExpiredConditionIndex] > 0
+                => "BuffCardNotification_ExpiringSoon_Default",
             NotificationKind.EntryConfirmation => "EntryConfirmationNotification_Default",
             NotificationKind.HealthLow => "PlayerListNotification_HealthLow_Default",
             NotificationKind.PlayerAppeared => "PlayerAppearedNotification_Default",
+            NotificationKind.CooldownReady => "CooldownReadyNotification_Default",
             NotificationKind.EntityAppeared => "EntityAppearedNotification_Default",
             NotificationKind.Targeted => "TargetedNotification_Default",
             NotificationKind.BuffExpired => "BuffCardNotification_Expired_Default",
@@ -45,8 +52,9 @@ public static partial class NotificationTextFormatter
     /// <summary>今の設定で使う書式。保存した値が無ければ表示言語の既定の文。</summary>
     public static string ResolveFormat(NotificationKind kind)
     {
-        return ConfigManager.Instance.GetNotificationItem(kind).FormatString
-            ?? LocalizationManager.Instance.GetString(GetDefaultKey(kind));
+        var item = ConfigManager.Instance.GetNotificationItem(kind);
+        return item.FormatString
+            ?? LocalizationManager.Instance.GetString(GetDefaultKey(kind, item.BuffExpiredConditionIndex));
     }
 
     /// <summary>
@@ -93,6 +101,12 @@ public static partial class NotificationTextFormatter
         return regex.Replace(format, _ => name);
     }
 
+    /// <summary>リキャスト完了の文。{SkillName} は使えるようになった自分のスキル。</summary>
+    public static string FormatCooldownReady(string format, string skillName)
+    {
+        return GetSkillNameFieldRegex().Replace(format, _ => skillName);
+    }
+
     /// <summary>狙われるプレイヤーの文。{PlayerName} は狙われている人、{EntityName} は狙っている敵。</summary>
     public static string FormatTargeted(string format, string playerName, string entityName)
     {
@@ -132,6 +146,7 @@ public static partial class NotificationTextFormatter
             // 名前はプレイヤー名の書式の見本と同じ。
             NotificationKind.HealthLow => FormatHealthLow(format, localization.GetString("Settings_PlayerInfo_PreviewName")),
             NotificationKind.PlayerAppeared => FormatAppeared(kind, format, localization.GetString("Settings_PlayerInfo_PreviewName")),
+            NotificationKind.CooldownReady => FormatCooldownReady(format, localization.GetString("Settings_SkillInfo_PreviewName")),
             NotificationKind.EntityAppeared => FormatAppeared(kind, format, localization.GetString("Settings_EntityInfo_PreviewName")),
             NotificationKind.Targeted => FormatTargeted(
                 format,
@@ -180,6 +195,9 @@ public static partial class NotificationTextFormatter
 
     [GeneratedRegex(@"\{EntityName\}", RegexOptions.IgnoreCase)]
     private static partial Regex GetEntityNameFieldRegex();
+
+    [GeneratedRegex(@"\{SkillName\}", RegexOptions.IgnoreCase)]
+    private static partial Regex GetSkillNameFieldRegex();
 
     [GeneratedRegex(@"\{(PlayerName|EntityName)\}", RegexOptions.IgnoreCase)]
     private static partial Regex GetTargetedFieldRegex();}

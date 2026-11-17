@@ -319,6 +319,21 @@
   <data name="BuffCardNotification_Expired_Default" xml:space="preserve">
     <value>{TargetName}的{BuffName}效果已结束</value>
   </data>
+  <data name="BuffCardNotification_ExpiringSoon_Default" xml:space="preserve">
+    <value>{TargetName}的{BuffName}效果即将结束</value>
+  </data>
+  <data name="BuffExpiredCondition_OnExpiry" xml:space="preserve">
+    <value>效果结束时</value>
+  </data>
+  <data name="BuffExpiredCondition_1" xml:space="preserve">
+    <value>效果结束前1秒</value>
+  </data>
+  <data name="BuffExpiredCondition_2" xml:space="preserve">
+    <value>效果结束前2秒</value>
+  </data>
+  <data name="BuffExpiredCondition_3" xml:space="preserve">
+    <value>效果结束前3秒</value>
+  </data>
   <data name="BuffCardNotification_CuisinePotionLow_Default" xml:space="preserve">
     <value>{TargetName}的{BuffName}效果即将结束</value>
   </data>
@@ -401,6 +416,27 @@
   </data>
   <data name="TelegraphedSkillCondition_3" xml:space="preserve">
     <value>发动前3秒</value>
+  </data>
+  <data name="Notification_CooldownReady" xml:space="preserve">
+    <value>冷却完毕</value>
+  </data>
+  <data name="CooldownReadyNotification_Default" xml:space="preserve">
+    <value>{SkillName}已可使用</value>
+  </data>
+  <data name="CooldownReadyCondition_OnReady" xml:space="preserve">
+    <value>可用时</value>
+  </data>
+  <data name="CooldownReadyCondition_1" xml:space="preserve">
+    <value>可用前1秒</value>
+  </data>
+  <data name="CooldownReadyCondition_2" xml:space="preserve">
+    <value>可用前2秒</value>
+  </data>
+  <data name="CooldownReadyCondition_3" xml:space="preserve">
+    <value>可用前3秒</value>
+  </data>
+  <data name="Notification_CooldownSelfOnlyNote" xml:space="preserve">
+    <value>※仅通知自己的技能</value>
   </data>
   <data name="Settings_Section_Basic_Title" xml:space="preserve">
     <value>基础设置</value>
@@ -657,6 +693,9 @@
     <value>将关闭应用进行更新，然后重新启动。
 设置和历史记录会保留。</value>
   </data>
+  <data name="Update_Progress_Comparing" xml:space="preserve">
+    <value>正在检查已更改的文件…</value>
+  </data>
   <data name="Update_Progress_Downloading" xml:space="preserve">
     <value>正在下载…</value>
   </data>
@@ -668,6 +707,20 @@
   </data>
   <data name="Update_Progress_WaitingForFiles" xml:space="preserve">
     <value>正在等待占用的文件释放…</value>
+  </data>
+  <data name="Update_FileInUse_Message" xml:space="preserve">
+    <value>其他程序正在使用文件，无法更新。</value>
+  </data>
+  <data name="Update_FileInUse_Detail" xml:space="preserve">
+    <value>关闭{0}后点击“是”即可继续更新。
+点击“否”将停止更新并启动原版本。</value>
+  </data>
+  <data name="Update_FileInUseUnknownProgram_Detail" xml:space="preserve">
+    <value>关闭正在使用{0}的程序后点击“是”即可继续更新。
+点击“否”将停止更新并启动原版本。</value>
+  </data>
+  <data name="Update_Progress_ProgramSeparator" xml:space="preserve">
+    <value>、</value>
   </data>
   <data name="Update_Progress_Replacing" xml:space="preserve">
     <value>正在替换文件…</value>
@@ -1212,6 +1265,9 @@
   <data name="Classes_Boss" xml:space="preserve">
     <value>首领</value>
   </data>
+  <data name="Classes_Entity" xml:space="preserve">
+    <value>实体</value>
+  </data>
   <data name="Classes_Unknown" xml:space="preserve">
     <value>未知职业</value>
   </data>
@@ -1346,6 +1402,9 @@
   </data>
   <data name="Widget_DebuffList" xml:space="preserve">
     <value>减益列表</value>
+  </data>
+  <data name="Widget_BuffUptime" xml:space="preserve">
+    <value>增益覆盖率</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>取消</value>
@@ -1507,6 +1566,18 @@
   </data>
   <data name="Settings_Graph_ShowSkillLog" xml:space="preserve">
     <value>显示技能日志</value>
+  </data>
+  <data name="Settings_BuffUptime_ShowsPermanentBuffs" xml:space="preserve">
+    <value>显示常驻增益</value>
+  </data>
+  <data name="Settings_BuffUptime_ShowsCuisinePotion" xml:space="preserve">
+    <value>显示料理·药剂</value>
+  </data>
+  <data name="Settings_BuffUptime_PixelsPerSecond" xml:space="preserve">
+    <value>1秒的宽度</value>
+  </data>
+  <data name="Settings_BuffUptime_PixelsPerSecond_Option" xml:space="preserve">
+    <value>{0}px</value>
   </data>
   <data name="Widget_DamageSkillDetail" xml:space="preserve">
     <value>技能详情(伤害)</value>
@@ -1752,10 +1823,67 @@
     <value>复活列表</value>
   </data>
   <data name="Widget_EntityInfo" xml:space="preserve">
-    <value>实体信息</value>
+    <value>目标信息</value>
   </data>
   <data name="Widget_Chat" xml:space="preserve">
     <value>聊天</value>
+  </data>
+  <data name="Widget_Map" xml:space="preserve">
+    <value>地图</value>
+  </data>
+  <data name="Settings_Map_Opacity" xml:space="preserve">
+    <value>地图不透明度</value>
+  </data>
+  <data name="Settings_Map_PlayerFilter" xml:space="preserve">
+    <value>玩家</value>
+  </data>
+  <data name="Settings_Map_EntityFilter" xml:space="preserve">
+    <value>实体</value>
+  </data>
+  <data name="Settings_Map_PlayerName" xml:space="preserve">
+    <value>玩家名称</value>
+  </data>
+  <data name="Settings_Map_EntityName" xml:space="preserve">
+    <value>实体名称</value>
+  </data>
+  <data name="Settings_Map_HideNamesInCombat" xml:space="preserve">
+    <value>交战中隐藏名称</value>
+  </data>
+  <data name="Settings_Map_SimplifyPlayersInCombat" xml:space="preserve">
+    <value>简化显示交战中玩家</value>
+  </data>
+  <data name="Settings_Map_AlwaysSimplifySelf" xml:space="preserve">
+    <value>始终简化显示自己</value>
+  </data>
+  <data name="MapHideNamesTarget_None" xml:space="preserve">
+    <value>不隐藏</value>
+  </data>
+  <data name="MapInCombatTarget_Players" xml:space="preserve">
+    <value>仅玩家</value>
+  </data>
+  <data name="MapInCombatTarget_Entities" xml:space="preserve">
+    <value>仅实体</value>
+  </data>
+  <data name="MapPlayerNameDisplay_MembersOnly" xml:space="preserve">
+    <value>仅显示队伍成员</value>
+  </data>
+  <data name="MapPlayerNameDisplay_NonMembersOnly" xml:space="preserve">
+    <value>显示非队伍成员</value>
+  </data>
+  <data name="Map_ReturnToCurrentMap" xml:space="preserve">
+    <value>返回自己所在的地图</value>
+  </data>
+  <data name="Map_ClearSharedPosition" xml:space="preserve">
+    <value>清除位置标记</value>
+  </data>
+  <data name="EntityInfo_ReturnToTarget" xml:space="preserve">
+    <value>返回目标</value>
+  </data>
+  <data name="Map_FooterEntities" xml:space="preserve">
+    <value>实体</value>
+  </data>
+  <data name="Map_FooterPlayers" xml:space="preserve">
+    <value>玩家</value>
   </data>
   <data name="Chat_Channel_World" xml:space="preserve">
     <value>世界</value>
@@ -1876,6 +2004,9 @@
   </data>
   <data name="Settings_Widget_DataStatus" xml:space="preserve">
     <value>小组件状态</value>
+  </data>
+  <data name="Settings_Widget_HideWhenGameInactive" xml:space="preserve">
+    <value>游戏未激活时隐藏小组件</value>
   </data>
   <data name="WidgetDataStatusDisplay_NonNormalOnly" xml:space="preserve">
     <value>仅非正常状态时显示</value>
@@ -2053,6 +2184,15 @@
   </data>
   <data name="Notification_TargetIdSourceNote" xml:space="preserve">
     <value>※ID可通过显示设置的“内部ID”显示，ID和名称可从小组件“时间轴”复制</value>
+  </data>
+  <data name="Notification_CooldownSkillName_Placeholder" xml:space="preserve">
+    <value>例: 奥义！时间法令</value>
+  </data>
+  <data name="Notification_CooldownSkillId_Placeholder" xml:space="preserve">
+    <value>例: 3921</value>
+  </data>
+  <data name="Notification_CooldownSkillIdSourceNote" xml:space="preserve">
+    <value>※ID可通过显示设置的“内部ID”显示，并可在小组件“玩家列表”的技能栏位中查看</value>
   </data>
   <data name="Notification_TargetMultipleNote" xml:space="preserve">
     <value>※可用“|”分隔输入多个</value>

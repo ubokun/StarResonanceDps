@@ -319,6 +319,21 @@ Restart VOICEVOX.</value>
   <data name="BuffCardNotification_Expired_Default" xml:space="preserve">
     <value>{BuffName} on {TargetName} has expired</value>
   </data>
+  <data name="BuffCardNotification_ExpiringSoon_Default" xml:space="preserve">
+    <value>{BuffName} on {TargetName} is about to expire</value>
+  </data>
+  <data name="BuffExpiredCondition_OnExpiry" xml:space="preserve">
+    <value>On expiry</value>
+  </data>
+  <data name="BuffExpiredCondition_1" xml:space="preserve">
+    <value>1s before expiry</value>
+  </data>
+  <data name="BuffExpiredCondition_2" xml:space="preserve">
+    <value>2s before expiry</value>
+  </data>
+  <data name="BuffExpiredCondition_3" xml:space="preserve">
+    <value>3s before expiry</value>
+  </data>
   <data name="BuffCardNotification_CuisinePotionLow_Default" xml:space="preserve">
     <value>{TargetName}'s {BuffName} effect is about to expire</value>
   </data>
@@ -401,6 +416,27 @@ Restart VOICEVOX.</value>
   </data>
   <data name="TelegraphedSkillCondition_3" xml:space="preserve">
     <value>3s before activation</value>
+  </data>
+  <data name="Notification_CooldownReady" xml:space="preserve">
+    <value>Cooldown ready</value>
+  </data>
+  <data name="CooldownReadyNotification_Default" xml:space="preserve">
+    <value>{SkillName} is ready</value>
+  </data>
+  <data name="CooldownReadyCondition_OnReady" xml:space="preserve">
+    <value>When ready</value>
+  </data>
+  <data name="CooldownReadyCondition_1" xml:space="preserve">
+    <value>1s before ready</value>
+  </data>
+  <data name="CooldownReadyCondition_2" xml:space="preserve">
+    <value>2s before ready</value>
+  </data>
+  <data name="CooldownReadyCondition_3" xml:space="preserve">
+    <value>3s before ready</value>
+  </data>
+  <data name="Notification_CooldownSelfOnlyNote" xml:space="preserve">
+    <value>Note: Only your own skills are notified.</value>
   </data>
   <data name="Settings_Section_Basic_Title" xml:space="preserve">
     <value>General</value>
@@ -657,6 +693,9 @@ Its settings will also be deleted.</value>
     <value>The app will close, update, and restart.
 Your settings and history are kept.</value>
   </data>
+  <data name="Update_Progress_Comparing" xml:space="preserve">
+    <value>Checking for changed files…</value>
+  </data>
   <data name="Update_Progress_Downloading" xml:space="preserve">
     <value>Downloading…</value>
   </data>
@@ -668,6 +707,20 @@ Your settings and history are kept.</value>
   </data>
   <data name="Update_Progress_WaitingForFiles" xml:space="preserve">
     <value>Waiting for files in use to be released…</value>
+  </data>
+  <data name="Update_FileInUse_Message" xml:space="preserve">
+    <value>The update cannot continue because another program is using a file.</value>
+  </data>
+  <data name="Update_FileInUse_Detail" xml:space="preserve">
+    <value>Close {0}, then click "Yes" to continue the update.
+Click "No" to stop the update and start the previous version.</value>
+  </data>
+  <data name="Update_FileInUseUnknownProgram_Detail" xml:space="preserve">
+    <value>Close the program that is using {0}, then click "Yes" to continue the update.
+Click "No" to stop the update and start the previous version.</value>
+  </data>
+  <data name="Update_Progress_ProgramSeparator" xml:space="preserve">
+    <value>, </value>
   </data>
   <data name="Update_Progress_Replacing" xml:space="preserve">
     <value>Replacing files…</value>
@@ -1211,6 +1264,9 @@ Wait a moment and copy again.</value>
   <data name="Classes_Boss" xml:space="preserve">
     <value>Boss</value>
   </data>
+  <data name="Classes_Entity" xml:space="preserve">
+    <value>Entity</value>
+  </data>
   <data name="Classes_Unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
@@ -1345,6 +1401,9 @@ Wait a moment and copy again.</value>
   </data>
   <data name="Widget_DebuffList" xml:space="preserve">
     <value>Debuff List</value>
+  </data>
+  <data name="Widget_BuffUptime" xml:space="preserve">
+    <value>Buff Uptime</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancel</value>
@@ -1506,6 +1565,18 @@ It is strongly recommended to update to this version, or higher, to avoid proble
   </data>
   <data name="Settings_Graph_ShowSkillLog" xml:space="preserve">
     <value>Show Skill Log</value>
+  </data>
+  <data name="Settings_BuffUptime_ShowsPermanentBuffs" xml:space="preserve">
+    <value>Show permanent buffs</value>
+  </data>
+  <data name="Settings_BuffUptime_ShowsCuisinePotion" xml:space="preserve">
+    <value>Show cuisine/potions</value>
+  </data>
+  <data name="Settings_BuffUptime_PixelsPerSecond" xml:space="preserve">
+    <value>Width per second</value>
+  </data>
+  <data name="Settings_BuffUptime_PixelsPerSecond_Option" xml:space="preserve">
+    <value>{0}px</value>
   </data>
   <data name="Widget_DamageSkillDetail" xml:space="preserve">
     <value>Skill Details (Damage)</value>
@@ -1751,10 +1822,67 @@ It is strongly recommended to update to this version, or higher, to avoid proble
     <value>Revive List</value>
   </data>
   <data name="Widget_EntityInfo" xml:space="preserve">
-    <value>Entity Info</value>
+    <value>Target Info</value>
   </data>
   <data name="Widget_Chat" xml:space="preserve">
     <value>Chat</value>
+  </data>
+  <data name="Widget_Map" xml:space="preserve">
+    <value>Map</value>
+  </data>
+  <data name="Settings_Map_Opacity" xml:space="preserve">
+    <value>Map Opacity</value>
+  </data>
+  <data name="Settings_Map_PlayerFilter" xml:space="preserve">
+    <value>Players</value>
+  </data>
+  <data name="Settings_Map_EntityFilter" xml:space="preserve">
+    <value>Entities</value>
+  </data>
+  <data name="Settings_Map_PlayerName" xml:space="preserve">
+    <value>Player Names</value>
+  </data>
+  <data name="Settings_Map_EntityName" xml:space="preserve">
+    <value>Entity Names</value>
+  </data>
+  <data name="Settings_Map_HideNamesInCombat" xml:space="preserve">
+    <value>Hide Names In Combat</value>
+  </data>
+  <data name="Settings_Map_SimplifyPlayersInCombat" xml:space="preserve">
+    <value>Simplify Players In Combat</value>
+  </data>
+  <data name="Settings_Map_AlwaysSimplifySelf" xml:space="preserve">
+    <value>Always Simplify Self</value>
+  </data>
+  <data name="MapHideNamesTarget_None" xml:space="preserve">
+    <value>Don't Hide</value>
+  </data>
+  <data name="MapInCombatTarget_Players" xml:space="preserve">
+    <value>Players Only</value>
+  </data>
+  <data name="MapInCombatTarget_Entities" xml:space="preserve">
+    <value>Entities Only</value>
+  </data>
+  <data name="MapPlayerNameDisplay_MembersOnly" xml:space="preserve">
+    <value>Show Party Members Only</value>
+  </data>
+  <data name="MapPlayerNameDisplay_NonMembersOnly" xml:space="preserve">
+    <value>Show Non-Party Members</value>
+  </data>
+  <data name="Map_ReturnToCurrentMap" xml:space="preserve">
+    <value>Back to My Map</value>
+  </data>
+  <data name="Map_ClearSharedPosition" xml:space="preserve">
+    <value>Clear Position Marker</value>
+  </data>
+  <data name="EntityInfo_ReturnToTarget" xml:space="preserve">
+    <value>Back to Target</value>
+  </data>
+  <data name="Map_FooterEntities" xml:space="preserve">
+    <value>Entities</value>
+  </data>
+  <data name="Map_FooterPlayers" xml:space="preserve">
+    <value>Players</value>
   </data>
   <data name="Chat_Channel_World" xml:space="preserve">
     <value>World</value>
@@ -1873,6 +2001,9 @@ It is strongly recommended to update to this version, or higher, to avoid proble
   </data>
   <data name="Settings_Widget_DataStatus" xml:space="preserve">
     <value>Widget Status</value>
+  </data>
+  <data name="Settings_Widget_HideWhenGameInactive" xml:space="preserve">
+    <value>Hide widgets when the game is inactive</value>
   </data>
   <data name="WidgetDataStatusDisplay_NonNormalOnly" xml:space="preserve">
     <value>Show Only When Not Normal</value>
@@ -2050,6 +2181,15 @@ It is strongly recommended to update to this version, or higher, to avoid proble
   </data>
   <data name="Notification_TargetIdSourceNote" xml:space="preserve">
     <value>Note: Show IDs with "Internal ID" in Display, and copy IDs and names from the "Timeline" widget.</value>
+  </data>
+  <data name="Notification_CooldownSkillName_Placeholder" xml:space="preserve">
+    <value>e.g. Arcane! Time Decree</value>
+  </data>
+  <data name="Notification_CooldownSkillId_Placeholder" xml:space="preserve">
+    <value>e.g. 3921</value>
+  </data>
+  <data name="Notification_CooldownSkillIdSourceNote" xml:space="preserve">
+    <value>Note: Show IDs with "Internal ID" in Display, and check them on the skill slots of the "Player List" widget.</value>
   </data>
   <data name="Notification_TargetMultipleNote" xml:space="preserve">
     <value>Note: Separate multiple entries with "|".</value>

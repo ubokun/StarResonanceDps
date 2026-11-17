@@ -4,7 +4,7 @@ This widget shows one player's Resilience Break per second (how much of the enem
 
 ## How to open
 
-- On the "BPS Trend Graph" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [Break Meter](Break-Meter), following the Break Meter's "Filter settings" (the default is yourself).
+- On the "BPS Trend Graph" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [Break Meter](Break-Meter), following the Break Meter's "Filter settings" (the default is the person at the top).
 - You can also open it by right-clicking a row in the [Break Meter](Break-Meter) and choosing "BPS Trend Graph".
 - A window is opened per target. If a window for the same target is already open, that window is brought to the front.
 

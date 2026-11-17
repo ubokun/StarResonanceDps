@@ -9,7 +9,7 @@ namespace StarResonanceDps.App.ViewModels;
 
 public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataStatusSource
 {
-    private readonly long? _requestedCharacterId;
+    private long? _requestedCharacterId;
     private long? _representedCharacterId;
     private PlayerRosterEntry? _selectedPlayer;
     private string _headerText = string.Empty;
@@ -134,13 +134,11 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
     }
 
     /// <summary>
-    /// ログアウトで起動直後の状態へ戻したとき。覚えている素性のうち、保存して次の起動へ持ち越す名前と UID だけを残し、
-    /// NPC の印と職業は捨てる(起動時の復元と同じ)。出していた行も、キャラが替わり得るので捨てる。
+    /// ログアウトで起動直後の状態へ戻したとき。出していた行は、キャラが替わり得るので捨てる。
+    /// 覚えている素性(名前・UID・NPC の印・職業)は保存して次の起動へ持ち越す値なので残す(起動時の復元と同じ)。
     /// </summary>
     public void ResetToStartup()
     {
-        _lastKnownIsNpc = false;
-        _lastKnownProfessionId = 0;
         if (_selectedPlayer is not null)
         {
             _selectedPlayer = null;
@@ -148,13 +146,7 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
         }
 
         RenderHeaderText();
-        OnResetToStartup();
         RefreshDataStatus();
-    }
-
-    /// <summary>ログアウトで起動直後の状態へ戻したとき。行が無くても覚えている素性から表示を作る窓だけが上書きする。</summary>
-    protected virtual void OnResetToStartup()
-    {
     }
 
     /// <summary>
@@ -166,9 +158,9 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
     public WidgetListItemViewModel PlayerWidget { get; }
 
     /// <summary>
-    /// 窓を開いたときの指定。<c>null</c> は「自分」。
-    /// <b>保存にはこれを使う。</b>解決後のIDを保存すると、キャラを変えたときに
-    /// 前のキャラの窓として復元されてしまう。
+    /// 窓を開いたときの指定。<c>null</c> は相手を持たない窓(<see cref="IsAwaitingPlayer"/>)。空の窓がその人の窓になったら、その人(<see cref="EnterPlayer"/>)。
+    /// <b>保存にはこれを使う。</b>複数開けるウィジェットの人の窓を相手の指定なしで保存したもの(前の版の自分の窓)は、窓の管理が復元のときに
+    /// 最後に映した相手(<see cref="LastKnownPlayerUid"/>)の窓として開く。
     /// </summary>
     public long? RequestedCharacterId => _requestedCharacterId;
 
@@ -178,19 +170,39 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
     /// <summary>最後に確定した相手のUID。名前と対にして保存する。</summary>
     public long LastKnownPlayerUid => _lastKnownPlayerUid;
 
-    /// <summary>最後に確定した相手の NPC の印。</summary>
-    protected bool LastKnownIsNpc => _lastKnownIsNpc;
+    /// <summary>最後に確定した相手が NPC か。保存して、次の起動でタイトルに使う。</summary>
+    public bool LastKnownIsNpc => _lastKnownIsNpc;
 
-    /// <summary>最後に確定した相手の職業。</summary>
-    protected int LastKnownProfessionId => _lastKnownProfessionId;
+    /// <summary>最後に確定した相手の職業(分からなければ 0)。保存して、次の起動でタイトルに使う。</summary>
+    public int LastKnownProfessionId => _lastKnownProfessionId;
 
-    /// <summary>自分を映す窓か。「自分」の指定で開いた窓と、覚えている UID が自分のものの窓。</summary>
-    protected bool IsSelfTarget => _requestedCharacterId is null
-        || (AppState.PlayerUID != 0 && _lastKnownPlayerUid == AppState.PlayerUID);
+    /// <summary>自分を映す窓か(<see cref="RepresentsSelf"/>)。</summary>
+    protected bool IsSelfTarget => RepresentsSelf();
 
     /// <summary>
-    /// 保存しておきたい素性が空から確定に変わったときに上がる。
-    /// 対象一覧を書き直す契機になる(窓の開閉だけだと、開いた直後はまだ空のまま)。
+    /// 相手を持たない窓(相手の指定なし)か。複数開けるウィジェットの人の窓では、一覧にプレイヤーが出るのを待つ空の窓で、
+    /// 窓の管理がその人の窓にする(<see cref="EnterPlayer"/>)。1枚だけの自分の窓とバフ・デバフカードの自分のカードは自分を映し、窓の管理は待たせない。
+    /// </summary>
+    public bool IsAwaitingPlayer => _requestedCharacterId is null;
+
+    /// <summary>
+    /// 空の窓を、その人の窓にする(窓の管理が呼ぶ)。以後はその人を指定して開いた窓と同じで、相手の指定として保存し直す
+    /// (<see cref="SavedTargetInfoResolved"/>)。相手を持つ窓なら何もしない。今の顔ぶれは呼んだ側が当て直す。
+    /// </summary>
+    public void EnterPlayer(long characterId)
+    {
+        if (!IsAwaitingPlayer || characterId == 0)
+        {
+            return;
+        }
+
+        _requestedCharacterId = characterId;
+        RaiseSavedTargetInfoResolved();
+    }
+
+    /// <summary>
+    /// 保存する素性(名前・UID・NPC の印・職業)が変わったとき(空から分かったときと、別の値に変わったとき)に上がる。
+    /// 対象一覧を書き直す契機になる(窓の開閉だけだと、開いた直後はまだ空のまま、後から分かった値も残らない)。
     /// プレイヤー名だけでなく、派生側が持つ値(カードのバフ名など)からも上げる。
     /// </summary>
     public event EventHandler? SavedTargetInfoResolved;
@@ -205,7 +217,7 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
     /// 設定から復元したときに、相手が見つかる前のタイトルを埋める。
     /// <b>実際に観測した値は上書きしない。</b>
     /// </summary>
-    public void SeedLastKnownPlayer(string? playerName, long playerUid)
+    public void SeedLastKnownPlayer(string? playerName, long playerUid, bool isNpc, int professionId)
     {
         if (playerUid == 0
             || (!string.IsNullOrWhiteSpace(_lastKnownPlayerName) && _lastKnownPlayerUid != 0))
@@ -221,16 +233,13 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
         }
 
         _lastKnownPlayerUid = playerUid;
-        RefreshHeaderText();
-        OnLastKnownPlayerChanged();
-    }
+        _lastKnownIsNpc |= isNpc;
+        if (_lastKnownProfessionId == 0)
+        {
+            _lastKnownProfessionId = professionId;
+        }
 
-    /// <summary>
-    /// 覚えている相手の素性(名前・UID・NPC の印・職業)を書いたとき。
-    /// 相手が一覧に載る前から素性を表示に使う窓だけが上書きする。
-    /// </summary>
-    protected virtual void OnLastKnownPlayerChanged()
-    {
+        RefreshHeaderText();
     }
 
     protected long? SelectedCharacterId => _requestedCharacterId ?? _representedCharacterId;
@@ -478,6 +487,11 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
     /// <b>NPC の印と職業は相手ごとの値。</b>相手(UID)が変わったら入れ替える。
     /// 同じ相手なら名前と同じく分かった値を消さない(NPC の印は true から戻さない、職業は 0 で上書きしない)。
     /// </para>
+    ///
+    /// <para>
+    /// 覚えている値のどれかが変わったら、保存し直す契機(<see cref="SavedTargetInfoResolved"/>)を上げる。
+    /// 呼ばれる回数は多いが、上げるのは値が変わったときだけ。
+    /// </para>
     /// </summary>
     private void RememberPlayer(string? playerName, long playerUid, bool isNpc, int professionId)
     {
@@ -488,8 +502,10 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
                 ? null
                 : playerName;
 
-        var wasUnknown = string.IsNullOrWhiteSpace(_lastKnownPlayerName)
-            && _lastKnownPlayerUid == 0;
+        var previousName = _lastKnownPlayerName;
+        var previousUid = _lastKnownPlayerUid;
+        var previousIsNpc = _lastKnownIsNpc;
+        var previousProfessionId = _lastKnownProfessionId;
 
         if (playerUid != 0 && playerUid != _lastKnownPlayerUid)
         {
@@ -515,12 +531,12 @@ public abstract class PlayerWidgetWindowViewModel : ViewModelBase, IWidgetDataSt
             _lastKnownPlayerUid = playerUid;
         }
 
-        if (wasUnknown
-            && (!string.IsNullOrWhiteSpace(_lastKnownPlayerName) || _lastKnownPlayerUid != 0))
+        if (!string.Equals(previousName, _lastKnownPlayerName, StringComparison.Ordinal)
+            || previousUid != _lastKnownPlayerUid
+            || previousIsNpc != _lastKnownIsNpc
+            || previousProfessionId != _lastKnownProfessionId)
         {
             SavedTargetInfoResolved?.Invoke(this, EventArgs.Empty);
         }
-
-        OnLastKnownPlayerChanged();
     }
 }

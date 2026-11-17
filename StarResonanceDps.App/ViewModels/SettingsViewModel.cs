@@ -67,6 +67,9 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private int _widgetDataStatusDisplayModeIndex = AppConfigDefaults.WidgetDataStatusDisplayShowIndex;
 
+    [ObservableProperty]
+    private bool _hidesWidgetsWhenGameInactive = true;
+
     // --- 起動設定 ---
 
     [ObservableProperty]
@@ -162,7 +165,6 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
         _lastSavedSettings = settings.Clone();
         LoadFromSettings(settings, applyLanguage: false, applyPreview: false);
         LoadCaptureSettings();
-        _configManager.WidgetWindowTopmostModeSaved += ConfigManager_WidgetWindowTopmostModeSaved;
         _configManager.PlayerNameDisplayModeSaved += ConfigManager_PlayerNameDisplayModeSaved;
         _configManager.VoicevoxInstallFolderSaved += ConfigManager_VoicevoxInstallFolderSaved;
         _hotkeyService.RegistrationChanged += HotkeyService_RegistrationChanged;
@@ -188,7 +190,6 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
     {
         // 受付中に閉じたら取り消して、外していたホットキーを戻す(戻せなかったものはサービスがログに書く)。
         EndHotkeyCapture();
-        _configManager.WidgetWindowTopmostModeSaved -= ConfigManager_WidgetWindowTopmostModeSaved;
         _configManager.PlayerNameDisplayModeSaved -= ConfigManager_PlayerNameDisplayModeSaved;
         _configManager.VoicevoxInstallFolderSaved -= ConfigManager_VoicevoxInstallFolderSaved;
         _hotkeyService.RegistrationChanged -= HotkeyService_RegistrationChanged;
@@ -366,6 +367,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
             UnnamedSkillNameDisplayModeIndex = UnnamedSkillNameDisplayModeIndex,
             WidgetWindowTopmostModeIndex = WidgetWindowTopmostModeIndex,
             WidgetDataStatusDisplayModeIndex = WidgetDataStatusDisplayModeIndex,
+            HidesWidgetsWhenGameInactive = HidesWidgetsWhenGameInactive,
             WindowColorIndex = WindowColors.SelectedIndex,
             WindowColors = [.. WindowColors.GetHexColors()],
             LaunchAtWindowsStartup = LaunchAtWindowsStartup,
@@ -420,6 +422,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
             UnnamedSkillNameDisplayModeIndex = settings.UnnamedSkillNameDisplayModeIndex;
             WidgetWindowTopmostModeIndex = settings.WidgetWindowTopmostModeIndex;
             WidgetDataStatusDisplayModeIndex = settings.WidgetDataStatusDisplayModeIndex;
+            HidesWidgetsWhenGameInactive = settings.HidesWidgetsWhenGameInactive;
             WindowColors.Load(settings.WindowColors, settings.WindowColorIndex);
             LaunchAtWindowsStartup = settings.LaunchAtWindowsStartup;
             CheckForUpdatesOnStartup = settings.CheckForUpdatesOnStartup;
@@ -586,6 +589,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(StartHotkeyHelperOnLaunchStateText));
         OnPropertyChanged(nameof(LaunchVoicevoxOnLaunchStateText));
         OnPropertyChanged(nameof(StopAggregationInNonCombatAreasStateText));
+        OnPropertyChanged(nameof(HidesWidgetsWhenGameInactiveStateText));
         OnPropertyChanged(nameof(SplitEncountersOnNewPhasesStateText));
         OnPropertyChanged(nameof(KeepPastEncounterInMeterUntilNextDamageStateText));
         OnPropertyChanged(nameof(ClearHistorySelectionOnNextEventStateText));
@@ -700,6 +704,7 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
             && left.UnnamedSkillNameDisplayModeIndex == right.UnnamedSkillNameDisplayModeIndex
             && left.WidgetWindowTopmostModeIndex == right.WidgetWindowTopmostModeIndex
             && left.WidgetDataStatusDisplayModeIndex == right.WidgetDataStatusDisplayModeIndex
+            && left.HidesWidgetsWhenGameInactive == right.HidesWidgetsWhenGameInactive
             && left.WindowColorIndex == right.WindowColorIndex
             && left.LaunchAtWindowsStartup == right.LaunchAtWindowsStartup
             && left.CheckForUpdatesOnStartup == right.CheckForUpdatesOnStartup
@@ -1024,28 +1029,6 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// ホットキーがウィジェット設定「ウィジェットウィンドウ」を切り替えて保存した。表示と保存済みの控えの両方を保存した値に合わせる
-    /// (未保存の扱いにしない)。プレビューは保存の側で合わせてあるので出し直さない。
-    /// </summary>
-    private void ConfigManager_WidgetWindowTopmostModeSaved(object? sender, EventArgs e)
-    {
-        var savedIndex = _configManager.AppConfig.Settings.WidgetWindowTopmostModeIndex;
-        _lastSavedSettings.WidgetWindowTopmostModeIndex = savedIndex;
-
-        _isLoadingSettings = true;
-        try
-        {
-            WidgetWindowTopmostModeIndex = savedIndex;
-        }
-        finally
-        {
-            _isLoadingSettings = false;
-        }
-
-        OnPropertyChanged(nameof(HasUnsavedChanges));
-    }
-
-    /// <summary>
     /// ホットキーが表示設定「プレイヤー名」を切り替えて保存した。表示と保存済みの控えの両方を保存した値に合わせる
     /// (未保存の扱いにしない)。プレビューと名前の表示は保存の側で合わせてあるので出し直さない。
     /// </summary>
@@ -1076,6 +1059,19 @@ public sealed partial class SettingsViewModel : ViewModelBase, IDisposable
 
         OnPropertyChanged(nameof(HasUnsavedChanges));
     }
+
+    partial void OnHidesWidgetsWhenGameInactiveChanged(bool value)
+    {
+        if (!_isLoadingSettings)
+        {
+            ApplySettingsPreview();
+        }
+
+        OnPropertyChanged(nameof(HidesWidgetsWhenGameInactiveStateText));
+        OnPropertyChanged(nameof(HasUnsavedChanges));
+    }
+
+    public string HidesWidgetsWhenGameInactiveStateText => GetSwitchStateText(HidesWidgetsWhenGameInactive);
 
     partial void OnWidgetDataStatusDisplayModeIndexChanged(int value)
     {

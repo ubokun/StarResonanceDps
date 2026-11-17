@@ -33,7 +33,7 @@ namespace StarResonanceDps.App.ViewModels;
 /// バフ・デバフ効果切れは、追うバフがカードの設定の通知対象に入っているときだけ出す(1秒ごとの更新で今の通知対象を読む)。
 /// </para>
 /// </summary>
-public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable, IBuffDebuffCardMenuViewModel
+public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable, IBuffDebuffCardMenuViewModel, IWidgetWindowHiddenAware
 {
     /// <summary>バフかデバフか。待っている窓が入るまでは <see cref="PlayerBuffListKind.Buff"/>。</summary>
     private PlayerBuffListKind _kind;
@@ -63,12 +63,15 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
     /// <summary>通知(バフ・デバフ効果切れ・薬剤・料理効果切れ)の判定。カードを開いている間だけ借りる(同じバフを見ているグループと共有)。</summary>
     private readonly BuffNotificationWatcher _notificationWatcher = new();
 
+    /// <summary>窓が隠れているか(全体設定「ゲーム非アクティブ時にウィジェットを隠す」)。隠れている間は中身を当て直さない。</summary>
+    private bool _isWindowHidden;
+
     private PlayerRosterEntry? _player;
     private string _scaleKey = string.Empty;
 
     /// <summary>
     /// 最後に分かったバフ名。<b>失効してもタイトルは維持する</b>ので持っておく。
-    /// 一度も分かっていないうち(料理バフの自動選択で対象が無い等)は空。
+    /// 一度も分かっていないうち(バフがまだ一度も見つかっていない等)は空。
     /// </summary>
     private string _lastKnownBuffName = string.Empty;
 
@@ -154,9 +157,6 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
         Refresh();
         _refreshTimer.Start();
     }
-
-    /// <summary>いま追っているバフのキー。料理バフ自動選択では実際に見つかったものになる。</summary>
-    public string ResolvedBuffKey { get; private set; } = string.Empty;
 
     public PlayerBuffListKind BuffListKind => _kind;
 
@@ -265,14 +265,7 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
 
     public bool RepresentsBuff(PlayerBuffListKind kind, string? buffKey, BuffGroup group)
     {
-        if (_kind != kind || _group != group)
-        {
-            return false;
-        }
-
-        // まとまりを追う窓は、個別のバフキーが違っても同じ窓。
-        return group != BuffGroup.None
-            || string.Equals(_requestedBuffKey, buffKey, StringComparison.Ordinal);
+        return BuffDebuffCardContent.RepresentsBuff(_kind, _requestedBuffKey, _group, kind, buffKey, group);
     }
 
     public void Dispose()
@@ -403,6 +396,19 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
         Refresh();
     }
 
+    /// <summary>
+    /// 窓が隠れたら中身の当て直しだけを止め、見えたら読み直す(<see cref="IWidgetWindowHiddenAware"/>)。
+    /// 定期の読み直しは隠れている間も続け、通知の判定は止めない(止めると、その間に消えたバフの効果切れを見落とす)。
+    /// </summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        _isWindowHidden = isHidden;
+        if (!isHidden)
+        {
+            Refresh();
+        }
+    }
+
     private void Refresh()
     {
         if (_isDisposed)
@@ -413,7 +419,7 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
         if (SelectedCharacterId is not { } characterId)
         {
             _notificationWatcher.Release();
-            ApplyContent(BuffDebuffCardContent.Empty, string.Empty, characterId: 0, hasBuff: false);
+            ApplyContent(BuffDebuffCardContent.Empty, characterId: 0, hasBuff: false);
 
             // 対象が分からなくても、まとまり(料理・薬剤)の名前は出せる。
             // ここで組み直さないと、直起動のあいだ既定名のまま固定される。
@@ -491,6 +497,18 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
                 targetName);
         }
 
+        if (snapshot is not null)
+        {
+            _lastKnownCaster = snapshot.Caster;
+            _lastKnownCasterCharacterId = characterId;
+        }
+
+        // 窓が隠れている間は通知の判定と付与者の控えまでで、中身は当て直さない(見えたときに SetWindowHidden が読み直す)。
+        if (_isWindowHidden)
+        {
+            return;
+        }
+
         if (snapshot is null)
         {
             // 失効。アイコンと残り時間は消すが、名前の行は残す。
@@ -501,14 +519,10 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
                     _player?.Level ?? 0,
                     PlayerWidget.BuffInfoFormatString,
                     _lastKnownCasterCharacterId == characterId ? _lastKnownCaster : null),
-                string.Empty,
                 characterId,
                 hasBuff: false);
             return;
         }
-
-        _lastKnownCaster = snapshot.Caster;
-        _lastKnownCasterCharacterId = characterId;
 
         var content = BuffDebuffCardContent.Create(
             snapshot,
@@ -516,7 +530,7 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
             _player?.Level ?? 0,
             PlayerWidget.BuffInfoFormatString);
 
-        ApplyContent(content, snapshot.CardKey, characterId, hasBuff: true);
+        ApplyContent(content, characterId, hasBuff: true);
     }
 
     /// <summary>
@@ -526,11 +540,9 @@ public sealed partial class BuffDebuffCardWidgetViewModel : PlayerWidgetWindowVi
     /// </summary>
     private void ApplyContent(
         BuffDebuffCardContent content,
-        string buffKey,
         long characterId,
         bool hasBuff)
     {
-        ResolvedBuffKey = buffKey;
         DisplayText = content.DisplayText;
         DurationText = content.DurationText;
         LayerText = content.LayerText;

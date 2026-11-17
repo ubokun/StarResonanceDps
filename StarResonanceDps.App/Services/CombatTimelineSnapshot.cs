@@ -80,7 +80,7 @@ public static class CombatTimelineReader
         var partyKnown = partyIds.Count > 0;
         var players = encounter.Entities.Values.Where(x => x.EntityType == EEntityType.EntChar && !x.IsNpc)
             .Where(x => !options.PartyOnly || !partyKnown || partyIds.Contains(x.UID != 0 ? x.UID : Utils.UuidToEntityId(x.UUID))).ToArray();
-        var buckets = new Dictionary<double, (double End, double Value)>();
+        var buckets = new Dictionary<double, double>();
         var events = new List<ExtensionTimelineEvent>();
         foreach (var player in players)
         {
@@ -89,8 +89,8 @@ public static class CombatTimelineReader
             MeterSnapshotProvider.ReadPlayerGraph(MeterSnapshotKind.Damage, id, 1, buffer);
             foreach (var point in buffer.CreateView())
             {
-                var prior = buckets.GetValueOrDefault(point.StartSeconds);
-                buckets[point.StartSeconds] = (Math.Max(prior.End, point.EndSeconds), prior.Value + point.ValuePerSecond);
+                var prior = buckets.GetValueOrDefault(point.EndSeconds);
+                buckets[point.EndSeconds] = prior + point.ValuePerSecond;
             }
             foreach (var skill in encounter.GetSkillActivationsFrom(player.UUID, 0, out _))
             {
@@ -153,7 +153,7 @@ public static class CombatTimelineReader
         var enemies = options.ShowEnemies ? encounter.Entities.Values.Where(x => x.EntityType == EEntityType.EntMonster && (!options.UseEnemyCatalog || EnemyCatalogStore.Current.IsEnabled(encounter,x.UUID)))
             .Select(x => new TimelineActor(x.UUID, EnemyName(encounter, x.UUID), true)).ToArray() : [];
         var actors = enemies.Concat(events.Select(x => new TimelineActor(x.EntityUuid, x.Actor))).DistinctBy(x => x.Uuid).ToArray();
-        var points = buckets.OrderBy(x => x.Key).Select(x => new MetricGraphPoint(x.Key, x.Value.End, x.Value.Value)).ToArray();
+        var points = buckets.OrderBy(x => x.Key).Select(x => new MetricGraphPoint(x.Key, x.Value)).ToArray();
         var scope = options.PartyOnly && partyKnown ? "PT" : options.PartyOnly ? "全員（PT情報未記録）" : "全員";
         var clock = encounter.ReadCombatClock();
         return new(encounter.EncounterId, clock.Elapsed.TotalSeconds,

@@ -131,6 +131,15 @@
                                 <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding EntityInfoSettings.PriorityBuffs.SectionTitle}" />
                             </StackPanel>
                         </Button>
+                        <Button x:Name="BuffUptimePriorityBuffsNavButton"
+                                Click="BuffUptimePriorityBuffsNavButton_Click"
+                                Style="{StaticResource Button.Sidebar}"
+                                Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{DynamicResource Icon.Fill}" Data="{DynamicResource Icon.PriorityList}" />
+                                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding BuffUptimeSettings.PriorityBuffs.SectionTitle}" />
+                            </StackPanel>
+                        </Button>
                         <Button x:Name="BuffListHiddenBuffsNavButton"
                                 Click="BuffListHiddenBuffsNavButton_Click"
                                 Style="{StaticResource Button.Sidebar}"
@@ -147,6 +156,15 @@
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{DynamicResource Icon.Stroke}" Data="{DynamicResource Icon.EyeOff}" />
                                 <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding EntityInfoSettings.HiddenBuffSectionTitle}" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BuffUptimeHiddenBuffsNavButton"
+                                Click="BuffUptimeHiddenBuffsNavButton_Click"
+                                Style="{StaticResource Button.Sidebar}"
+                                Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{DynamicResource Icon.Stroke}" Data="{DynamicResource Icon.EyeOff}" />
+                                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding BuffUptimeSettings.HiddenBuffSectionTitle}" />
                             </StackPanel>
                         </Button>
                         <!-- プラグインのウィジェットの節(アイコンと名前はプラグインの定義。線で描くか塗るかも定義で決まる)。 -->
@@ -185,7 +203,16 @@
                                 Visibility="{Binding HasMetricGraphDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <Path Style="{DynamicResource Icon.Fill}" Data="{DynamicResource Icon.PaintBrush}" />
-                                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding MetricGraphSettings.GraphColorSectionTitle}" />
+                                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding MetricGraphSettings.GraphColors.SectionTitle}" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BuffUptimeGraphColorsNavButton"
+                                Click="BuffUptimeGraphColorsNavButton_Click"
+                                Style="{StaticResource Button.Sidebar}"
+                                Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{DynamicResource Icon.Fill}" Data="{DynamicResource Icon.PaintBrush}" />
+                                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding BuffUptimeSettings.GraphColors.SectionTitle}" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="PlayerStatusTextColorsNavButton"
@@ -323,6 +350,15 @@
                                 <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding EntityInfoSettings.ClassColorSectionTitle}" />
                             </StackPanel>
                         </Button>
+                        <Button x:Name="MapClassColorsNavButton"
+                                Click="MapClassColorsNavButton_Click"
+                                Style="{StaticResource Button.Sidebar}"
+                                Visibility="{Binding HasMapDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Style="{DynamicResource Icon.Fill}" Data="{DynamicResource Icon.PaintBrush}" />
+                                <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding MapSettings.ClassColorSectionTitle}" />
+                            </StackPanel>
+                        </Button>
                         <Button x:Name="ChatTextColorsNavButton"
                                 Click="ChatTextColorsNavButton_Click"
                                 Style="{StaticResource Button.Sidebar}"
@@ -370,6 +406,15 @@
                                         <ContentControl.ContentTemplate>
                                             <DataTemplate>
                                                 <widgetSettingsViews:MetricGraphWidgetDisplaySettingsView />
+                                            </DataTemplate>
+                                        </ContentControl.ContentTemplate>
+                                    </ContentControl>
+
+                                    <ContentControl Content="{Binding BuffUptimeSettings}"
+                                                    Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <ContentControl.ContentTemplate>
+                                            <DataTemplate>
+                                                <widgetSettingsViews:BuffUptimeWidgetDisplaySettingsView />
                                             </DataTemplate>
                                         </ContentControl.ContentTemplate>
                                     </ContentControl>
@@ -463,6 +508,15 @@
                                             </DataTemplate>
                                         </ContentControl.ContentTemplate>
                                     </ContentControl>
+
+                                    <ContentControl Content="{Binding MapSettings}"
+                                                    Visibility="{Binding HasMapDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <ContentControl.ContentTemplate>
+                                            <DataTemplate>
+                                                <widgetSettingsViews:MapWidgetDisplaySettingsView />
+                                            </DataTemplate>
+                                        </ContentControl.ContentTemplate>
+                                    </ContentControl>
                                 </StackPanel>
 
                                 <ContentControl x:Name="PlayerStatusRowsHost"
@@ -546,6 +600,17 @@
                                     </ContentControl.ContentTemplate>
                                 </ContentControl>
 
+                                <!-- バフ稼働率の優先表示リスト。中身はバフ・デバフ一覧と同じ部品。 -->
+                                <ContentControl x:Name="BuffUptimePriorityBuffsHost"
+                                                Content="{Binding BuffUptimeSettings.PriorityBuffs}"
+                                                Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <widgetSettingsViews:BuffEntryListSettingsView />
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+
                                 <ContentControl x:Name="BuffListHiddenBuffsHost"
                                                 Content="{Binding BuffListSettings}"
                                                 Visibility="{Binding HasBuffListDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -560,6 +625,17 @@
                                 <ContentControl x:Name="EntityInfoHiddenBuffsHost"
                                                 Content="{Binding EntityInfoSettings}"
                                                 Visibility="{Binding HasEntityInfoDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <widgetSettingsViews:BuffListHiddenBuffSettingsView />
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+
+                                <!-- バフ稼働率の非表示リスト。中身はバフ・デバフ一覧と同じ部品。 -->
+                                <ContentControl x:Name="BuffUptimeHiddenBuffsHost"
+                                                Content="{Binding BuffUptimeSettings}"
+                                                Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <ContentControl.ContentTemplate>
                                         <DataTemplate>
                                             <widgetSettingsViews:BuffListHiddenBuffSettingsView />
@@ -659,8 +735,19 @@
                                 </ContentControl>
 
                                 <ContentControl x:Name="GraphColorsHost"
-                                                Content="{Binding MetricGraphSettings}"
+                                                Content="{Binding MetricGraphSettings.GraphColors}"
                                                 Visibility="{Binding HasMetricGraphDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <widgetSettingsViews:MetricGraphColorSettingsView />
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+
+                                <!-- バフ稼働率のグラフカラー(バーの色)。中身は推移グラフと同じ部品。 -->
+                                <ContentControl x:Name="BuffUptimeGraphColorsHost"
+                                                Content="{Binding BuffUptimeSettings.GraphColors}"
+                                                Visibility="{Binding HasBuffUptimeDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
                                     <ContentControl.ContentTemplate>
                                         <DataTemplate>
                                             <widgetSettingsViews:MetricGraphColorSettingsView />
@@ -814,6 +901,16 @@
                                     <ContentControl.ContentTemplate>
                                         <DataTemplate>
                                             <widgetSettingsViews:EntityInfoClassColorSettingsView />
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+
+                                <ContentControl x:Name="MapClassColorsHost"
+                                                Content="{Binding MapSettings}"
+                                                Visibility="{Binding HasMapDisplaySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate>
+                                            <widgetSettingsViews:MapClassColorSettingsView />
                                         </DataTemplate>
                                     </ContentControl.ContentTemplate>
                                 </ContentControl>

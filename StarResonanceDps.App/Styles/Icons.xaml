@@ -29,6 +29,14 @@
     <BitmapImage x:Key="Icon.Profession.Boss" UriSource="/Assets/Images/com_icon_tab_146.png" />
     <BitmapImage x:Key="Icon.Profession.Elite" UriSource="/Assets/Images/com_icon_tab_147.png" />
     <BitmapImage x:Key="Icon.Profession.Monster" UriSource="/Assets/Images/com_icon_tab_148.png" />
+    <DrawingImage x:Key="Icon.Profession.Entity">
+        <DrawingImage.Drawing>
+            <DrawingGroup ClipGeometry="M12,12 H58 V58 H12 Z">
+                <ImageDrawing ImageSource="/Assets/Images/talk_icon_union_54.png"
+                  Rect="0,0,70,70" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
     <BitmapImage x:Key="Icon.Profession.Unknown" UriSource="/Assets/Images/com_icon_question.png" />
     <!-- ダメージの属性。キーの末尾は EDamageProperty の名前。 -->
     <BitmapImage x:Key="Icon.DamageProperty.General" UriSource="/Assets/Images/main_progress_icon_no.png" />
@@ -50,6 +58,16 @@
     <!-- エンティティリストのヘイトの枠のバッジ。狙っている相手の印と、ヘイトのゲージの形。塗るのは HateBadgeImages。 -->
     <BitmapImage x:Key="Icon.HateTarget" UriSource="/Assets/Images/map_icon_iocation.png" />
     <BitmapImage x:Key="Icon.HateGauge" UriSource="/Assets/Images/main_warning_base.png" />
+
+    <!-- マップの印(チャットで共有された位置)。ゲームがこの位置の追跡に出すアイコンと同じ絵で、色は変えずにそのまま出す。 -->
+    <BitmapImage x:Key="Icon.MapSharedPosition" UriSource="/Assets/Images/map_dynamic_icon.png" />
+    <BitmapImage x:Key="Icon.FieldMarkFrame" UriSource="/Assets/Images/t_fx_marking_background.png" />
+    <BitmapImage x:Key="Icon.FieldMark1" UriSource="/Assets/Images/t_fx_marking_01.png" />
+    <BitmapImage x:Key="Icon.FieldMark2" UriSource="/Assets/Images/t_fx_marking_02.png" />
+    <BitmapImage x:Key="Icon.FieldMark3" UriSource="/Assets/Images/t_fx_marking_03.png" />
+    <BitmapImage x:Key="Icon.FieldMark4" UriSource="/Assets/Images/t_fx_marking_04.png" />
+    <BitmapImage x:Key="Icon.FieldMark5" UriSource="/Assets/Images/t_fx_marking_05.png" />
+    <BitmapImage x:Key="Icon.FieldMark6" UriSource="/Assets/Images/t_fx_marking_06.png" />
 
     <!--
         戦闘状態の印の見た目。Brush.CombatState で塗った面を絵で型抜きし、影は文字と同じ。
@@ -683,6 +701,14 @@
     <!-- 塗り(元SVGはfill="currentColor")。Icon.Fillと組で使う。フィードバックタブの不具合報告・機能要望の欄。 -->
     <Geometry x:Key="Icon.Report">
         F1 M11.741 14.966a1 1 0 0 1-.607-.466c-.439-.76.29-1.69 1.127-1.466c.254.068.475.238.607.466c.439.76-.29 1.69-1.127 1.466m-.707-7.225c.226-.842 1.396-.996 1.832-.241c.101.175.121.302.134.5v3c-.03.451-.288.844-.741.966c-.656.176-1.217-.327-1.259-.966V8ZM6 19c-.262 0-1.092.028-1.485-.036C3.046 18.726 2.059 17.498 2 16.04V5.96c.032-.788.314-1.52.877-2.083S4.172 3.032 4.96 3h14.08c.788.032 1.52.314 2.083.877s.845 1.295.877 2.083v10.08c-.038.946-.453 1.817-1.226 2.383c-.513.376-1.103.552-1.734.577h-7.653c-.135.029.029-.025-.097.032l-3.366 2.525l-.346.169a1.29 1.29 0 0 1-1.506-.753L6 20.595Zm2 0l2.176-1.632A2.1 2.1 0 0 1 11.28 17h7.68c.622-.025 1.015-.418 1.04-1.04V6.04c-.014-.336-.132-.641-.412-.845c-.188-.138-.398-.186-.628-.195H5.04c-.336.014-.641.132-.845.412c-.138.188-.186.398-.195.628v9.92c.058 1.433 1.651.966 2.58 1.04c.331.027.533.075.813.28C8.02 17.738 8 18.304 8 19
+    </Geometry>
+
+    <!--
+        マップの簡略化した自分の印(向きを指す矢先)。14×14 の枠の三角(7,0 / 12.5,14 / 1.5,14)の角を半径 0.75 で丸めた形。
+        縁(太さ 1.5)は辺の上に半分ずつかかるので、縁の外側の角の半径は 0.75 ＋ 0.75 = 1.5 になる。角の半径を変えるときは、接する点を計算し直す。
+    -->
+    <Geometry x:Key="Icon.MapSelfArrow">
+        M7.698,1.777 L12.098,12.976 A0.75,0.75 0 0 1 11.4,14 L2.6,14 A0.75,0.75 0 0 1 1.902,12.976 L6.302,1.777 A0.75,0.75 0 0 1 7.698,1.777 Z
     </Geometry>
 
 </ResourceDictionary>

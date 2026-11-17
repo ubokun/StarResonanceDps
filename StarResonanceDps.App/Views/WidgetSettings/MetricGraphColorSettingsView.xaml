@@ -7,15 +7,16 @@
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
     <!--
-        推移グラフのグラフカラー。行の作りはメーターのクラスカラー(MeterWidgetClassColorSettingsView)と同じで、不透明度は持たない。
-        クラスアイコンの欄に折れ線の見本を出す(メーターのクラスアイコンと同じく、選んでいる色で描いて影を付ける)。
+        グラフカラー(推移グラフの線の色とバフ稼働率のバーの色。中身は GraphColorSettingsViewModel)。
+        行の作りはメーターのクラスカラー(MeterWidgetClassColorSettingsView)と同じで、不透明度は持たない。
+        クラスアイコンの欄に、推移グラフは折れ線、バフ稼働率はバーの見本を出す(メーターのクラスアイコンと同じく、選んでいる色で描いて影を付ける)。
     -->
     <UserControl.Resources>
         <converters:ColorToBrushConverter x:Key="ColorToBrushConverter" />
     </UserControl.Resources>
 
     <StackPanel>
-        <TextBlock Text="{Binding GraphColorSectionTitle}"
+        <TextBlock Text="{Binding SectionTitle}"
                    Foreground="{DynamicResource Brush.TextPrimary}"
                    FontSize="16"
                    FontWeight="SemiBold"
@@ -23,7 +24,7 @@
 
         <ContentControl Style="{StaticResource Panel.SettingSection}" Margin="0,0,0,12">
             <StackPanel>
-                <ItemsControl ItemsSource="{Binding ClassColorItems}">
+                <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border>
@@ -44,25 +45,62 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- 見本。2回折れる線(/＼/)で、上下の端をそろえて欄の中央に置く。グラフの線と同じく端と角を丸める。 -->
-                                    <Polyline Grid.Column="0"
-                                              Width="27"
-                                              Height="27"
-                                              VerticalAlignment="Center"
-                                              Points="3,19 10,8 17,19 24,8"
-                                              StrokeThickness="2"
-                                              StrokeStartLineCap="Round"
-                                              StrokeEndLineCap="Round"
-                                              StrokeLineJoin="Round"
-                                              Stroke="{Binding Colors.SelectedColor, Converter={StaticResource ColorToBrushConverter}}">
-                                        <Polyline.Effect>
-                                            <DropShadowEffect
-                                                Color="{Binding Color, Source={StaticResource Brush.TextPrimary}}"
-                                                Opacity="0.5"
-                                                ShadowDepth="0"
-                                                BlurRadius="5" />
-                                        </Polyline.Effect>
-                                    </Polyline>
+                                    <Grid Grid.Column="0"
+                                          Width="27"
+                                          Height="27"
+                                          VerticalAlignment="Center">
+                                        <!-- 推移グラフの見本。2回折れる線(/＼/)で、上下の端をそろえて欄の中央に置く。グラフの線と同じく端と角を丸める。 -->
+                                        <Polyline Points="3,19 10,8 17,19 24,8"
+                                                  StrokeThickness="2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Stroke="{Binding Colors.SelectedColor, Converter={StaticResource ColorToBrushConverter}}">
+                                            <Polyline.Style>
+                                                <Style TargetType="Polyline">
+                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.UsesBarSwatch, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Polyline.Style>
+                                            <Polyline.Effect>
+                                                <DropShadowEffect
+                                                    Color="{Binding Color, Source={StaticResource Brush.TextPrimary}}"
+                                                    Opacity="0.5"
+                                                    ShadowDepth="0"
+                                                    BlurRadius="5" />
+                                            </Polyline.Effect>
+                                        </Polyline>
+
+                                        <!-- バフ稼働率の見本。太さはウィジェットのバーと同じ 10、長さは折れ線の横の範囲(3〜24)と同じ 21 で、欄の中央に置く。角は丸めない。 -->
+                                        <Rectangle Width="21"
+                                                   Height="10"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Fill="{Binding Colors.SelectedColor, Converter={StaticResource ColorToBrushConverter}}">
+                                            <Rectangle.Style>
+                                                <Style TargetType="Rectangle">
+                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.UsesBarSwatch, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Rectangle.Style>
+                                            <Rectangle.Effect>
+                                                <DropShadowEffect
+                                                    Color="{Binding Color, Source={StaticResource Brush.TextPrimary}}"
+                                                    Opacity="0.5"
+                                                    ShadowDepth="0"
+                                                    BlurRadius="5" />
+                                            </Rectangle.Effect>
+                                        </Rectangle>
+                                    </Grid>
 
                                     <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
                                                Text="{Binding DisplayName}"

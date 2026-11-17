@@ -10,7 +10,6 @@ This feature lets you start or pin widgets, run benchmarks, and more by pressing
 | Start favorites/Stop all | Ctrl+F8 | If any widgets are running, stops all of them; otherwise, starts your favorite widgets. |
 | Pin running/Unpin all | Ctrl+F7 | If any widgets are pinned, unpins all of them; otherwise, pins all running widgets. |
 | Make pinned click-through/Disable all click-through | Ctrl+F6 | If any widgets are click-through, turns it off for all of them; otherwise, makes all pinned widgets click-through. |
-| Always on Top/On Top Only While Pinned | Ctrl+F5 | Switches "Widget Windows" in Settings. |
 | Benchmark | Ctrl+F10 | The same as "Benchmark" in "[Aggregation](Aggregation)" (while a benchmark is running, it stops the benchmark). |
 | Reset | Ctrl+F9 | The same as "Reset" in "[Aggregation](Aggregation)". |
 

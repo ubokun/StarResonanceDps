@@ -141,6 +141,12 @@ public sealed partial class PlayerListEntry : ObservableObject
     [ObservableProperty]
     private bool _isSelf;
 
+    /// <summary>
+    /// 技の枠を自分の形(アクションバーの枠番号どおり・ロールスキル4枠)で出すか。自分の行と、
+    /// 履歴の記録から来た行でその回のアクションバーを保存してある人(<see cref="PlayerRosterEntry.RecordedSelf"/>)。Core の枠の組み立てと同じ決め方。
+    /// </summary>
+    private bool _usesSelfSkillLayout;
+
     /// <summary>自分の行を強調表示するか。設定「自分の表示」が強調表示のときだけ true。</summary>
     [ObservableProperty]
     private bool _isSelfHighlighted;
@@ -178,6 +184,7 @@ public sealed partial class PlayerListEntry : ObservableObject
         }
 
         IsSelf = player.IsSelf;
+        _usesSelfSkillLayout = player.IsSelf || player.RecordedSelf?.ActionBar is not null;
         IsSelfHighlighted = player.IsSelf
             && settings.SelfDisplayModeIndex == WidgetConfigDefaults.DefaultSelfDisplayModeIndex;
         _otherRoleSkillVisibility = settings.OtherRoleSkillVisibility;
@@ -238,7 +245,7 @@ public sealed partial class PlayerListEntry : ObservableObject
     /// <summary>定期の更新。今の人の値を Core から読んで枠へ書く。</summary>
     public void RefreshSkillDisplay(bool refreshEffects)
     {
-        if (_skillState.RefreshSkills(IsSelf, _otherRoleSkillVisibility))
+        if (_skillState.RefreshSkills(_usesSelfSkillLayout, _otherRoleSkillVisibility))
         {
             WriteSkillSlots();
         }
@@ -269,11 +276,11 @@ public sealed partial class PlayerListEntry : ObservableObject
     {
         if (_skillState.HasRead)
         {
-            _skillState.ApplyRoleSkillVisibilityIfChanged(IsSelf, _otherRoleSkillVisibility);
+            _skillState.ApplyRoleSkillVisibilityIfChanged(_usesSelfSkillLayout, _otherRoleSkillVisibility);
         }
         else
         {
-            _skillState.RefreshSkills(IsSelf, _otherRoleSkillVisibility);
+            _skillState.RefreshSkills(_usesSelfSkillLayout, _otherRoleSkillVisibility);
             _skillState.RefreshCooldowns();
             _skillState.RefreshEffects();
         }
@@ -287,7 +294,7 @@ public sealed partial class PlayerListEntry : ObservableObject
     {
         SyncSkillSlotCount(
             _roleSkillEntries,
-            IsSelf ? SelfRoleSlotCount : _skillState.RoleSkills.Count,
+            _usesSelfSkillLayout ? SelfRoleSlotCount : _skillState.RoleSkills.Count,
             isImagine: false);
         UpdateSkillMetadata(_imagineSkillEntries, _skillState.ImagineSkills);
         UpdateSkillMetadata(_roleSkillEntries, _skillState.RoleSkills);

@@ -1,0 +1,16 @@
+name: 버그 제보 · 기능 요청
+description: 버그를 제보하거나 기능을 요청합니다
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: 내용
+      description: 일어난 일과 재현 방법, 또는 원하는 기능을 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경
+      description: 앱의 '피드백'에서 열면 미리 입력됩니다.
+      render: text

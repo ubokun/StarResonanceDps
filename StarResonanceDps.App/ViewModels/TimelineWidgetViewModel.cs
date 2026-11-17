@@ -70,7 +70,7 @@ public sealed record TimelineClassIconSegment(Brush IconMask, Brush ClassBrush, 
 /// 画面で選んだ文字は、右クリックの「コピー」で文字にする(<see cref="CreateCopyText"/>)。
 /// </para>
 /// </summary>
-public sealed class TimelineWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, ITextRowsCopySource
+public sealed class TimelineWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, ITextRowsCopySource, IWidgetWindowHiddenAware
 {
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromMilliseconds(250);
 
@@ -203,6 +203,19 @@ public sealed class TimelineWidgetViewModel : ViewModelBase, IDisposable, IWidge
         }
 
         return text.ToString();
+    }
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
     }
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)

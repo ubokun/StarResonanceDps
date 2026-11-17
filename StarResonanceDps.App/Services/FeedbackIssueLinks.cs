@@ -7,7 +7,10 @@ using StarResonanceDps.Core.Diagnostics;
 
 namespace StarResonanceDps.App.Services;
 
-/// <summary>GitHubのIssueの投稿画面を開くURLを作る。欄の名前は .github/ISSUE_TEMPLATE/feedback.yml と同じ。</summary>
+/// <summary>
+/// GitHubのIssueの投稿画面を開くURLを作る。型は押した時点のアプリの言語のもの(<see cref="ProjectLinks.GetNewIssueUrl"/>)。
+/// 欄の名前(content・environment)は .github/ISSUE_TEMPLATE の4つの型で同じ。
+/// </summary>
 internal static class FeedbackIssueLinks
 {
     // これより長いと、GitHubのログインの後に入力済みの画面へ戻れない。
@@ -15,7 +18,12 @@ internal static class FeedbackIssueLinks
 
     public static string CreateNewIssueUrl()
     {
-        return ProjectLinks.NewIssueUrl + "&environment=" + Uri.EscapeDataString(CreateEnvironmentText());
+        return GetNewIssueUrl() + "&environment=" + Uri.EscapeDataString(CreateEnvironmentText());
+    }
+
+    private static string GetNewIssueUrl()
+    {
+        return ProjectLinks.GetNewIssueUrl(LocalizationManager.Instance.CurrentCulture);
     }
 
     /// <summary>検出された項目の報告のURLを、1つの画面に入る分ずつ作る。項目は渡した順に入れる。</summary>
@@ -95,7 +103,7 @@ internal static class FeedbackIssueLinks
     private static string CreateDetectionUrl(int count, string environment, string content)
     {
         var title = LocalizationManager.Instance.Format("Feedback_Report_IssueTitle", AppUpdateService.CurrentVersion.ToString(3), count);
-        return ProjectLinks.NewIssueUrl
+        return GetNewIssueUrl()
             + "&title=" + Uri.EscapeDataString(title)
             + "&environment=" + Uri.EscapeDataString(environment)
             + "&content=" + Uri.EscapeDataString(content);

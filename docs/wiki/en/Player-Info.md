@@ -20,6 +20,7 @@ This widget shows one player's level, location, ability score, season strength, 
 ## Controls
 
 - Right-click your own avatar or namecard photo to choose "Save Image As…" or "Copy Image". This is available only while a photo is shown.
+- When the location is underlined, click it to open the [Map](Map) widget centered on that player. If the player is on another map, that map is shown.
 
 ## Settings
 
@@ -37,5 +38,5 @@ Choose the colors of the three icons below the five lines for each class (includ
 - For people who have left the Player List (for example, people who moved away from you), the last known values remain, and only the location changes to "Unknown". They are cleared when you log out.
 - If you start the app while the game is already running, the season and season title are not known until you change maps, and your own level, ability score, and season strength show "Unknown".
 - While a player is transformed, the ability score and season strength are the transformed values sent by the game.
-- While a history entry is open, the season, season title, class, Deep-Slumber Psychoscope, and photos from that time are shown for the people who were in that battle.
+- While a history entry is open, the season, season title, class, Deep-Slumber Psychoscope, and photos from that time are shown for people who were in that battle and are not around you now.
 - The window size is not saved, and the window opens at the default size every time. The position is saved.

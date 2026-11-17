@@ -28,6 +28,7 @@ python gen_match_targets.py   # マッチング先(パーティ・活動)の名�
 python gen_root_buffs.py      # ルートバフ(タレント・心相晶・因子・モジュール効果)の名前・アイコン、モジュール効果の段階、因子のアイテムと、タレントの木
 python gen_items.py           # アイテムの名前(装備の名前も含む)
 python gen_chat_hyperlinks.py # チャットのリンクの発言の文のテンプレートと、ギルドの建物の名前
+python gen_maps.py            # シーンの地図(画像の名前と座標の範囲)と、エリアの階層
 
 python check_overrides.py     # 手動編集ファイルのうち、要らなくなった項目を表示する
 python gen_images.py          # アプリの画像の足りないものを表示する(--writeで取り出して置く、--compareで今の画像と比べる)
@@ -41,7 +42,7 @@ python gen_images.py          # アプリの画像の足りないものを表示
 
 [StarResonanceTool](https://github.com/PotRooms/StarResonanceTool)の内部コードに手を入れると、言語別のZtableを取り出せる。
 
-`Star`と`StarASIA`の両方を、次の形で置く。`gen_skill_warnings.py`と`gen_images.py`は同じツールの出力の`Unk`と`Bundles`も読む。
+`Star`と`StarASIA`の両方を、次の形で置く。`gen_skill_warnings.py`・`gen_maps.py`・`gen_images.py`は同じツールの出力の`Unk`と`Bundles`も読む。
 
 ```
 JSONS/
@@ -84,6 +85,7 @@ export BPSR_TABLES=<置き場所>     # bash
 | `gen_root_buffs.py` | `Data/Localization/RootBuffNames.json`<br>`Data/Localization/ModuleEffectNames.json`<br>`Data/Localization/TalentNames.json`<br>`Data/Generated/RootBuffs.json` |
 | `gen_items.py` | `Data/Localization/ItemNames.json` |
 | `gen_chat_hyperlinks.py` | `Data/Localization/ChatHyperlinks.json`<br>`Data/Localization/UnionBuildingNames.json` |
+| `gen_maps.py` | `Data/Generated/Maps.json` |
 | `check_overrides.py` | 書かない(表示だけ) |
 | `gen_images.py` | `--write`のときだけ`StarResonanceDps.App/Data/Images/`(無いファイルだけ) |
 
@@ -102,6 +104,7 @@ export BPSR_TABLES=<置き場所>     # bash
   更新する画像はファイルを消してから`--write`を流す
 - `--before`を付けずに`--write`を流すと、前から足りなかった画像も取り出して置く
 - `Data/Images/Buffs`には、ゲームの画像と大きさが違う(手で整えた)画像がある。`--write`で足す画像はゲームの大きさのまま
+- 地図の画像(`Data/Images/Maps`)は`Maps.json`から決めるので、`gen_maps.py`を先に流す。ゲームの大きさのまま置くので、ファイルが大きい
 - `check_overrides.py`と`gen_images.py`は、アプリのアイコンの探し方と行のまとめ方に合わせて作ってある。アプリ側を変えたら合わせる
 
 ## 手動編集ファイル
@@ -116,6 +119,7 @@ export BPSR_TABLES=<置き場所>     # bash
 | `Data/Overrides/BuffOverrides.json` | 同梱`Data/BuffTable.json`の項目の差し替え |
 | `Data/Overrides/SkillOverrides.json` | 同梱`SkillTable`の`SkillLevelGroup`の補い |
 | `Data/Overrides/SkillActivationOverrides.json` | 推移グラフの技のアイコンの名前とアイコン |
+| `Data/Overrides/MapOverrides.json` | マップの地図の範囲(`Generated/Maps.json`)の差し替え |
 | `Data/Overrides/MonsterNameOverrides.json` | モンスターの名前(`MonsterNames.json`)の差し替え |
 | `Data/Overrides/SkillNameOverrides.json` | 技の名前(`SkillNames.json`)の差し替え |
 | `Data/Overrides/BuffNameOverrides.json` | バフの名前(`BuffNames.json`)の差し替え |
@@ -134,7 +138,7 @@ export BPSR_TABLES=<置き場所>     # bash
 | | |
 |---|---|
 | 上書きにキーが無い | 空になった言語だけを持つ項目を足す |
-| 上書きにキーがある | 空になった言語だけ前の名前で上書きする。ほかの言語はそのまま |
+| 上書きにキーがある | 空になった言語だけ前の名前で上書きする。他の言語はそのまま |
 | 今回の入力に行ごと無いキー | 書き足さず、キーを表示する |
 
 書き足したキー・言語・名前は全部表示する。
@@ -212,7 +216,7 @@ export BPSR_TABLES=<置き場所>     # bash
 ### SkillActivationOverrides.json
 
 推移グラフの横軸の下に出す、押した技のアイコンの名前とアイコンの手修正。テーブルに名前もアイコンも無い技に使う。
-ほかに次の2つにも使う。
+他に次の2つにも使う。
 
 - 通常攻撃の2段目以降。名前は1段目のメーターの行名、アイコンは1段目のアイコン
 - 押した技の番号とダメージの発生源キーが違い、メーターの行名に届かない技。名前はメーターの行名(その手修正を含む)を写す
@@ -231,6 +235,25 @@ export BPSR_TABLES=<置き場所>     # bash
 - `Name`と`Icon`はどちらも省略できる。空の値は書かなかったのと同じ
 - `Icon`はファイル名だけで書く。**イマジンのアイコンだけは頭に`ui/textures/skill_aoyi/`を付ける**(イマジンのアイコンかどうかをこの頭で決める)
 - キーが技IDの形でない行と知らない言語の名前は、エラーログが出て読まれない。ファイルが無ければエラーログを出し、上書き無しのまま続ける
+
+### MapOverrides.json
+
+マップの地図の範囲の差し替え。`Generated/Maps.json`の範囲で地図を出すと、実際の位置と地図の画像がずれる地図に使う。
+キーは`Maps.json`の`Maps`のキー(地図の画像の名前)。**書いた項目だけ**が差し替わり、同じ地図を使うシーンは全部変わる。
+
+```json
+{
+  "<地図のキー>": {
+    "X0": <地図の左端の x>,
+    "Z0": <地図の下端の z>,
+    "Width": <x の幅>,
+    "Depth": <z の幅>
+  }
+}
+```
+
+- 4つの項目はどれも省略できる
+- `Maps.json`に無いキーと中身の無い行は、エラーログが出て当てられない。ファイルが無い・読めないときはエラーログを出し、上書き無しのまま続ける
 
 ### BuffOverrides.json
 
@@ -253,7 +276,7 @@ export BPSR_TABLES=<置き場所>     # bash
 |---|---|
 | `BuffType` | バフ側かデバフ側か(0デバフ / 1バフ)。バフとデバフの振り分けは、実質このファイルで決まる |
 | `BuffPriority` | ゲーム内のバフ表示に出すか(0は出さない)。**バフ/デバフリストもこの値とアイコンで出すかが決まる**(0なら出さない、0以外ならアイコンがあるときだけ出す) |
-| `FoldInto` | まとめ先のバフID。まとめたバフは、バフ/デバフリストでまとめ先と同じものとして出る(名前・アイコン・バフ側かデバフ側か・優先度・非表示リストの番号)。**まとめる側にはほかの項目を書かない**(まとめ先のものが使われる)。まとめ先がテーブルに無い・自分自身・さらにまとめられているときは、エラーログが出てまとめない |
+| `FoldInto` | まとめ先のバフID。まとめたバフは、バフ/デバフリストでまとめ先と同じものとして出る(名前・アイコン・バフ側かデバフ側か・優先度・非表示リストの番号)。**まとめる側には他の項目を書かない**(まとめ先のものが使われる)。まとめ先がテーブルに無い・自分自身・さらにまとめられているときは、エラーログが出てまとめない |
 | `Icon` / `ShowHUDIcon` | アイコンのファイル名。`"-"`は空にする。**ファイル名だけで書き、頭は次のものだけ付ける**: モジュール効果のアイコンは`ui/atlas/mod_effect/`、因子のアイコンは`Factors/`。**`Icon.`で始まる値はアプリの`Styles/Icons.xaml`のアイコンのキー**で、白い形のアイコンとして描く(装備効果の`Icon.EquipSlot.202` / `Icon.EquipSlot.200`など) |
 
 必要な項目だけ書く。**中身の無い項目を置かない。** 差し替える中身が無くても、そのIDが登録されている扱いになる。

@@ -67,7 +67,6 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private int _widgetActionIndex = -1;
 
-    private bool _isBulkUpdatingWidgets;
     private bool _isLoadingWidgets;
 
     /// <summary>
@@ -102,6 +101,7 @@ public sealed partial class MainViewModel : ViewModelBase
 
         _playerListWidget = AddWidget(WidgetKind.PlayerList, "Widget_PlayerList");
         _entityListWidget = AddWidget(WidgetKind.EntityList, "Widget_EntityList");
+        AddWidget(WidgetKind.Map, "Widget_Map");
         AddWidget(WidgetKind.PlayerInfo, "Widget_PlayerInfo");
         AddWidget(WidgetKind.EntityInfo, "Widget_EntityInfo");
         AddWidget(WidgetKind.PlayerStatus, "Widget_PlayerStatus");
@@ -111,6 +111,7 @@ public sealed partial class MainViewModel : ViewModelBase
         AddWidget(WidgetKind.PlayerModule, "Widget_PlayerModule");
         AddWidget(WidgetKind.BuffList, "Widget_BuffList");
         AddWidget(WidgetKind.DebuffList, "Widget_DebuffList");
+        AddWidget(WidgetKind.BuffUptime, "Widget_BuffUptime");
         AddWidget(WidgetKind.BuffDebuffCard, "Widget_BuffDebuffCard");
         AddWidget(WidgetKind.BuffDebuffGroup, "Widget_BuffDebuffGroup");
         AddWidget(WidgetKind.ReviveList, "Widget_ReviveList");
@@ -147,6 +148,8 @@ public sealed partial class MainViewModel : ViewModelBase
         _entityListWidget.EntityListTargetsChanged += EntityListWidget_EntityListTargetsChanged;
         _widgetWindowManager.TargetWindowsChanged += WidgetWindowManager_TargetWindowsChanged;
         _widgetWindowManager.UnspecifiedBuffCardResolved += WidgetWindowManager_UnspecifiedBuffCardResolved;
+        _widgetWindowManager.TargetOpenedFromWidget += WidgetWindowManager_TargetOpenedFromWidget;
+        _widgetWindowManager.EntityWindowAcquired += WidgetWindowManager_EntityWindowAcquired;
         // 起動できないときに見せるだけのメイン窓では Core が初期化されていない(DB も開いていない)。
         // EncounterManager に触ると静的コンストラクタが回を作り直しに行くので、Core の購読も選択リストを読み直す時計も始めない(集計タブと同じ)。
         if (CombatRuntimeHost.Instance.IsInitialized)
@@ -291,6 +294,8 @@ public sealed partial class MainViewModel : ViewModelBase
             widget.EntityInfoHiddenBuffsChanged -= Widget_EntityInfoHiddenBuffsChanged;
             widget.BuffListPriorityBuffChangedFromWidget -= Widget_BuffListPriorityBuffChangedFromWidget;
             widget.EntityInfoPriorityBuffChangedFromWidget -= Widget_EntityInfoPriorityBuffChangedFromWidget;
+            widget.BuffUptimeHiddenBuffsChanged -= Widget_BuffUptimeHiddenBuffsChanged;
+            widget.BuffUptimePriorityBuffChangedFromWidget -= Widget_BuffUptimePriorityBuffChangedFromWidget;
             widget.BuffDebuffGroupEntryChangedFromWidget -= Widget_BuffDebuffGroupEntryChangedFromWidget;
             widget.BuffCardShortcutChangedFromWidget -= Widget_BuffCardShortcutChangedFromWidget;
             widget.BuffCardNotificationTargetChangedFromWidget -= Widget_BuffCardNotificationTargetChangedFromWidget;
@@ -341,6 +346,8 @@ public sealed partial class MainViewModel : ViewModelBase
         widget.EntityInfoHiddenBuffsChanged += Widget_EntityInfoHiddenBuffsChanged;
         widget.BuffListPriorityBuffChangedFromWidget += Widget_BuffListPriorityBuffChangedFromWidget;
         widget.EntityInfoPriorityBuffChangedFromWidget += Widget_EntityInfoPriorityBuffChangedFromWidget;
+        widget.BuffUptimeHiddenBuffsChanged += Widget_BuffUptimeHiddenBuffsChanged;
+        widget.BuffUptimePriorityBuffChangedFromWidget += Widget_BuffUptimePriorityBuffChangedFromWidget;
         widget.BuffDebuffGroupEntryChangedFromWidget += Widget_BuffDebuffGroupEntryChangedFromWidget;
         widget.BuffCardShortcutChangedFromWidget += Widget_BuffCardShortcutChangedFromWidget;
         widget.BuffCardNotificationTargetChangedFromWidget += Widget_BuffCardNotificationTargetChangedFromWidget;
@@ -356,7 +363,7 @@ public sealed partial class MainViewModel : ViewModelBase
 
         widget.IsSearchMatch = MatchesSearchText(widget);
         _widgetItems.Add(widget);
-        _widgetWindowManager.RegisterPlayerWindowWidget(widget);
+        _widgetWindowManager.RegisterWidget(widget);
         return widget;
     }
 
@@ -401,6 +408,17 @@ public sealed partial class MainViewModel : ViewModelBase
     private void WidgetWindowManager_UnspecifiedBuffCardResolved(WidgetListItemViewModel widget, WidgetTargetOption card)
     {
         _targetSelection.ResolveUnspecified(widget, card);
+    }
+
+    /// <summary>ほかのウィジェットから窓を開いたか前に出した。カードの選択をその窓の相手にする。</summary>
+    private void WidgetWindowManager_TargetOpenedFromWidget(WidgetListItemViewModel widget, WidgetTargetOption option)
+    {
+        _targetSelection.SelectOpenedTarget(widget, option);
+    }
+
+    private void WidgetWindowManager_EntityWindowAcquired(WidgetListItemViewModel widget, WidgetTargetOption before, WidgetTargetOption after)
+    {
+        _targetSelection.ReplaceAcquiredTarget(widget, before, after);
     }
 
     /// <summary>バフ・デバフカードのショートカット(保存かプレビュー)が変わった。並べるものの有無と既定が変わるので、そのカードを当て直す。</summary>
@@ -506,6 +524,28 @@ public sealed partial class MainViewModel : ViewModelBase
             .PriorityBuffs ?? [];
         WidgetConfigDefaults.SetBuffEntryEnabled(priorityBuffs, key, isEnabled, WidgetConfigDefaults.DefaultEntityInfoPriorityBuffEntries);
         _widgetStateManager.SaveEntityInfoPriorityBuffs(kind, priorityBuffs);
+    }
+
+    /// <summary>バフ稼働率の行の右クリックでバフを非表示にした。バフ・デバフ一覧と同じく、保存済みの一覧に足してその項目だけ書く。</summary>
+    private void Widget_BuffUptimeHiddenBuffsChanged(WidgetKind kind, int baseId)
+    {
+        var hiddenBuffIds = _widgetStateManager.GetWidgetSnapshot(kind).BuffUptime?.HiddenBuffIds ?? [];
+        if (hiddenBuffIds.Contains(baseId))
+        {
+            return;
+        }
+
+        _widgetStateManager.SaveBuffUptimeHiddenBuffs(kind, [.. hiddenBuffIds, baseId]);
+    }
+
+    /// <summary>バフ稼働率の行の右クリックでバフを優先表示にした・やめた。バフ・デバフ一覧と同じく、保存済みの行に同じ決まりで当ててその項目だけ書く。</summary>
+    private void Widget_BuffUptimePriorityBuffChangedFromWidget(WidgetKind kind, BuffEntryKey key, bool isEnabled)
+    {
+        var priorityBuffs = WidgetConfigDefaults
+            .CloneNormalizedBuffUptime(_widgetStateManager.GetWidgetSnapshot(kind).BuffUptime)
+            .PriorityBuffs ?? [];
+        WidgetConfigDefaults.SetBuffEntryEnabled(priorityBuffs, key, isEnabled, WidgetConfigDefaults.DefaultBuffUptimePriorityBuffEntries);
+        _widgetStateManager.SaveBuffUptimePriorityBuffs(kind, priorityBuffs);
     }
 
     /// <summary>
@@ -939,9 +979,7 @@ public sealed partial class MainViewModel : ViewModelBase
 
             if (e.PropertyName == nameof(WidgetListItemViewModel.IsPinned))
             {
-                _widgetWindowManager.ApplyWidgetPinState(
-                    widget,
-                    bringToFront: !_isBulkUpdatingWidgets);
+                _widgetWindowManager.ApplyWidgetPinState(widget);
             }
         }
 
@@ -1024,13 +1062,6 @@ public sealed partial class MainViewModel : ViewModelBase
                     _configManager.CurrentSettings.PlayerNameDisplayModeIndex == (int)PlayerNameDisplayMode.Show
                         ? (int)PlayerNameDisplayMode.Hide
                         : (int)PlayerNameDisplayMode.Show);
-                break;
-
-            case HotkeyAction.WidgetWindowTopmostAlwaysOrPinnedOnly:
-                _configManager.SaveWidgetWindowTopmostModeIndex(
-                    _configManager.CurrentSettings.WidgetWindowTopmostModeIndex == AppConfigDefaults.AlwaysWidgetWindowTopmostModeIndex
-                        ? AppConfigDefaults.PinnedOnlyWidgetWindowTopmostModeIndex
-                        : AppConfigDefaults.AlwaysWidgetWindowTopmostModeIndex);
                 break;
 
             case HotkeyAction.Benchmark:
@@ -1183,21 +1214,11 @@ public sealed partial class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>一括のピン留めでは、窓を1枚ずつ前に出さない(<c>bringToFront</c>)。</summary>
-    private void UpdateWidgetPinStates(IEnumerable<WidgetListItemViewModel> widgets, bool isPinned)
+    private static void UpdateWidgetPinStates(IEnumerable<WidgetListItemViewModel> widgets, bool isPinned)
     {
-        _isBulkUpdatingWidgets = true;
-
-        try
+        foreach (var widget in widgets)
         {
-            foreach (var widget in widgets)
-            {
-                widget.IsPinned = isPinned;
-            }
-        }
-        finally
-        {
-            _isBulkUpdatingWidgets = false;
+            widget.IsPinned = isPinned;
         }
     }
 

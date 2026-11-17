@@ -33,6 +33,7 @@ These are the settings for the whole app. Open them with "Settings" at the botto
 
 ## Widgets
 
+- Hide widgets when the game is inactive: Hides widgets while you are using a window other than the game or this app (default: on).
 - Widget Windows: Chooses whether widget windows are always on top or only pinned windows are on top (default: "Always on Top").
 - Widget Status: Whether the status circle is shown on the left of the title of widget windows. "Show Only When Not Normal" shows it only when it is yellow or red (default: "Show").
 

@@ -26,7 +26,7 @@ namespace StarResonanceDps.App.ViewModels;
 /// </para>
 /// </summary>
 public sealed partial class EntityBuffDebuffCardWidgetViewModel
-    : ViewModelBase, IEntityWidgetWindowViewModel, IDisposable, IBuffDebuffCardMenuViewModel
+    : ViewModelBase, IEntityWidgetWindowViewModel, IDisposable, IBuffDebuffCardMenuViewModel, IWidgetWindowHiddenAware
 {
     private readonly WidgetListItemViewModel _widget;
     private readonly EntityWindowTarget _target;
@@ -39,6 +39,9 @@ public sealed partial class EntityBuffDebuffCardWidgetViewModel
 
     /// <summary>通知(バフ・デバフ効果切れ・薬剤・料理効果切れ)の判定。カードを開いている間だけ借りる。</summary>
     private readonly BuffNotificationWatcher _notificationWatcher = new();
+
+    /// <summary>窓が隠れているか(全体設定「ゲーム非アクティブ時にウィジェットを隠す」)。隠れている間は中身を当て直さない。</summary>
+    private bool _isWindowHidden;
 
     private string _scaleKey = string.Empty;
 
@@ -148,8 +151,6 @@ public sealed partial class EntityBuffDebuffCardWidgetViewModel
 
     public bool IsEntityAcquired => _target.IsAcquired;
 
-    public bool IsWaitingForEntity => _target.IsWaitingForEntity;
-
     public EntityTargetInfo? Entity => _target.Entity;
 
     public string TargetName => _target.Name;
@@ -222,16 +223,14 @@ public sealed partial class EntityBuffDebuffCardWidgetViewModel
         return _target.Represents(entityUuid);
     }
 
+    public bool CanCaptureEntity(EntityTargetInfo entity)
+    {
+        return _target.CanCapture(entity);
+    }
+
     public bool RepresentsBuff(PlayerBuffListKind kind, string? buffKey, BuffGroup group)
     {
-        if (_kind != kind || _group != group)
-        {
-            return false;
-        }
-
-        // まとまりを追う窓は、個別のバフキーが違っても同じ窓。
-        return group != BuffGroup.None
-            || string.Equals(_requestedBuffKey, buffKey, StringComparison.Ordinal);
+        return BuffDebuffCardContent.RepresentsBuff(_kind, _requestedBuffKey, _group, kind, buffKey, group);
     }
 
     public bool TryApplyEntity(EntityTargetInfo entity)
@@ -357,6 +356,19 @@ public sealed partial class EntityBuffDebuffCardWidgetViewModel
         RefreshMenuText();
     }
 
+    /// <summary>
+    /// 窓が隠れたら中身の当て直しだけを止め、見えたら読み直す(<see cref="IWidgetWindowHiddenAware"/>)。
+    /// 定期の読み直しは隠れている間も続け、通知の判定は止めない(止めると、その間に消えたバフの効果切れを見落とす)。
+    /// </summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        _isWindowHidden = isHidden;
+        if (!isHidden)
+        {
+            Refresh();
+        }
+    }
+
     private void Refresh()
     {
         if (_isDisposed)
@@ -394,6 +406,18 @@ public sealed partial class EntityBuffDebuffCardWidgetViewModel
             snapshot,
             _target.Name);
 
+        if (snapshot is not null)
+        {
+            _lastKnownCaster = snapshot.Caster;
+            _lastKnownCasterEntityUuid = _target.EntityUuid;
+        }
+
+        // 窓が隠れている間は通知の判定と付与者の控えまでで、中身は当て直さない(見えたときに SetWindowHidden が読み直す)。
+        if (_isWindowHidden)
+        {
+            return;
+        }
+
         if (snapshot is null)
         {
             // 失効。アイコンと残り時間は消すが、名前の行は残す。
@@ -407,9 +431,6 @@ public sealed partial class EntityBuffDebuffCardWidgetViewModel
                 hasBuff: false);
             return;
         }
-
-        _lastKnownCaster = snapshot.Caster;
-        _lastKnownCasterEntityUuid = _target.EntityUuid;
 
         ApplyContent(
             BuffDebuffCardContent.Create(

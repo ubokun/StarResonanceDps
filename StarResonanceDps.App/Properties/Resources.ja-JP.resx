@@ -214,7 +214,7 @@
     <value>別のキーを割り当ててください。</value>
   </data>
   <data name="Hotkey_RegisterFailed_InUse" xml:space="preserve">
-    <value>「{0}」はほかのアプリが使用中です。</value>
+    <value>「{0}」は他のアプリが使用中です。</value>
   </data>
   <data name="Hotkey_RegisterFailed_Error" xml:space="preserve">
     <value>「{0}」を設定できませんでした(エラー{1})。</value>
@@ -319,6 +319,21 @@ VOICEVOXを起動し直してください。</value>
   <data name="BuffCardNotification_Expired_Default" xml:space="preserve">
     <value>{TargetName}の{BuffName}の効果が切れました</value>
   </data>
+  <data name="BuffCardNotification_ExpiringSoon_Default" xml:space="preserve">
+    <value>{TargetName}の{BuffName}の効果が切れそうです</value>
+  </data>
+  <data name="BuffExpiredCondition_OnExpiry" xml:space="preserve">
+    <value>効果切れ時</value>
+  </data>
+  <data name="BuffExpiredCondition_1" xml:space="preserve">
+    <value>効果切れ1秒前</value>
+  </data>
+  <data name="BuffExpiredCondition_2" xml:space="preserve">
+    <value>効果切れ2秒前</value>
+  </data>
+  <data name="BuffExpiredCondition_3" xml:space="preserve">
+    <value>効果切れ3秒前</value>
+  </data>
   <data name="BuffCardNotification_CuisinePotionLow_Default" xml:space="preserve">
     <value>{TargetName}の{BuffName}効果が切れそうです</value>
   </data>
@@ -402,6 +417,27 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="TelegraphedSkillCondition_3" xml:space="preserve">
     <value>発動3秒前</value>
+  </data>
+  <data name="Notification_CooldownReady" xml:space="preserve">
+    <value>リキャスト完了</value>
+  </data>
+  <data name="CooldownReadyNotification_Default" xml:space="preserve">
+    <value>{SkillName}が使えます</value>
+  </data>
+  <data name="CooldownReadyCondition_OnReady" xml:space="preserve">
+    <value>使用可能時</value>
+  </data>
+  <data name="CooldownReadyCondition_1" xml:space="preserve">
+    <value>使用可能1秒前</value>
+  </data>
+  <data name="CooldownReadyCondition_2" xml:space="preserve">
+    <value>使用可能2秒前</value>
+  </data>
+  <data name="CooldownReadyCondition_3" xml:space="preserve">
+    <value>使用可能3秒前</value>
+  </data>
+  <data name="Notification_CooldownSelfOnlyNote" xml:space="preserve">
+    <value>※自分のスキルのみ通知します</value>
   </data>
   <data name="Settings_Section_Basic_Title" xml:space="preserve">
     <value>基本設定</value>
@@ -658,6 +694,9 @@ VOICEVOXを起動し直してください。</value>
     <value>アプリを閉じて更新し、起動し直します。
 設定と履歴はそのまま残ります。</value>
   </data>
+  <data name="Update_Progress_Comparing" xml:space="preserve">
+    <value>変更されたファイルを確認しています…</value>
+  </data>
   <data name="Update_Progress_Downloading" xml:space="preserve">
     <value>ダウンロードしています…</value>
   </data>
@@ -669,6 +708,20 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Update_Progress_WaitingForFiles" xml:space="preserve">
     <value>使用中のファイルが解放されるのを待っています…</value>
+  </data>
+  <data name="Update_FileInUse_Message" xml:space="preserve">
+    <value>他のプログラムがファイルを使用しているため、更新できません。</value>
+  </data>
+  <data name="Update_FileInUse_Detail" xml:space="preserve">
+    <value>{0}を閉じてから「はい」を押すと、更新を続けます。
+「いいえ」を押すと、更新をやめて元のバージョンを起動します。</value>
+  </data>
+  <data name="Update_FileInUseUnknownProgram_Detail" xml:space="preserve">
+    <value>{0}を使用しているプログラムを閉じてから「はい」を押すと、更新を続けます。
+「いいえ」を押すと、更新をやめて元のバージョンを起動します。</value>
+  </data>
+  <data name="Update_Progress_ProgramSeparator" xml:space="preserve">
+    <value>、</value>
   </data>
   <data name="Update_Progress_Replacing" xml:space="preserve">
     <value>ファイルを置き換えています…</value>
@@ -723,7 +776,7 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Update_Error_Replace" xml:space="preserve">
     <value>ファイルを置き換えられなかったので、元のバージョンに戻しました。
-アプリのフォルダを開いているほかのアプリを閉じて、もう一度お試しください。</value>
+アプリのフォルダを開いている他のアプリを閉じて、もう一度お試しください。</value>
   </data>
   <data name="Update_Error_RestoreFailed" xml:space="preserve">
     <value>元のバージョンに戻せませんでした。
@@ -1018,7 +1071,7 @@ VOICEVOXを起動し直してください。</value>
     <value>テキストをコピーできませんでした。</value>
   </data>
   <data name="TextCopyFailed_Detail" xml:space="preserve">
-    <value>ほかのアプリがクリップボードを使っている可能性があります。
+    <value>他のアプリがクリップボードを使っている可能性があります。
 少し待ってから、もう一度コピーしてください。</value>
   </data>
   <data name="Timeline_HealFormat" xml:space="preserve">
@@ -1213,6 +1266,9 @@ VOICEVOXを起動し直してください。</value>
   <data name="Classes_Boss" xml:space="preserve">
     <value>ボス</value>
   </data>
+  <data name="Classes_Entity" xml:space="preserve">
+    <value>エンティティ</value>
+  </data>
   <data name="Classes_Unknown" xml:space="preserve">
     <value>不明</value>
   </data>
@@ -1347,6 +1403,9 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Widget_DebuffList" xml:space="preserve">
     <value>デバフリスト</value>
+  </data>
+  <data name="Widget_BuffUptime" xml:space="preserve">
+    <value>バフ稼働率</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>キャンセル</value>
@@ -1508,6 +1567,18 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Settings_Graph_ShowSkillLog" xml:space="preserve">
     <value>スキルログを表示</value>
+  </data>
+  <data name="Settings_BuffUptime_ShowsPermanentBuffs" xml:space="preserve">
+    <value>常駐バフの表示</value>
+  </data>
+  <data name="Settings_BuffUptime_ShowsCuisinePotion" xml:space="preserve">
+    <value>料理・薬剤の表示</value>
+  </data>
+  <data name="Settings_BuffUptime_PixelsPerSecond" xml:space="preserve">
+    <value>1秒の幅</value>
+  </data>
+  <data name="Settings_BuffUptime_PixelsPerSecond_Option" xml:space="preserve">
+    <value>{0}px</value>
   </data>
   <data name="Widget_DamageSkillDetail" xml:space="preserve">
     <value>スキル詳細(与ダメ)</value>
@@ -1753,10 +1824,67 @@ VOICEVOXを起動し直してください。</value>
     <value>蘇生リスト</value>
   </data>
   <data name="Widget_EntityInfo" xml:space="preserve">
-    <value>エンティティ情報</value>
+    <value>ターゲット情報</value>
   </data>
   <data name="Widget_Chat" xml:space="preserve">
     <value>チャット</value>
+  </data>
+  <data name="Widget_Map" xml:space="preserve">
+    <value>マップ</value>
+  </data>
+  <data name="Settings_Map_Opacity" xml:space="preserve">
+    <value>マップの不透明度</value>
+  </data>
+  <data name="Settings_Map_PlayerFilter" xml:space="preserve">
+    <value>プレイヤー</value>
+  </data>
+  <data name="Settings_Map_EntityFilter" xml:space="preserve">
+    <value>エンティティ</value>
+  </data>
+  <data name="Settings_Map_PlayerName" xml:space="preserve">
+    <value>プレイヤー名</value>
+  </data>
+  <data name="Settings_Map_EntityName" xml:space="preserve">
+    <value>エンティティ名</value>
+  </data>
+  <data name="Settings_Map_HideNamesInCombat" xml:space="preserve">
+    <value>交戦中の名前非表示</value>
+  </data>
+  <data name="Settings_Map_SimplifyPlayersInCombat" xml:space="preserve">
+    <value>交戦中のプレイヤーを簡略化表示</value>
+  </data>
+  <data name="Settings_Map_AlwaysSimplifySelf" xml:space="preserve">
+    <value>自分を常に簡略化表示</value>
+  </data>
+  <data name="MapHideNamesTarget_None" xml:space="preserve">
+    <value>非表示しない</value>
+  </data>
+  <data name="MapInCombatTarget_Players" xml:space="preserve">
+    <value>プレイヤーのみ</value>
+  </data>
+  <data name="MapInCombatTarget_Entities" xml:space="preserve">
+    <value>エンティティのみ</value>
+  </data>
+  <data name="MapPlayerNameDisplay_MembersOnly" xml:space="preserve">
+    <value>パーティメンバーのみ表示</value>
+  </data>
+  <data name="MapPlayerNameDisplay_NonMembersOnly" xml:space="preserve">
+    <value>パーティメンバー以外表示</value>
+  </data>
+  <data name="Map_ReturnToCurrentMap" xml:space="preserve">
+    <value>自分のいるマップに戻る</value>
+  </data>
+  <data name="Map_ClearSharedPosition" xml:space="preserve">
+    <value>位置のマークを消す</value>
+  </data>
+  <data name="EntityInfo_ReturnToTarget" xml:space="preserve">
+    <value>ターゲットに戻る</value>
+  </data>
+  <data name="Map_FooterEntities" xml:space="preserve">
+    <value>エンティティ</value>
+  </data>
+  <data name="Map_FooterPlayers" xml:space="preserve">
+    <value>プレイヤー</value>
   </data>
   <data name="Chat_Channel_World" xml:space="preserve">
     <value>ワールド</value>
@@ -1877,6 +2005,9 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Settings_Widget_DataStatus" xml:space="preserve">
     <value>ウィジェット状態</value>
+  </data>
+  <data name="Settings_Widget_HideWhenGameInactive" xml:space="preserve">
+    <value>ゲーム非アクティブ時にウィジェットを隠す</value>
   </data>
   <data name="WidgetDataStatusDisplay_NonNormalOnly" xml:space="preserve">
     <value>正常状態以外のみ表示</value>
@@ -2054,6 +2185,15 @@ VOICEVOXを起動し直してください。</value>
   </data>
   <data name="Notification_TargetIdSourceNote" xml:space="preserve">
     <value>※IDは表示設定の「内部ID」で表示でき、IDと名前はウィジェット「タイムライン」からコピーできます</value>
+  </data>
+  <data name="Notification_CooldownSkillName_Placeholder" xml:space="preserve">
+    <value>例: 奥義！タイムエディクト</value>
+  </data>
+  <data name="Notification_CooldownSkillId_Placeholder" xml:space="preserve">
+    <value>例: 3921</value>
+  </data>
+  <data name="Notification_CooldownSkillIdSourceNote" xml:space="preserve">
+    <value>※IDは表示設定の「内部ID」で表示でき、ウィジェット「プレイヤーリスト」のスキルの枠で確認できます</value>
   </data>
   <data name="Notification_TargetMultipleNote" xml:space="preserve">
     <value>※「|」で区切って複数入力できます</value>
@@ -2510,7 +2650,7 @@ VOICEVOXを起動し直してください。</value>
     <value>画像をコピーできませんでした。</value>
   </data>
   <data name="PlayerInfo_CopyImageFailed_Detail" xml:space="preserve">
-    <value>ほかのアプリがクリップボードを使っている可能性があります。
+    <value>他のアプリがクリップボードを使っている可能性があります。
 少し待ってから、もう一度コピーしてください。</value>
   </data>
   <data name="Startup_Error_Title" xml:space="preserve">

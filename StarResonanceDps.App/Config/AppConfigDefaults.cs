@@ -57,6 +57,12 @@ public static class AppConfigDefaults
     /// <summary>既定は3秒。</summary>
     public const int DefaultHealthLowConditionIndex = 3;
 
+    /// <summary>通知「バフ・デバフ効果切れ」の通知条件の選択肢(切れる何秒前に出すか)。0 は切れるとき。並びは通知タブの選択リストと同じ。</summary>
+    public static readonly int[] BuffExpiredLeadSeconds = [0, 1, 2, 3];
+
+    /// <summary>既定は切れるとき。</summary>
+    public const int DefaultBuffExpiredConditionIndex = 0;
+
     /// <summary>通知「薬剤・料理効果切れ」の通知条件の選択肢(残りの分数)。並びは通知タブの選択リストと同じ。</summary>
     public static readonly int[] CuisinePotionLowMinutes = [1, 2, 5, 10];
 
@@ -91,6 +97,12 @@ public static class AppConfigDefaults
 
     /// <summary>既定は発動時。</summary>
     public const int DefaultTelegraphedSkillConditionIndex = 0;
+
+    /// <summary>通知「リキャスト完了」の通知条件の選択肢(自分のスキルが使えるようになる何秒前に出すか)。0 は使えるようになったとき。並びは通知タブの選択リストと同じ。</summary>
+    public static readonly int[] CooldownReadyLeadSeconds = [0, 1, 2, 3];
+
+    /// <summary>既定は使用可能時。</summary>
+    public const int DefaultCooldownReadyConditionIndex = 0;
 
     // 通知音量(Windows の通知の音と読み上げ、%)。0 は鳴らさない。
     // 100 は Windows の通知の音と Windows の音声では元の大きさ、VOICEVOX では値を2倍して掛ける(SpeechQueue.VoicevoxVolumeScale)ので 50 が元の大きさ。
@@ -152,6 +164,7 @@ public static class AppConfigDefaults
             UnnamedSkillNameDisplayModeIndex = UnnamedSkillNameInternalNameIndex,
             WidgetWindowTopmostModeIndex = AlwaysWidgetWindowTopmostModeIndex,
             WidgetDataStatusDisplayModeIndex = WidgetDataStatusDisplayShowIndex,
+            HidesWidgetsWhenGameInactive = true,
             WindowColorIndex = 1,
             WindowColors = CreateDefaultWindowColors(),
             Hotkeys = CreateDefaultHotkeys()
@@ -191,15 +204,17 @@ public static class AppConfigDefaults
             TargetedConditionIndex = DefaultTargetedConditionIndex,
             HealthLowThresholdIndex = DefaultHealthLowThresholdIndex,
             HealthLowConditionIndex = DefaultHealthLowConditionIndex,
+            BuffExpiredConditionIndex = DefaultBuffExpiredConditionIndex,
             CuisinePotionConditionIndex = DefaultCuisinePotionConditionIndex,
             TelegraphedSkillConditionIndex = DefaultTelegraphedSkillConditionIndex,
+            CooldownReadyConditionIndex = DefaultCooldownReadyConditionIndex,
             TargetNames = [],
             TargetIds = []
         };
     }
 
     /// <summary>
-    /// ホットキーの既定。プレイヤー名 Ctrl+F11 / お気に入り Ctrl+F8 / ピン留め Ctrl+F7 / クリック透過 Ctrl+F6 / 最前面 Ctrl+F5 /
+    /// ホットキーの既定。プレイヤー名 Ctrl+F11 / お気に入り Ctrl+F8 / ピン留め Ctrl+F7 / クリック透過 Ctrl+F6 /
     /// 計測 Ctrl+F10 / リセット Ctrl+F9。
     /// </summary>
     public static HotkeySettingsConfig CreateDefaultHotkeys()
@@ -210,7 +225,6 @@ public static class AppConfigDefaults
             StartFavoritesOrStopAll = HotkeyBindingConfig.Create(Key.F8, ModifierKeys.Control),
             PinRunningOrUnpinAll = HotkeyBindingConfig.Create(Key.F7, ModifierKeys.Control),
             ClickThroughPinnedOrClearAll = HotkeyBindingConfig.Create(Key.F6, ModifierKeys.Control),
-            WidgetWindowTopmostAlwaysOrPinnedOnly = HotkeyBindingConfig.Create(Key.F5, ModifierKeys.Control),
             Benchmark = HotkeyBindingConfig.Create(Key.F10, ModifierKeys.Control),
             ResetEncounter = HotkeyBindingConfig.Create(Key.F9, ModifierKeys.Control)
         };
@@ -314,11 +328,16 @@ public static class AppConfigDefaults
             DefaultTargetedConditionIndex);
         item.HealthLowThresholdIndex = IndexOrDefault(item.HealthLowThresholdIndex, HealthLowThresholdPercents.Length, DefaultHealthLowThresholdIndex);
         item.HealthLowConditionIndex = IndexOrDefault(item.HealthLowConditionIndex, HealthLowDurationSeconds.Length, DefaultHealthLowConditionIndex);
+        item.BuffExpiredConditionIndex = IndexOrDefault(item.BuffExpiredConditionIndex, BuffExpiredLeadSeconds.Length, DefaultBuffExpiredConditionIndex);
         item.CuisinePotionConditionIndex = IndexOrDefault(item.CuisinePotionConditionIndex, CuisinePotionLowMinutes.Length, DefaultCuisinePotionConditionIndex);
         item.TelegraphedSkillConditionIndex = IndexOrDefault(
             item.TelegraphedSkillConditionIndex,
             TelegraphedSkillLeadSeconds.Length,
             DefaultTelegraphedSkillConditionIndex);
+        item.CooldownReadyConditionIndex = IndexOrDefault(
+            item.CooldownReadyConditionIndex,
+            CooldownReadyLeadSeconds.Length,
+            DefaultCooldownReadyConditionIndex);
         item.TargetNames = [.. (item.TargetNames ?? []).Select(name => name?.Trim() ?? string.Empty).Where(name => name.Length > 0)];
         item.TargetIds = [.. (item.TargetIds ?? []).Where(id => id >= 0)];
     }

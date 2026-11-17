@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>StarResonanceDps</AssemblyName>
-    <Version>4.1.0</Version>
+    <Version>4.2.0</Version>
     <Copyright>Copyright © 2026 kokoukohiro</Copyright>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\Images\ApplicationIcon.ico</ApplicationIcon>
@@ -88,6 +88,7 @@
     <None Remove="Assets\Images\main_progress_icon_rock.png" />
     <None Remove="Assets\Images\main_progress_icon_wind.png" />
     <None Remove="Assets\Images\main_warning_base.png" />
+    <None Remove="Assets\Images\map_dynamic_icon.png" />
     <None Remove="Assets\Images\map_icon_iocation.png" />
     <None Remove="Assets\Images\profession_horizontal_01.png" />
     <None Remove="Assets\Images\profession_horizontal_02.png" />
@@ -113,7 +114,15 @@
     <None Remove="Assets\Images\talent_icon_genre.png" />
     <None Remove="Assets\Images\talent_icon_green.png" />
     <None Remove="Assets\Images\talent_icon_red.png" />
+    <None Remove="Assets\Images\talk_icon_union_54.png" />
     <None Remove="Assets\Images\team_num_frame.png" />
+    <None Remove="Assets\Images\t_fx_marking_01.png" />
+    <None Remove="Assets\Images\t_fx_marking_02.png" />
+    <None Remove="Assets\Images\t_fx_marking_03.png" />
+    <None Remove="Assets\Images\t_fx_marking_04.png" />
+    <None Remove="Assets\Images\t_fx_marking_05.png" />
+    <None Remove="Assets\Images\t_fx_marking_06.png" />
+    <None Remove="Assets\Images\t_fx_marking_background.png" />
     <None Remove="Assets\Images\trialroad_icon_assist.png" />
     <None Remove="Assets\Images\trialroad_icon_attack.png" />
     <None Remove="Assets\Images\trialroad_icon_survival.png" />
@@ -244,6 +253,7 @@
     <Resource Include="Assets\Images\main_progress_icon_rock.png" />
     <Resource Include="Assets\Images\main_progress_icon_wind.png" />
     <Resource Include="Assets\Images\main_warning_base.png" />
+    <Resource Include="Assets\Images\map_dynamic_icon.png" />
     <Resource Include="Assets\Images\map_icon_iocation.png" />
     <Resource Include="Assets\Images\profession_horizontal_01.png" />
     <Resource Include="Assets\Images\profession_horizontal_02.png" />
@@ -269,7 +279,15 @@
     <Resource Include="Assets\Images\talent_icon_genre.png" />
     <Resource Include="Assets\Images\talent_icon_green.png" />
     <Resource Include="Assets\Images\talent_icon_red.png" />
+    <Resource Include="Assets\Images\talk_icon_union_54.png" />
     <Resource Include="Assets\Images\team_num_frame.png" />
+    <Resource Include="Assets\Images\t_fx_marking_01.png" />
+    <Resource Include="Assets\Images\t_fx_marking_02.png" />
+    <Resource Include="Assets\Images\t_fx_marking_03.png" />
+    <Resource Include="Assets\Images\t_fx_marking_04.png" />
+    <Resource Include="Assets\Images\t_fx_marking_05.png" />
+    <Resource Include="Assets\Images\t_fx_marking_06.png" />
+    <Resource Include="Assets\Images\t_fx_marking_background.png" />
   </ItemGroup>
 
   <Target Name="RemoveObsoleteLocalizationSatelliteOutputs" AfterTargets="Build">

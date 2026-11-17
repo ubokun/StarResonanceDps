@@ -122,6 +122,12 @@ public static class CombatIconResolver
         return Resolve(iconName, Path.Combine("Stickers", cultureName), "Stickers");
     }
 
+    /// <summary>地図の画像。<c>Maps</c> のフォルダだけを探す(サーバーでは分けない。地図の表 <see cref="CombatDataCatalog.GetSceneMap"/> と同じ)。</summary>
+    public static string? ResolveMapImage(string? imageName)
+    {
+        return Resolve(imageName, "Maps");
+    }
+
 
     private static string? Resolve(string? iconName, string category, string? fallbackCategory = null)
     {

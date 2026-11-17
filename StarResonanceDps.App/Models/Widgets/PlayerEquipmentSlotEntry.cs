@@ -158,8 +158,8 @@ public sealed class PlayerEquipmentSlotEntry
     }
 
     /// <summary>
-    /// 自分の装備の値(具体値の元)。自分の行で、置き場のその部位の装備ID が行の装備ID と同じで、
-    /// 突破の段階が装備の段階に収まるときだけ使う。食い違うとき(途中起動で全体コンテナがまだ来ていない など)は
+    /// 自分の装備の値(具体値の元)。自分の行は置き場の今の値、履歴の記録から来た行で装備の値を保存してある人はその回の値(<see cref="PlayerRosterEntry.RecordedSelf"/>)。
+    /// その部位の装備ID が行の装備ID と同じで、突破の段階が装備の段階に収まるときだけ使う。食い違うとき(途中起動で全体コンテナがまだ来ていない など)は
     /// 範囲で出す(範囲は「下限~上限」の形なので具体値と見分けがつく)。
     /// </summary>
     private static bool TryGetSelfDetail(
@@ -168,13 +168,33 @@ public sealed class PlayerEquipmentSlotEntry
         PlayerRosterEntry player,
         out SelfEquipmentSlot detail)
     {
-        if (player.IsSelf
-            && SelfEquipmentStore.TryGetSlot(item.Slot, out detail)
+        var found = player.IsSelf
+            ? SelfEquipmentStore.TryGetSlot(item.Slot, out detail)
+            : TryGetRecordedSlot(player.RecordedSelf, item.Slot, out detail);
+        if (found
             && detail.EquipmentId == item.EquipmentId
             && detail.BreakThroughTime >= 0
             && detail.BreakThroughTime < equipment.Stages.Count)
         {
             return true;
+        }
+
+        detail = null!;
+        return false;
+    }
+
+    private static bool TryGetRecordedSlot(RecordedSelfData? recordedSelf, int slot, out SelfEquipmentSlot detail)
+    {
+        if (recordedSelf?.Equipment is { } slots)
+        {
+            foreach (var recorded in slots)
+            {
+                if (recorded.Slot == slot)
+                {
+                    detail = recorded;
+                    return true;
+                }
+            }
         }
 
         detail = null!;

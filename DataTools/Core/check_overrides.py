@@ -2,8 +2,8 @@
 """
 手動編集ファイル(`Data/Overrides`)のうち、元のテーブルや生成物と同じ値になっていて要らない項目を表示する。書き込みはしない。
 
-入力はリポジトリの`Data`だけ(`Raw/BuffTable.json`・`Raw/SkillTable.json`・`Localization/RecountRows.json`・`Overrides`)。
-`Raw`を差し替えて`gen_recounts.py`を流した後に使う。
+入力はリポジトリの`Data`だけ(`Raw/BuffTable.json`・`Raw/SkillTable.json`・`Localization/RecountRows.json`・`Generated/Maps.json`・`Overrides`)。
+`Raw`を差し替えて`gen_recounts.py`・`gen_maps.py`を流した後に使う。
 
 比べる項目と、要らないと判断する条件:
 - `BuffOverrides.json`
@@ -12,6 +12,7 @@
   - `Icon` / `ShowHUDIcon`: 種類とファイル名がテーブルと同じ。アプリはファイルをパスの最後の部分で探し、
     頭は種類(`Icon.` = アプリのアイコンのキー、`Factors/`、`ui/atlas/mod_effect/`)の判定にだけ使う
 - `SkillOverrides.json`: `SkillLevelGroup`がテーブルと同じ値
+- `MapOverrides.json`: `X0`・`Z0`・`Width`・`Depth`が`Generated/Maps.json`の地図と同じ値。`Maps.json`に無い地図のキーも出す(アプリは当てない)
 - `RecountRowOverrides.json`の`Row`
   - 行へ入れる`Row`: 全部の手修正を当てたときの行の分け方と、その項目だけ外したときの行の分け方が同じ
     (同じ行のほかのキーへの影響も含む)。当て方はアプリと同じで、生成物の行から始め、`"Row": null`を先に当て、
@@ -33,7 +34,7 @@ import sys
 # _commonを読み込む前に置く(後ろだと__pycache__が作られる)
 sys.dont_write_bytecode = True
 
-from _common import DATA, LOCALIZATION, OVERRIDES, load
+from _common import DATA, GENERATED, LOCALIZATION, OVERRIDES, load
 
 RAW = os.path.join(DATA, "Raw")
 
@@ -135,6 +136,17 @@ def check_skills(found):
             found.append(("SkillOverrides", key, "SkillLevelGroup", entry["SkillLevelGroup"], group))
 
 
+def check_maps(found):
+    maps = read(os.path.join(GENERATED, "Maps.json"))["Maps"]
+    for key, entry in read(os.path.join(OVERRIDES, "MapOverrides.json")).items():
+        if key not in maps:
+            found.append(("MapOverrides", key, "(キー)", key, "Maps.jsonに無い地図"))
+            continue
+        for field in ("X0", "Z0", "Width", "Depth"):
+            if field in entry and entry[field] == maps[key][field]:
+                found.append(("MapOverrides", key, field, entry[field], maps[key][field]))
+
+
 def check_recount_rows(found):
     rows = read(os.path.join(LOCALIZATION, "RecountRows.json"))
     overrides = read(os.path.join(OVERRIDES, "RecountRowOverrides.json"))
@@ -157,6 +169,7 @@ def main():
     found = []
     check_buffs(found)
     check_skills(found)
+    check_maps(found)
     check_recount_rows(found)
     print("要らない項目 %d件" % len(found))
     for file_name, key, field, value, original in found:

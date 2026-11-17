@@ -17,7 +17,7 @@ Click the start button on the "HPS Meter" card in "[Widgets](Widgets)".
 ## Controls
 
 - Click a row to open that player's [Skill Details (Healing)](Skill-Details-(Healing)).
-- Right-click a row to choose and open that player's "Skill Details (Healing)", "Healing Details", or "HPS Trend Graph".
+- Right-click a row to choose and open that player's "Skill Details (Healing)", "Healing Details", "HPS Trend Graph", or "Buff Uptime".
 - If the rows do not fit in the window, scroll with the mouse wheel or the scroll bar on the right.
 
 ## Settings

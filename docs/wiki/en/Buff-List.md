@@ -6,7 +6,7 @@ This widget lists the buffs on one player or one enemy, one per row, with the re
 
 - On the "Buff List" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows yourself, party members, the other people in the Player List, and then the enemies in the [Entity List](Entity-List) (the default is yourself).
 - You can also open it by right-clicking a row in the [Player List](Player-List) or the [Revive List](Revive-List) and choosing "Buff List".
-- If you right-click a row in the [Entity List](Entity-List) and choose "Buff List", the window for that enemy opens. It also opens when you click a buff slot in [Entity Info](Entity-Info).
+- If you right-click a row in the [Entity List](Entity-List) and choose "Buff List", the window for that enemy opens. It also opens when you click a buff slot in [Target Info](Target-Info).
 - A window is opened per target. If a window for the same target is already open, that window is brought to the front.
 
 ## What it shows
@@ -15,7 +15,7 @@ This widget lists the buffs on one player or one enemy, one per row, with the re
 - Row: From the left, the buff icon, the name ("Buff Name" in the display settings), and the remaining time. When there are 2 or more stacks, the number is shown over the icon. Buffs whose icon file is missing show a question mark.
 - Remaining time: In the form "12s", rounded up to the second. Buffs whose remaining time is not known show "??s", and buffs with no duration show nothing.
 - Gauge: While the remaining time is longer than "Gauge length" in the display settings, the gauge is full; once it becomes shorter, the gauge shrinks with the remaining time. For buffs whose remaining time is not known and buffs with no duration, the gauge stays full.
-- Name: For cuisine and potions, it is the name of the cuisine or potion that applies the buff. For buffs applied by a player other than the target, the name of the player who applied it is added after the buff name (for buffs applied by a summon, the name of the player who summoned it).
+- Name: For cuisine and potions, it is the name of the cuisine or potion that applies the buff. For buffs applied by a player other than the target, the caster's name is added after the buff name (for buffs applied by a summon, the name of the player who summoned it).
 - Buffs shown: The buffs shown in the buff area of the game screen, plus buffs that the app adds (such as equipment effects and factor effects). Effects that are always active, such as talents, the Deep-Slumber Psychoscope, and modules, are shown in [Talent Info](Talent-Info), [Deep-Slumber Psychoscope Info](Deep-Slumber-Psychoscope-Info), and [Module Info](Module-Info).
 - Order: Buffs turned on in the Priority List come first (in the order of the list), and the rest follow in the order they were applied (newest at the bottom).
 
@@ -47,7 +47,7 @@ The window settings and theme are described in [Common Widget Settings](Common-W
 | Level | `{Level}` | The level of the window's target. |
 
 - Gauge length: Choose from "Auto", "10s", "20s", and "30s". "Auto" uses the buff's duration. When the buff is extended, the gauge length grows together with the remaining time (default: "10s").
-- Same Buffs: Chooses whether to combine the same buff applied by several players into one row. The choices are "Don't Group", "Group Players Only", "Group Entities Only", and "Group All". "Group Players Only" groups only in player windows, and "Group Entities Only" groups only in enemy windows. A grouped row shows the one with the longest remaining time. Rows that are not grouped are shown one per player who applied them (default: "Group Players Only").
+- Same Buffs: Chooses whether to combine the same buff applied by several players into one row. The choices are "Don't Group", "Group Players Only", "Group Entities Only", and "Group All". "Group Players Only" groups only in player windows, and "Group Entities Only" groups only in enemy windows. A grouped row shows the one with the longest remaining time. Rows that are not grouped are shown one per caster (default: "Group Players Only").
 - Caster Player Name: Choose from "Show", "Hide", and "Applied by Others". "Applied by Others" does not add a name to buffs that the target applied to themselves (default: "Applied by Others").
 
 Parentheses left with nothing inside are removed.

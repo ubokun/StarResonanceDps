@@ -484,10 +484,18 @@
     "BuffPriority": 1,
     "Icon": "debuff_icon_101"
   },
+  "3003022": {
+    "BuffPriority": 1,
+    "Icon": "buff_red_cd"
+  },
   "3003031": {
     "BuffType": 1,
     "BuffPriority": 1,
     "Icon": "buff_passive_icon_general_dps_tyrannical"
+  },
+  "3003054": {
+    "BuffPriority": 1,
+    "Icon": "buff_red_cd"
   },
   "3005001": {
     "BuffPriority": 1,

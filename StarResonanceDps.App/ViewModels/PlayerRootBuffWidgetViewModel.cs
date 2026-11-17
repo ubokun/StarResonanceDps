@@ -143,10 +143,10 @@ public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel,
     private List<PlayerRootBuffEntry> CreateEntries(PlayerRosterEntry? player)
     {
         var selfModuleEffects = player is { IsFromRecord: true }
-            ? player.RecordedBuild?.ModuleEffects
+            ? player.RecordedBuild?.ModuleEffects ?? player.RecordedSelf?.ModuleEffects
             : UsesSelfData(player, RootBuffKind.ModuleEffect) ? SelfModuleStore.GetEquippedEffectLinks() : null;
         var selfFactors = player is { IsFromRecord: true }
-            ? player.RecordedBuild?.Factors
+            ? player.RecordedBuild?.Factors ?? player.RecordedSelf?.Factors
             : UsesSelfData(player, RootBuffKind.Factor) ? GetSelfFactors() : null;
         var rootBuffData = player?.RootBuffData;
         var entries = new List<PlayerRootBuffEntry>();
@@ -158,7 +158,7 @@ public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel,
             }
             else if (kind == RootBuffKind.Factor && selfFactors is not null)
             {
-                AddSelfFactorEntries(entries, selfFactors);
+                AddSelfFactorEntries(entries, selfFactors, player?.GameServer ?? GameServerStore.Current);
             }
             else if (rootBuffData is not null)
             {
@@ -171,10 +171,17 @@ public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel,
 
     /// <summary>
     /// その種類の行を、根のバフではなく自分の控え(モジュールは <see cref="SelfModuleStore"/>、因子は <see cref="SelfSeasonCultivateStore"/>)から作るか。
-    /// 自分のライブの行だけ(履歴の回の記録から来た行は、その回の根のバフで出す)。控えがそろう前(全体コンテナの前)は根のバフで出す。
+    /// 自分の行だけ(自分の行は履歴を開いていても記録から作らない)。控えがそろう前(全体コンテナの前)は根のバフで出す。
     /// </summary>
     private bool UsesSelfData(PlayerRosterEntry? player, RootBuffKind kind)
-        => player is { IsSelf: true, IsFromRecord: false } && Array.IndexOf(_kinds, kind) >= 0;
+        => player is { IsSelf: true } && Array.IndexOf(_kinds, kind) >= 0;
+
+    /// <summary>
+    /// その種類の行を、履歴の記録から来た行がその回に保存した値(<see cref="PlayerRosterEntry.RecordedSelf"/>)から作るか。
+    /// 保存した値が無い行(他のプレイヤー・この値を保存する前の回)は根のバフで出す。保存の時点で控えがそろっていなかった種類は、作り手が null を受けて根のバフで出す。
+    /// </summary>
+    private bool UsesRecordedSelfData(PlayerRosterEntry? player, RootBuffKind kind)
+        => player is { IsFromRecord: true, RecordedSelf: not null } && Array.IndexOf(_kinds, kind) >= 0;
 
     /// <summary>今のシーズンの潜在心相晶の、有効な型に付けている因子。今のシーズンか控えがまだなら null(根のバフで出す)。</summary>
     private static IReadOnlyList<SelfSeasonFactor>? GetSelfFactors()
@@ -237,11 +244,10 @@ public sealed class PlayerRootBuffWidgetViewModel : PlayerWidgetWindowViewModel,
 
     /// <summary>
     /// 自分の付けている因子を、枠の番号の順で足す。名前は等級つきのアイテム名、絵は因子のアイテムの絵。
-    /// 因子のアイテムの表(付けるバフ・絵)はサーバーで違うので、今つないでいるサーバーの表で引く。
+    /// 因子のアイテムの表(付けるバフ・絵)はサーバーで違うので、行のサーバー(履歴の行はその回のサーバー、ライブの行は今つないでいるサーバー)の表で引く。
     /// </summary>
-    private static void AddSelfFactorEntries(List<PlayerRootBuffEntry> entries, IReadOnlyList<SelfSeasonFactor> factors)
+    private static void AddSelfFactorEntries(List<PlayerRootBuffEntry> entries, IReadOnlyList<SelfSeasonFactor> factors, GameServer server)
     {
-        var server = GameServerStore.Current;
         foreach (var factor in factors)
         {
             entries.Add(new PlayerRootBuffEntry(

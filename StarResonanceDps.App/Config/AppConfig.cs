@@ -109,6 +109,13 @@ public sealed class SettingsConfig
     /// 反映は <c>WidgetWindow.ApplyDataStatus</c>。
     /// </summary>
     public int WidgetDataStatusDisplayModeIndex { get; set; } = AppConfigDefaults.WidgetDataStatusDisplayShowIndex;
+
+    /// <summary>
+    /// ゲームでもこのアプリでもないウィンドウを操作している間、ウィジェットを隠すか(全体設定「ゲーム非アクティブ時にウィジェットを隠す」)。
+    /// 前面の判定は <c>GameForegroundWatcher</c>、隠し方は <c>WidgetWindow</c>。
+    /// </summary>
+    public bool HidesWidgetsWhenGameInactive { get; set; } = true;
+
     public int WindowColorIndex { get; set; }
     public List<string> WindowColors { get; set; } = AppConfigDefaults.CreateDefaultWindowColors();
 
@@ -147,6 +154,7 @@ public sealed class SettingsConfig
             UnnamedSkillNameDisplayModeIndex = UnnamedSkillNameDisplayModeIndex,
             WidgetWindowTopmostModeIndex = WidgetWindowTopmostModeIndex,
             WidgetDataStatusDisplayModeIndex = WidgetDataStatusDisplayModeIndex,
+            HidesWidgetsWhenGameInactive = HidesWidgetsWhenGameInactive,
             WindowColorIndex = WindowColorIndex,
             WindowColors = WindowColors is null ? AppConfigDefaults.CreateDefaultWindowColors() : [.. WindowColors],
             Hotkeys = Hotkeys?.Clone() ?? AppConfigDefaults.CreateDefaultHotkeys()

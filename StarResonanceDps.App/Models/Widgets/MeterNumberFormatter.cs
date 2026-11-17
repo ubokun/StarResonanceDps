@@ -14,16 +14,24 @@ public static class MeterNumberFormatter
     /// <summary>メーター・詳細の数値。単位を付けた値は小数点以下2位で固定する(1.20K のように末尾の0も出す)。単位を付けない値は整数に小数を足さない。</summary>
     public static string Format(double value, int formatIndex)
     {
+        var parts = FormatParts(value, formatIndex);
+        return parts.Number + parts.Unit;
+    }
+
+    /// <summary><see cref="Format"/> と同じ値を、数字と単位に分けて返す(フッターの「見出し: 値」)。単位を付けない値の単位は空。</summary>
+    public static FooterValue FormatParts(double value, int formatIndex)
+    {
         return FormatWithUnit(value, formatIndex, scaledFormat: "F2", unscaledFormat: "0.##");
     }
 
     /// <summary>グラフの軸の数字。小数は要る桁だけ出す(1.5M・750K・0)。</summary>
     public static string FormatCompact(double value, int formatIndex)
     {
-        return FormatWithUnit(value, formatIndex, scaledFormat: "0.##", unscaledFormat: "0");
+        var parts = FormatWithUnit(value, formatIndex, scaledFormat: "0.##", unscaledFormat: "0");
+        return parts.Number + parts.Unit;
     }
 
-    private static string FormatWithUnit(double value, int formatIndex, string scaledFormat, string unscaledFormat)
+    private static FooterValue FormatWithUnit(double value, int formatIndex, string scaledFormat, string unscaledFormat)
     {
         var normalized = double.IsFinite(value)
             ? Math.Max(value, 0d)
@@ -33,8 +41,8 @@ public static class MeterNumberFormatter
             : GetKmbtUnit(normalized);
 
         return unit is null
-            ? normalized.ToString(unscaledFormat, CultureInfo.CurrentCulture)
-            : (normalized / divisor).ToString(scaledFormat, CultureInfo.CurrentCulture) + unit;
+            ? new FooterValue(normalized.ToString(unscaledFormat, CultureInfo.CurrentCulture), string.Empty)
+            : new FooterValue((normalized / divisor).ToString(scaledFormat, CultureInfo.CurrentCulture), unit);
     }
 
     private static (double Divisor, string? Unit) GetKmbtUnit(double value)

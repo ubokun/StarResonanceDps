@@ -36,7 +36,7 @@ namespace StarResonanceDps.App.ViewModels;
 /// バフ・デバフ効果切れは、そのうちグループの設定の通知対象に入っている行だけ。
 /// </para>
 /// </summary>
-public sealed partial class BuffDebuffGroupWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable, IRowReorderTarget
+public sealed partial class BuffDebuffGroupWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable, IRowReorderTarget, IWidgetWindowHiddenAware
 {
     private readonly ObservableCollection<PlayerBuffEntry> _entries = [];
     private readonly Dictionary<BuffEntryKey, PlayerBuffEntry> _entriesByKey = [];
@@ -52,6 +52,9 @@ public sealed partial class BuffDebuffGroupWidgetViewModel : PlayerWidgetWindowV
     /// 通知(バフ・デバフ効果切れ・薬剤・料理効果切れ)の判定。オンの行ごとに、窓を開いている間だけ借りる(同じバフを見ているカードと共有)。
     /// </summary>
     private readonly Dictionary<BuffEntryKey, BuffNotificationWatch> _notificationWatches = [];
+
+    /// <summary>窓が隠れているか(全体設定「ゲーム非アクティブ時にウィジェットを隠す」)。隠れている間は行を当て直さない。</summary>
+    private bool _isWindowHidden;
 
     private PlayerRosterEntry? _player;
 
@@ -320,13 +323,27 @@ public sealed partial class BuffDebuffGroupWidgetViewModel : PlayerWidgetWindowV
     }
 
     /// <summary>
+    /// 窓が隠れたら行の当て直しだけを止め、見えたら当て直す(<see cref="IWidgetWindowHiddenAware"/>)。
+    /// 定期の読み直しは隠れている間も続け、通知の判定は止めない。
+    /// </summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        _isWindowHidden = isHidden;
+        if (!isHidden)
+        {
+            Refresh();
+        }
+    }
+
+    /// <summary>
     /// 通知の判定を進め、行を当て直す。行を掴んでいる間は行の当て直しだけ止める(離したときに <see cref="EndRowReorder"/> が必ず当て直す)。
-    /// 通知の判定は掴んでいる間も止めない(止めると、その間に消えたバフの効果切れを見落とす)。
+    /// 窓が隠れている間も行の当て直しだけ止める(見えたときに <see cref="SetWindowHidden"/> が当て直す)。
+    /// 通知の判定はどちらの間も止めない(止めると、その間に消えたバフの効果切れを見落とす)。
     /// </summary>
     private void Refresh()
     {
         ObserveNotifications();
-        if (_reorderKey is not null)
+        if (_reorderKey is not null || _isWindowHidden)
         {
             return;
         }

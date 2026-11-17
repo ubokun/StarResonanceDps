@@ -66,6 +66,13 @@
 
 プラグインで機能を追加できます。作り方は[プラグイン開発](https://github.com/kokoukohiro/StarResonanceDps/wiki/プラグイン開発)を参照してください。SDKのパッケージ(`.nupkg`)は、Releasesにアプリのzipと並べて公開しています。
 
+### 公開中のプラグイン
+
+| プラグイン | 種類 | 作者 | 入手先 |
+|---|---|---|---|
+| [ただのモジュールツール](https://github.com/kokoukohiro/StarResonanceDps/wiki/ただのモジュールツール) | モジュールツール | kokoukohiro | このアプリに同梱(Releasesにも`ModuleTool.dll`) |
+| BPSR：パッド勢を救いたい | キーバインドツール | kokoukohiro | [BPSRControllerHelper](https://github.com/kokoukohiro/BPSRControllerHelper) |
+
 ## ✅ 安全性・プライバシーについて
 
 - ゲームのクライアントを改変しません
@@ -77,7 +84,7 @@
 
 ## ⭐ お願い
 
-表示される数値は自分のプレイのために使い、ほかのプレイヤーへの誹謗中傷など、コミュニティの環境を損なう目的には使用しないでください。
+表示される数値は自分のプレイのために使い、他のプレイヤーへの誹謗中傷など、コミュニティの環境を損なう目的には使用しないでください。
 
 ## ❤ 開発の支援
 

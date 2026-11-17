@@ -575,12 +575,28 @@
       "ko-KR": "적멸"
     }
   },
+  "3003022": {
+    "Name": {
+      "zh-CN": "血限冲域无法触发",
+      "en-US": "Bloodbound Surge Unavailable",
+      "ja-JP": "HP限界突破発動不可",
+      "ko-KR": "혈계 돌파 영역 발동 불가"
+    }
+  },
   "3003031": {
     "Name": {
       "zh-CN": "激励·绝唱护魂",
       "en-US": "Inspire: Soulguard Finale",
       "ja-JP": "幻夢の執念",
       "ko-KR": "환상꿈 집념"
+    }
+  },
+  "3003054": {
+    "Name": {
+      "zh-CN": "环契恩泽无法触发",
+      "en-US": "Harmony Grace Unavailable",
+      "ja-JP": "環契の恩恵発動不可",
+      "ko-KR": "순환의 은총 발동 불가"
     }
   },
   "3005001": {

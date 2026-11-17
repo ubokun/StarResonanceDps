@@ -53,6 +53,10 @@ public sealed class WidgetConfig
 
     public ChatWidgetSettingsConfig? Chat { get; set; }
 
+    public MapWidgetSettingsConfig? Map { get; set; }
+
+    public BuffUptimeWidgetSettingsConfig? BuffUptime { get; set; }
+
     /// <summary>プラグインのウィジェットの設定(プラグインが定義した設定の値)。プラグインのウィジェットだけ持つ。</summary>
     public PluginWidgetSettingsConfig? Plugin { get; set; }
 
@@ -67,11 +71,11 @@ public sealed class WidgetConfig
     public List<int>? PlayerStatusRowOrder { get; set; }
 
     /// <summary>
-    /// 前回開いていたウィンドウの対象一覧。プレイヤー用ウィンドウのみ持つ。
+    /// 前回開いていたウィンドウの対象一覧。複数開けるウィジェット(人・敵・チャット・プラグインの窓)だけが持つ。
     ///
     /// <para>
-    /// これが無いと、状態が Running のウィジェットは再起動のたびに
-    /// <b>自分の窓1枚</b>として作り直される(対象の指定が失われる)。
+    /// これが無い(<c>null</c>)と、状態が Running のウィジェットは再起動のたびに、記録の無いまま起動中になったときの既定の窓で開く。
+    /// 空の一覧は「窓はあったが戻せるものが無い」(<see cref="WidgetOpenTargetConfig"/>)。
     /// </para>
     /// </summary>
     public List<WidgetOpenTargetConfig>? OpenTargets { get; set; }
@@ -104,6 +108,8 @@ public sealed class WidgetConfig
             DamageTakenLog = DamageTakenLog?.Clone(),
             EntityInfo = EntityInfo?.Clone(),
             Chat = Chat?.Clone(),
+            Map = Map?.Clone(),
+            BuffUptime = BuffUptime?.Clone(),
             Plugin = Plugin?.Clone(),
             PlayerStatusRowOrder = PlayerStatusRowOrder is null ? null : [.. PlayerStatusRowOrder],
             OpenTargets = OpenTargets?.Select(target => target.Clone()).ToList()
@@ -402,7 +408,7 @@ public sealed class BuffGaugeColorConfig
 }
 
 /// <summary>
-/// バフ・デバフグループの1行と、バフ・デバフカードのショートカットの1行、両方の通知対象の1行、バフ・デバフ一覧とエンティティ情報の優先表示リストの1行。
+/// バフ・デバフグループの1行と、バフ・デバフカードのショートカットの1行、両方の通知対象の1行、バフ・デバフ一覧とエンティティ情報とバフ稼働率の優先表示リストの1行。
 /// バフの番号(<c>BaseId</c>)か、料理・薬剤のまとまり(<see cref="BuffGroup"/>)のどちらか(<see cref="BuffEntryKey"/>)。優先表示リストはバフの番号だけ。
 /// </summary>
 public sealed class BuffDebuffGroupEntryConfig
@@ -471,16 +477,19 @@ public sealed class BuffDebuffGroupWidgetSettingsConfig
 ///
 /// <para>
 /// プレイヤーとエンティティリストの実体(モンスター)とチャットのチャンネルとプラグインの相手を1つの型で表す。
-/// <see cref="PluginTargetId"/> があればプラグインの相手、<see cref="ChatChannel"/> があればチャット、<see cref="EntityId"/> が 0 以外なら実体、そうでなければプレイヤー
-/// (エンティティ情報にプレイヤーの窓は無いので、エンティティ情報でそうなら敵を待つ空の窓)。
+/// <see cref="PluginTargetId"/> があればプラグインの相手、<see cref="ChatChannel"/> があればチャット、
+/// <see cref="EntityId"/> が 0 以外なら実体、そうでなければプレイヤー。
+/// </para>
+///
+/// <para>
+/// 開いている窓がどれも保存できない(種別ID 0 の未知の敵の窓だけ)ときは空の一覧で保存し、「記録が無い」(<c>null</c>)と分ける。
 /// </para>
 /// </summary>
 public sealed class WidgetOpenTargetConfig
 {
     /// <summary>
-    /// プレイヤーのID。<c>null</c> は「自分」。
-    /// <b>解決後の自分のIDではなく、窓を開いたときの指定をそのまま保存する。</b>
-    /// 解決後の値を保存すると、キャラを変えたときに前のキャラの窓として復元される。
+    /// プレイヤーのID。窓を開いたときの指定をそのまま保存する。<c>null</c> は相手を持たない窓
+    /// (人の窓とメーターの種類では空の窓、バフ・デバフカードでは自分のカード)。
     /// </summary>
     public long? CharacterId { get; set; }
 
@@ -503,16 +512,18 @@ public sealed class WidgetOpenTargetConfig
     public string? Name { get; set; }
 
     /// <summary>
-    /// 実際に観測したプレイヤーのUID。<b>表示用</b>で、対象の指定ではない。
-    ///
-    /// <para>
-    /// 自分の窓は <see cref="CharacterId"/> が <c>null</c>(＝「自分」という指定)なので、
-    /// これが無いとタイトルに出すUIDが分からない。かといって <see cref="CharacterId"/> を
-    /// 観測値で埋めてしまうと、キャラを変えたときに<b>前のキャラ固定の窓として復元される</b>。
-    /// 指定と観測値は別に持つ。
-    /// </para>
+    /// 最後に映した相手のUID。復元直後のタイトルに使う。
+    /// 人の窓とメーターの種類を相手の指定なしで保存したもの(前の版の自分の窓)は、復元のときにこれを相手にして開く。
     /// </summary>
     public long? ResolvedCharacterId { get; set; }
+
+    /// <summary>
+    /// 人の窓専用。最後に映した相手が NPC(助っ人)なら true、ほかは <c>null</c>。復元直後のタイトルに名前の規則(NPC は職業名)を当てるために持つ。
+    /// </summary>
+    public bool? IsNpc { get; set; }
+
+    /// <summary>人の窓専用。最後に映した相手の職業。NPC のタイトルに出す職業名の元。分からなければ <c>null</c>。</summary>
+    public int? ProfessionId { get; set; }
 
     /// <summary>バフ・デバフカード専用。<c>PlayerBuffListKind</c> の値。</summary>
     public int? BuffListKind { get; set; }
@@ -568,6 +579,8 @@ public sealed class WidgetOpenTargetConfig
             EntityType = EntityType,
             Name = Name,
             ResolvedCharacterId = ResolvedCharacterId,
+            IsNpc = IsNpc,
+            ProfessionId = ProfessionId,
             BuffListKind = BuffListKind,
             BuffKey = BuffKey,
             BuffName = BuffName,
@@ -954,6 +967,64 @@ public sealed class EntityInfoWidgetSettingsConfig
     }
 }
 
+/// <summary>
+/// バフ稼働率の設定。常駐バフ(持続が永続の実体)と料理・薬剤を出すか、横軸の縮尺(1秒の幅)、
+/// 優先表示リスト・非表示リスト(バフ・デバフ一覧と同じ扱い)、バーの色(グラフカラー)。
+/// グラフカラーの形は推移グラフと同じ(クラスごとの色。不透明度は持たない)で、既定は DPS メーターと同じ
+/// (<see cref="WidgetConfigDefaults.GetMetricGraphColorDefaultSource"/>)。
+/// </summary>
+public sealed class BuffUptimeWidgetSettingsConfig
+{
+    /// <summary>
+    /// 設定「1秒の幅」(px、<see cref="WidgetConfigDefaults.MinBuffUptimePixelsPerSecond"/>〜<see cref="WidgetConfigDefaults.MaxBuffUptimePixelsPerSecond"/>)。
+    /// 幅と時間の比を固定し、窓の幅を変えたらバーを伸ばさず見える時間の範囲を変える。
+    /// </summary>
+    public int PixelsPerSecond { get; set; } = WidgetConfigDefaults.DefaultBuffUptimePixelsPerSecond;
+
+    /// <summary>設定「常駐バフの表示」。常駐バフは持続が永続(負)の実体。</summary>
+    public bool ShowsPermanentBuffs { get; set; } = WidgetConfigDefaults.DefaultBuffUptimeShowsPermanentBuffs;
+
+    /// <summary>設定「料理・薬剤の表示」。出すときは料理1行・薬剤1行。</summary>
+    public bool ShowsCuisinePotion { get; set; } = WidgetConfigDefaults.DefaultBuffUptimeShowsCuisinePotion;
+
+    /// <summary>
+    /// 優先表示リスト(一覧の先頭からこの並びで出すバフ)。扱いはバフ・デバフ一覧と同じで、
+    /// 既定の行は <see cref="WidgetConfigDefaults.DefaultBuffUptimePriorityBuffEntries"/>。
+    /// </summary>
+    public List<BuffDebuffGroupEntryConfig>? PriorityBuffs { get; set; }
+
+    /// <summary>
+    /// 一覧に出さないバフのID(<c>BaseId</c>)。並びは非表示にした順。
+    /// 行の右クリックで足し、設定画面のスイッチで外す。
+    /// </summary>
+    public List<int> HiddenBuffIds { get; set; } = [];
+
+    public Dictionary<string, int> ClassColorIndexes { get; set; } = WidgetConfigDefaults.CreateDefaultClassColorIndexes(WidgetKind.DpsMeter);
+
+    public Dictionary<string, List<string>> ClassColorPalettes { get; set; } = WidgetConfigDefaults.CreateDefaultClassColorPalettes(WidgetKind.DpsMeter);
+
+    public BuffUptimeWidgetSettingsConfig Clone()
+    {
+        return new BuffUptimeWidgetSettingsConfig
+        {
+            PixelsPerSecond = PixelsPerSecond,
+            ShowsPermanentBuffs = ShowsPermanentBuffs,
+            ShowsCuisinePotion = ShowsCuisinePotion,
+            PriorityBuffs = PriorityBuffs?.Select(entry => entry.Clone()).ToList(),
+            HiddenBuffIds = HiddenBuffIds is null ? [] : [.. HiddenBuffIds],
+            ClassColorIndexes = ClassColorIndexes is null
+                ? WidgetConfigDefaults.CreateDefaultClassColorIndexes(WidgetKind.DpsMeter)
+                : new Dictionary<string, int>(ClassColorIndexes, StringComparer.OrdinalIgnoreCase),
+            ClassColorPalettes = ClassColorPalettes is null
+                ? WidgetConfigDefaults.CreateDefaultClassColorPalettes(WidgetKind.DpsMeter)
+                : ClassColorPalettes.ToDictionary(
+                    pair => pair.Key,
+                    pair => pair.Value is null ? new List<string>() : new List<string>(pair.Value),
+                    StringComparer.OrdinalIgnoreCase)
+        };
+    }
+}
+
 /// <summary>チャットの設定。発言者の名前の色(テキストカラー)。形は蘇生リストのテキストカラーと同じ。</summary>
 public sealed class ChatWidgetSettingsConfig
 {
@@ -972,6 +1043,68 @@ public sealed class ChatWidgetSettingsConfig
             TextColorPalettes = TextColorPalettes is null
                 ? WidgetConfigDefaults.CreateDefaultChatTextColorPalettes()
                 : TextColorPalettes.ToDictionary(
+                    pair => pair.Key,
+                    pair => pair.Value is null ? new List<string>() : new List<string>(pair.Value),
+                    StringComparer.OrdinalIgnoreCase)
+        };
+    }
+}
+
+/// <summary>
+/// マップの設定。印のフィルター(プレイヤーとエンティティ)、印の名前を出す相手(プレイヤーとエンティティ)、地図の画像の不透明度と、
+/// アイコンカラー(エンティティ全部の1色とプレイヤーのクラス。鍵は <see cref="WidgetConfigDefaults.MapClassColorKeys"/>)。
+/// </summary>
+public sealed class MapWidgetSettingsConfig
+{
+    /// <summary>プレイヤーの印のフィルター(<c>PartyDisplayMode</c>)。値と決まりはプレイヤーリストのフィルターと同じ。</summary>
+    public int PartyDisplayModeIndex { get; set; } = WidgetConfigDefaults.DefaultPartyDisplayModeIndex;
+
+    /// <summary>実体の印のフィルター(<c>EntityDisplayMode</c>)。値と決まりはエンティティリストのフィルターと同じ。</summary>
+    public int EntityDisplayModeIndex { get; set; } = WidgetConfigDefaults.DefaultEntityDisplayModeIndex;
+
+    /// <summary>名前を出すプレイヤーの印(<c>PartyDisplayMode</c>)。値と決まりはフィルター「プレイヤー」と同じ。出さない印はアイコンだけ。</summary>
+    public int PlayerNamePartyDisplayModeIndex { get; set; } = WidgetConfigDefaults.DefaultMapPlayerNamePartyDisplayModeIndex;
+
+    /// <summary>実体の印の名前を出すか(0 表示 / 1 非表示)。出さない印はアイコンだけ。</summary>
+    public int EntityNameDisplayModeIndex { get; set; } = WidgetConfigDefaults.DefaultMapEntityNameDisplayModeIndex;
+
+    /// <summary>戦闘状態の相手の印の名前を出さない対象(0 すべて / 1 プレイヤーのみ / 2 エンティティのみ / 3 非表示しない)。</summary>
+    public int HideNamesInCombatModeIndex { get; set; } = WidgetConfigDefaults.DefaultMapHideNamesInCombatModeIndex;
+
+    /// <summary>
+    /// 戦闘状態のプレイヤーの印を簡略化するか(小さい円で、自分は向きを指す矢先)。偽ならクラスアイコンのまま。
+    /// 戦闘状態でないプレイヤーはいつもクラスアイコン(自分は <see cref="AlwaysSimplifiesSelf"/> も見る)。
+    /// </summary>
+    public bool SimplifiesPlayersInCombat { get; set; } = WidgetConfigDefaults.DefaultMapSimplifiesPlayersInCombat;
+
+    /// <summary>自分の印を、戦闘状態に関係なくいつも簡略化するか(向きを指す矢先)。</summary>
+    public bool AlwaysSimplifiesSelf { get; set; } = WidgetConfigDefaults.DefaultMapAlwaysSimplifiesSelf;
+
+    /// <summary>地図の濃さ(%)。窓の不透明度に関係なく、地図はこの濃さで見える。印(アイコンと名前)には掛けない。</summary>
+    public int MapOpacity { get; set; } = WidgetConfigDefaults.DefaultMapOpacity;
+
+    public Dictionary<string, int> ClassColorIndexes { get; set; } = WidgetConfigDefaults.CreateDefaultClassColorIndexes(WidgetKind.Map);
+
+    public Dictionary<string, List<string>> ClassColorPalettes { get; set; } = WidgetConfigDefaults.CreateDefaultClassColorPalettes(WidgetKind.Map);
+
+    public MapWidgetSettingsConfig Clone()
+    {
+        return new MapWidgetSettingsConfig
+        {
+            PartyDisplayModeIndex = PartyDisplayModeIndex,
+            EntityDisplayModeIndex = EntityDisplayModeIndex,
+            PlayerNamePartyDisplayModeIndex = PlayerNamePartyDisplayModeIndex,
+            EntityNameDisplayModeIndex = EntityNameDisplayModeIndex,
+            HideNamesInCombatModeIndex = HideNamesInCombatModeIndex,
+            SimplifiesPlayersInCombat = SimplifiesPlayersInCombat,
+            AlwaysSimplifiesSelf = AlwaysSimplifiesSelf,
+            MapOpacity = MapOpacity,
+            ClassColorIndexes = ClassColorIndexes is null
+                ? WidgetConfigDefaults.CreateDefaultClassColorIndexes(WidgetKind.Map)
+                : new Dictionary<string, int>(ClassColorIndexes, StringComparer.OrdinalIgnoreCase),
+            ClassColorPalettes = ClassColorPalettes is null
+                ? WidgetConfigDefaults.CreateDefaultClassColorPalettes(WidgetKind.Map)
+                : ClassColorPalettes.ToDictionary(
                     pair => pair.Key,
                     pair => pair.Value is null ? new List<string>() : new List<string>(pair.Value),
                     StringComparer.OrdinalIgnoreCase)
@@ -1147,6 +1280,8 @@ public static class WidgetConfigDefaults
     private const double EntityInfoInitialWindowHeight = 240d;
     private const double ChatInitialWindowWidth = 360d;
     private const double ChatInitialWindowHeight = 400d;
+    private const double MapInitialWindowWidth = 400d;
+    private const double MapInitialWindowHeight = 400d;
     private const double SkillDetailInitialWindowWidth = 520d;
     private const double SkillDetailInitialWindowHeight = 460d;
     private const double HateSkillDetailInitialWindowWidth = 520d;
@@ -1163,6 +1298,8 @@ public static class WidgetConfigDefaults
     private const double HateGraphInitialWindowHeight = 260d;
     private const double BreakGraphInitialWindowWidth = 440d;
     private const double BreakGraphInitialWindowHeight = 260d;
+    private const double BuffUptimeInitialWindowWidth = 440d;
+    private const double BuffUptimeInitialWindowHeight = 260d;
 
     /// <summary>
     /// バフ・デバフグループの既定の高さ。既定でオンの行(<see cref="DefaultBuffDebuffGroupEntries"/>)がちょうど入る高さで、
@@ -1278,6 +1415,16 @@ public static class WidgetConfigDefaults
         "Unknown"
     ];
 
+    /// <summary>
+    /// マップのアイコンカラーの鍵。エンティティ全部を塗る1行、プレイヤーのクラス、最後に不明(クラスの分からないプレイヤー)。
+    /// </summary>
+    public static readonly string[] MapClassColorKeys =
+    [
+        MapEntityColorKey,
+        .. ClassColorKeys.Where(key => key != "Unknown"),
+        "Unknown"
+    ];
+
     /// <summary>ゲージの色の鍵。左端と右端の2つで、間はグラデーションになる。バフ・デバフ一覧・バフ・デバフグループ・蘇生リストで共通。</summary>
     public static readonly string[] BuffGaugeColorKeys =
     [
@@ -1379,6 +1526,20 @@ public static class WidgetConfigDefaults
         (BuffEntryKey.ForBuff(2110305), true)    // 回復禁止(ロールスキルの鉄牙のデバフ、10秒)
     ];
 
+    /// <summary>
+    /// バフ稼働率の優先表示リストの既定の行(この並び)。先頭の3つはバフ一覧の既定と同じ番号で、この窓では全部オン。
+    /// 既定の行はオフにしても消えず、初期化でこの並びと既定のオン・オフに戻る。
+    /// </summary>
+    public static IReadOnlyList<(BuffEntryKey Key, bool IsEnabled)> DefaultBuffUptimePriorityBuffEntries { get; } =
+    [
+        (BuffEntryKey.ForBuff(2110034), true),  // リキャスト短縮(ティナの奥義のバフ)
+        (BuffEntryKey.ForBuff(2110140), true),  // 機械の力(ガトグリフの奥義のバフ)
+        (BuffEntryKey.ForBuff(2110125), true),  // 高原血統(バジリスクの奥義のバフ)
+        (BuffEntryKey.ForBuff(2110065), true),  // 灼熱の戦意(異国の山賊長ヒグマの奥義のバフ)
+        (BuffEntryKey.ForBuff(2110143), true),  // 機能強化(クロックゲイザーの奥義のバフ)
+        (BuffEntryKey.ForBuff(2110183), true)   // 激励バリア(夢現の宿主の奥義のバフ)
+    ];
+
     /// <summary>バフ・デバフ一覧の優先表示リストの既定の行。バフ一覧とデバフ一覧で別。</summary>
     public static IReadOnlyList<(BuffEntryKey Key, bool IsEnabled)> GetBuffListPriorityDefaults(WidgetKind kind)
     {
@@ -1393,7 +1554,7 @@ public static class WidgetConfigDefaults
     }
 
     /// <summary>
-    /// 行(バフ・デバフグループの行、バフ・デバフカードのショートカット、カードとグループの通知対象、バフ・デバフ一覧とエンティティ情報の優先表示リスト)をオン/オフにする
+    /// 行(バフ・デバフグループの行、バフ・デバフカードのショートカット、カードとグループの通知対象、バフ・デバフ一覧とエンティティ情報とバフ稼働率の優先表示リスト)をオン/オフにする
     /// (右クリックの「グループに追加」「ショートカットに追加」「通知対象にする」「優先表示」と「グループから削除」「通知対象にしない」「優先表示をやめる」)。
     /// オンにするときは、行があればオンに戻し、無ければ末尾に足す。オフにするときは、既定の行(<paramref name="defaults"/>)はオフにして残し、足した行は消す
     /// (足した行をオフのまま保存したときと同じ)。ウィジェットの今の値・保存する値・設定の窓の保存済みの値がこの決まりを使う。
@@ -1519,6 +1680,39 @@ public static class WidgetConfigDefaults
 
     /// <summary>エンティティ情報の「同種バフの表示」の既定(まとめない)。</summary>
     public const int DefaultEntityInfoSameBuffGroupingIndex = EntityInfoSameBuffUngroupedIndex;
+
+    public const int MinMapOpacity = 0;
+    public const int MaxMapOpacity = 100;
+
+    /// <summary>マップの「マップの不透明度」の既定。</summary>
+    public const int DefaultMapOpacity = 100;
+
+    /// <summary>マップの「プレイヤー名」の既定(パーティメンバー以外表示)。</summary>
+    public const int DefaultMapPlayerNamePartyDisplayModeIndex = (int)PartyDisplayMode.NonPartyMembersOnly;
+
+    public const int MapEntityNameShownIndex = 0;
+    public const int MapEntityNameHiddenIndex = 1;
+
+    /// <summary>マップの「エンティティ名」の既定(非表示)。</summary>
+    public const int DefaultMapEntityNameDisplayModeIndex = MapEntityNameHiddenIndex;
+
+    /// <summary>マップの「交戦中の名前非表示」の対象。最後が「非表示しない」。</summary>
+    public const int MapInCombatTargetAllIndex = 0;
+    public const int MapInCombatTargetPlayersIndex = 1;
+    public const int MapInCombatTargetEntitiesIndex = 2;
+    public const int MapInCombatTargetNoneIndex = 3;
+
+    /// <summary>マップの「交戦中の名前非表示」の既定(すべて)。</summary>
+    public const int DefaultMapHideNamesInCombatModeIndex = MapInCombatTargetAllIndex;
+
+    /// <summary>マップの「交戦中のプレイヤーを簡略化表示」の既定(オン)。</summary>
+    public const bool DefaultMapSimplifiesPlayersInCombat = true;
+
+    /// <summary>マップの「自分を常に簡略化表示」の既定(オン)。</summary>
+    public const bool DefaultMapAlwaysSimplifiesSelf = true;
+
+    /// <summary>マップのアイコンカラーの、エンティティ全部を塗る行の鍵(アイコンはボスの印の絵 <c>Icon.Profession.Entity</c>)。</summary>
+    public const string MapEntityColorKey = "Entity";
 
     /// <summary>バフ・デバフ一覧の行のバフ名の書式の既定。付与者が出ないときは空になった括弧ごと消える。</summary>
     public const string DefaultBuffListBuffInfoFormatString = "{BuffName}({CasterName})";
@@ -1669,6 +1863,9 @@ public static class WidgetConfigDefaults
         ["DamageMagical"] = ["#A369E7", "#674292"],
         ["DamageNormal"] = ["#B8B8B8", "#747474"]
     };
+
+    /// <summary>マップのアイコンカラーの「エンティティ」の既定の色。2枠目はエンティティリストの狙われる印の色(<c>HateBadgeImages</c>)。</summary>
+    private static readonly string[] MapDefaultEntityColorHexes = ["#FFFFFF", "#FF7D4B"];
 
     private static readonly Dictionary<string, string[]> EntityListDefaultClassColorHexes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -1903,6 +2100,18 @@ public static class WidgetConfigDefaults
         return kind is WidgetKind.Chat;
     }
 
+    /// <summary>マップの設定(マップの不透明度・アイコンカラー)を持つ種別か。</summary>
+    public static bool SupportsMapSettings(WidgetKind kind)
+    {
+        return kind is WidgetKind.Map;
+    }
+
+    /// <summary>バフ稼働率の設定(表示設定・優先表示リスト・非表示リスト・グラフカラー)を持つ種別か。</summary>
+    public static bool SupportsBuffUptimeSettings(WidgetKind kind)
+    {
+        return kind is WidgetKind.BuffUptime;
+    }
+
     /// <summary>自分だけを出す、1枚だけ開くプレイヤーの窓の種別か(ステータス詳細・バフ・デバフグループ)。</summary>
     public static bool IsSelfOnlyPlayerWindowKind(WidgetKind kind)
     {
@@ -1910,7 +2119,16 @@ public static class WidgetConfigDefaults
     }
 
     /// <summary>
-    /// 開いていた窓の対象を保存する種別か。プレイヤー用ウィンドウだけが持つ。
+    /// 窓の管理がプレイヤーの窓の仕組み(相手ごとの窓)で開く本体の種別か。複数開ける種別(<see cref="SupportsOpenTargets"/>)と、
+    /// 自分だけを出す1枚の窓(<see cref="IsSelfOnlyPlayerWindowKind"/>)。プラグインの複数起動のウィジェットは別に判定する。
+    /// </summary>
+    public static bool IsPlayerWindowKind(WidgetKind kind)
+    {
+        return SupportsOpenTargets(kind) || IsSelfOnlyPlayerWindowKind(kind);
+    }
+
+    /// <summary>
+    /// 開いていた窓の対象を保存する種別か(本体の複数開けるウィジェット。人・敵・チャットの窓)。プラグインの複数起動のウィジェットは別に判定する。
     /// 自分だけを出す窓(<see cref="IsSelfOnlyPlayerWindowKind"/>)は常に自分1枚なので対象外。
     /// </summary>
     public static bool SupportsOpenTargets(WidgetKind kind)
@@ -1922,6 +2140,7 @@ public static class WidgetConfigDefaults
             or WidgetKind.PlayerModule
             or WidgetKind.BuffList
             or WidgetKind.DebuffList
+            or WidgetKind.BuffUptime
             or WidgetKind.BuffDebuffCard
             or WidgetKind.DamageSkillDetail
             or WidgetKind.DamageSummary
@@ -1934,7 +2153,6 @@ public static class WidgetConfigDefaults
             or WidgetKind.BreakSkillDetail
             or WidgetKind.BreakGraph
             or WidgetKind.DamageTakenSummary
-            or WidgetKind.EntityInfo
             or WidgetKind.Chat;
     }
 
@@ -1964,6 +2182,8 @@ public static class WidgetConfigDefaults
             DamageTakenLog = SupportsDamageTakenLogSettings(kind) ? CreateDamageTakenLogSettings() : null,
             EntityInfo = SupportsEntityInfoSettings(kind) ? CreateEntityInfoSettings() : null,
             Chat = SupportsChatSettings(kind) ? CreateChatSettings() : null,
+            Map = SupportsMapSettings(kind) ? CreateMapSettings() : null,
+            BuffUptime = SupportsBuffUptimeSettings(kind) ? CreateBuffUptimeSettings() : null,
             Plugin = kind == WidgetKind.Plugin ? new PluginWidgetSettingsConfig() : null
         };
     }
@@ -2442,6 +2662,62 @@ public static class WidgetConfigDefaults
         return normalized;
     }
 
+    /// <summary>バフ稼働率の「常駐バフの表示」の既定。</summary>
+    public const bool DefaultBuffUptimeShowsPermanentBuffs = false;
+
+    /// <summary>バフ稼働率の「料理・薬剤の表示」の既定。</summary>
+    public const bool DefaultBuffUptimeShowsCuisinePotion = false;
+
+    /// <summary>バフ稼働率の「1秒の幅」の既定(px)。既定の大きさの窓で横軸がおよそ12秒(推移グラフの横軸の長さの既定)になる比。</summary>
+    public const int DefaultBuffUptimePixelsPerSecond = 10;
+
+    public const int MinBuffUptimePixelsPerSecond = 2;
+
+    public const int MaxBuffUptimePixelsPerSecond = 60;
+
+    public static int ClampBuffUptimePixelsPerSecond(int pixelsPerSecond)
+    {
+        return Math.Clamp(pixelsPerSecond, MinBuffUptimePixelsPerSecond, MaxBuffUptimePixelsPerSecond);
+    }
+
+    /// <summary>バフ稼働率の設定の既定。グラフカラーの既定は推移グラフと同じ決め方(<see cref="GetMetricGraphColorDefaultSource"/>)。</summary>
+    public static BuffUptimeWidgetSettingsConfig CreateBuffUptimeSettings()
+    {
+        var source = GetMetricGraphColorDefaultSource(WidgetKind.BuffUptime);
+
+        return new BuffUptimeWidgetSettingsConfig
+        {
+            PixelsPerSecond = DefaultBuffUptimePixelsPerSecond,
+            ShowsPermanentBuffs = DefaultBuffUptimeShowsPermanentBuffs,
+            ShowsCuisinePotion = DefaultBuffUptimeShowsCuisinePotion,
+            PriorityBuffs = CreateBuffEntries(DefaultBuffUptimePriorityBuffEntries),
+            HiddenBuffIds = [],
+            ClassColorIndexes = CreateDefaultClassColorIndexes(source),
+            ClassColorPalettes = CreateDefaultClassColorPalettes(source)
+        };
+    }
+
+    /// <summary>
+    /// 保存値を正規化して写す。1秒の幅は範囲に収め、優先表示リストは <see cref="NormalizeBuffEntries"/> で直し、
+    /// グラフカラーは推移グラフと同じく読み替え先のメーターの行の並びと既定値で揃える。
+    /// </summary>
+    public static BuffUptimeWidgetSettingsConfig CloneNormalizedBuffUptime(BuffUptimeWidgetSettingsConfig? buffUptime)
+    {
+        var normalized = (buffUptime ?? CreateBuffUptimeSettings()).Clone();
+        normalized.PixelsPerSecond = ClampBuffUptimePixelsPerSecond(normalized.PixelsPerSecond);
+        normalized.PriorityBuffs = NormalizeBuffEntries(normalized.PriorityBuffs, DefaultBuffUptimePriorityBuffEntries);
+
+        // 0 以下はバフのIDではない。重なりは先に足したほうを残し、非表示にした順を保つ(バフ・デバフ一覧と同じ)。
+        normalized.HiddenBuffIds = [.. normalized.HiddenBuffIds.Where(baseId => baseId > 0).Distinct()];
+
+        var source = GetMetricGraphColorDefaultSource(WidgetKind.BuffUptime);
+        (normalized.ClassColorIndexes, normalized.ClassColorPalettes) = NormalizeClassColors(
+            source,
+            normalized.ClassColorIndexes,
+            normalized.ClassColorPalettes);
+        return normalized;
+    }
+
     /// <summary>チャットの設定の既定。</summary>
     public static ChatWidgetSettingsConfig CreateChatSettings()
     {
@@ -2525,6 +2801,58 @@ public static class WidgetConfigDefaults
         return normalized;
     }
 
+    /// <summary>マップの設定の既定。</summary>
+    public static MapWidgetSettingsConfig CreateMapSettings()
+    {
+        return new MapWidgetSettingsConfig
+        {
+            PartyDisplayModeIndex = DefaultPartyDisplayModeIndex,
+            EntityDisplayModeIndex = DefaultEntityDisplayModeIndex,
+            PlayerNamePartyDisplayModeIndex = DefaultMapPlayerNamePartyDisplayModeIndex,
+            EntityNameDisplayModeIndex = DefaultMapEntityNameDisplayModeIndex,
+            HideNamesInCombatModeIndex = DefaultMapHideNamesInCombatModeIndex,
+            SimplifiesPlayersInCombat = DefaultMapSimplifiesPlayersInCombat,
+            AlwaysSimplifiesSelf = DefaultMapAlwaysSimplifiesSelf,
+            MapOpacity = DefaultMapOpacity,
+            ClassColorIndexes = CreateDefaultClassColorIndexes(WidgetKind.Map),
+            ClassColorPalettes = CreateDefaultClassColorPalettes(WidgetKind.Map)
+        };
+    }
+
+    /// <summary>
+    /// 保存値を正規化して写す。フィルター・名前を出す相手・不透明度は範囲に収め、クラスの色は一覧に無い鍵を捨てて足りない鍵を既定で埋める。
+    /// </summary>
+    public static MapWidgetSettingsConfig CloneNormalizedMap(MapWidgetSettingsConfig? map)
+    {
+        var normalized = (map ?? CreateMapSettings()).Clone();
+        normalized.PartyDisplayModeIndex = Math.Clamp(
+            normalized.PartyDisplayModeIndex,
+            DefaultPartyDisplayModeIndex,
+            MaxPartyDisplayModeIndex);
+        normalized.EntityDisplayModeIndex = Math.Clamp(
+            normalized.EntityDisplayModeIndex,
+            MinEntityDisplayModeIndex,
+            MaxEntityDisplayModeIndex);
+        normalized.PlayerNamePartyDisplayModeIndex = Math.Clamp(
+            normalized.PlayerNamePartyDisplayModeIndex,
+            DefaultPartyDisplayModeIndex,
+            MaxPartyDisplayModeIndex);
+        normalized.EntityNameDisplayModeIndex = Math.Clamp(
+            normalized.EntityNameDisplayModeIndex,
+            MapEntityNameShownIndex,
+            MapEntityNameHiddenIndex);
+        normalized.HideNamesInCombatModeIndex = Math.Clamp(
+            normalized.HideNamesInCombatModeIndex,
+            MapInCombatTargetAllIndex,
+            MapInCombatTargetNoneIndex);
+        normalized.MapOpacity = Math.Clamp(normalized.MapOpacity, MinMapOpacity, MaxMapOpacity);
+        (normalized.ClassColorIndexes, normalized.ClassColorPalettes) = NormalizeClassColors(
+            WidgetKind.Map,
+            normalized.ClassColorIndexes,
+            normalized.ClassColorPalettes);
+        return normalized;
+    }
+
     private static WidgetWindowConfig CreateDefaultWindowConfig(WidgetKind kind)
     {
         return kind switch
@@ -2574,6 +2902,11 @@ public static class WidgetConfigDefaults
                 Width = PlayerBuffListInitialWindowWidth,
                 Height = PlayerBuffListInitialWindowHeight
             },
+            WidgetKind.BuffUptime => new WidgetWindowConfig
+            {
+                Width = BuffUptimeInitialWindowWidth,
+                Height = BuffUptimeInitialWindowHeight
+            },
             WidgetKind.BuffDebuffGroup => new WidgetWindowConfig
             {
                 Width = BuffDebuffGroupInitialWindowWidth,
@@ -2593,6 +2926,11 @@ public static class WidgetConfigDefaults
             {
                 Width = ChatInitialWindowWidth,
                 Height = ChatInitialWindowHeight
+            },
+            WidgetKind.Map => new WidgetWindowConfig
+            {
+                Width = MapInitialWindowWidth,
+                Height = MapInitialWindowHeight
             },
             WidgetKind.DamageTakenLog => new WidgetWindowConfig
             {
@@ -2710,7 +3048,7 @@ public static class WidgetConfigDefaults
 
     /// <summary>
     /// 推移グラフのグラフカラーの既定を引くときの読み替え先。DPS・HPS・TPS・BPS推移グラフは、それぞれ DPS・HPS・ヘイト・ブレイクメーターに合わせる
-    /// (行の並び・色・最初に選ぶ枠)。推移グラフ以外(設定の初期値で種類が分からないとき)は DPS メーター。
+    /// (行の並び・色・最初に選ぶ枠)。バフ稼働率のバーの色と、推移グラフ以外(設定の初期値で種類が分からないとき)は DPS メーター。
     /// </summary>
     public static WidgetKind GetMetricGraphColorDefaultSource(WidgetKind kind)
     {
@@ -2992,6 +3330,7 @@ public static class WidgetConfigDefaults
         return kind switch
         {
             WidgetKind.EntityList or WidgetKind.EntityInfo => EntityClassColorKeys,
+            WidgetKind.Map => MapClassColorKeys,
             WidgetKind.PlayerList => PlayerListClassColorKeys,
             WidgetKind.PlayerInfo => PlayerInfoClassColorKeys,
             _ => ClassColorKeys
@@ -3000,11 +3339,13 @@ public static class WidgetConfigDefaults
 
     /// <summary>
     /// クラスカラーで最初に選ばれている枠。プレイヤーリストの潜在心相晶(不明を含む)と、
-    /// プレイヤー情報の潜在心相晶(無効を含む)とシーズンだけ2枠目。
+    /// プレイヤー情報の潜在心相晶(無効を含む)とシーズンと、マップのエンティティだけ2枠目。
     /// </summary>
     public static int GetDefaultClassColorIndex(WidgetKind kind, string key)
     {
-        return (kind == WidgetKind.PlayerList
+        return (kind == WidgetKind.Map
+                && string.Equals(key, MapEntityColorKey, StringComparison.OrdinalIgnoreCase))
+            || (kind == WidgetKind.PlayerList
                 && PlayerListDefaultSeasonTalentColorHexes.ContainsKey(key))
             || (kind == WidgetKind.PlayerInfo
                 && (PlayerListDefaultSeasonTalentColorHexes.ContainsKey(key)
@@ -3262,13 +3603,18 @@ public static class WidgetConfigDefaults
             return [.. seasonTalentColors];
         }
 
+        if (kind == WidgetKind.Map && string.Equals(key, MapEntityColorKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return [.. MapDefaultEntityColorHexes];
+        }
+
         var source = kind switch
         {
             // タイムライン・プレイヤー情報・蘇生リスト・被ダメログのクラスアイコンは、プレイヤーリストと同じ既定の色で始める。
             WidgetKind.PlayerList or WidgetKind.Timeline or WidgetKind.PlayerInfo or WidgetKind.ReviveList or WidgetKind.DamageTakenLog
                 => PlayerListDefaultClassColorHexes,
-            // エンティティリスト・エンティティ情報のプレイヤーのクラスの行(ヘイトの枠)は、プレイヤーリストと同じ既定の色で始める。
-            WidgetKind.EntityList or WidgetKind.EntityInfo => EntityListDefaultClassColorHexes.ContainsKey(key)
+            // エンティティリスト・エンティティ情報・マップのプレイヤーのクラスの行は、プレイヤーリストと同じ既定の色で始める(不明はエンティティリストの色)。
+            WidgetKind.EntityList or WidgetKind.EntityInfo or WidgetKind.Map => EntityListDefaultClassColorHexes.ContainsKey(key)
                 ? EntityListDefaultClassColorHexes
                 : PlayerListDefaultClassColorHexes,
             WidgetKind.HpsMeter => HpsMeterDefaultClassColorHexes,
@@ -3412,6 +3758,12 @@ public static class WidgetConfigDefaults
         config.Chat = SupportsChatSettings(kind)
             ? CloneNormalizedChat(config.Chat)
             : null;
+        config.Map = SupportsMapSettings(kind)
+            ? CloneNormalizedMap(config.Map)
+            : null;
+        config.BuffUptime = SupportsBuffUptimeSettings(kind)
+            ? CloneNormalizedBuffUptime(config.BuffUptime)
+            : null;
         config.Plugin = kind == WidgetKind.Plugin
             ? CloneNormalizedPlugin(config.Plugin)
             : null;
@@ -3463,6 +3815,10 @@ public static class WidgetConfigDefaults
                 config.Window.Width ??= PlayerBuffListInitialWindowWidth;
                 config.Window.Height ??= PlayerBuffListInitialWindowHeight;
                 break;
+            case WidgetKind.BuffUptime:
+                config.Window.Width ??= BuffUptimeInitialWindowWidth;
+                config.Window.Height ??= BuffUptimeInitialWindowHeight;
+                break;
             case WidgetKind.BuffDebuffGroup:
                 config.Window.Width ??= BuffDebuffGroupInitialWindowWidth;
                 config.Window.Height ??= BuffDebuffGroupInitialWindowHeight;
@@ -3478,6 +3834,10 @@ public static class WidgetConfigDefaults
             case WidgetKind.Chat:
                 config.Window.Width ??= ChatInitialWindowWidth;
                 config.Window.Height ??= ChatInitialWindowHeight;
+                break;
+            case WidgetKind.Map:
+                config.Window.Width ??= MapInitialWindowWidth;
+                config.Window.Height ??= MapInitialWindowHeight;
                 break;
             case WidgetKind.DamageTakenLog:
                 config.Window.Width ??= DamageTakenLogInitialWindowWidth;
@@ -3701,7 +4061,7 @@ public static class WidgetConfigDefaults
 
     /// <summary>
     /// クラスカラーの色の一覧と選んでいる枠を、<paramref name="kind"/> の職の並びと既定値で揃える。
-    /// メーター系の設定とタイムラインとプレイヤー情報と推移グラフ(読み替え先のメーターの種類で呼ぶ)が使う。
+    /// メーター系の設定とタイムラインとプレイヤー情報と推移グラフ・バフ稼働率(読み替え先のメーターの種類で呼ぶ)が使う。
     /// </summary>
     private static (Dictionary<string, int> Indexes, Dictionary<string, List<string>> Palettes) NormalizeClassColors(
         WidgetKind kind,

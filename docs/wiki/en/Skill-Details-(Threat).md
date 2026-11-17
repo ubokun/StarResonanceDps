@@ -4,7 +4,7 @@ This widget lists the threat built up by one player by skill, from most to least
 
 ## How to open
 
-- On the "Skill Details (Threat)" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [Threat Meter](Threat-Meter), following the Threat Meter's "Filter settings" (the default is yourself).
+- On the "Skill Details (Threat)" card in "[Widgets](Widgets)", choose the target from the drop-down list in the name field and click the start button. The list shows the people in the [Threat Meter](Threat-Meter), following the Threat Meter's "Filter settings" (the default is the person at the top).
 - You can also open it by clicking a row in the [Threat Meter](Threat-Meter), or by right-clicking a row and choosing "Skill Details (Threat)".
 - A window is opened per target. If a window for the same target is already open, that window is brought to the front.
 

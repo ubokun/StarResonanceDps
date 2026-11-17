@@ -46,12 +46,6 @@ namespace StarResonanceDps.App.Controls;
 /// </summary>
 public sealed class MetricGraphChart : FrameworkElement
 {
-    /// <summary>横軸の数字の区間の数の上限。数字の間隔(<see cref="GridStepSeconds"/>)はこれを超えない切りのいい秒にする。</summary>
-    private const int MaxSecondLabelIntervals = 4;
-
-    /// <summary>横軸の数字の間隔の候補(秒)。<see cref="VisibleSeconds"/> を <see cref="MaxSecondLabelIntervals"/> 区間以下に分ける最小のものを使う。</summary>
-    private static readonly double[] SecondLabelStepCandidates = [1d, 2d, 5d, 10d, 15d, 30d, 60d, 120d, 300d, 600d];
-
     private const int HorizontalGridCount = 2;
 
     /// <summary>
@@ -184,7 +178,8 @@ public sealed class MetricGraphChart : FrameworkElement
     private double _maxSeconds;
     private double _maxValuePerSecond;
     private int _lastPointCount;
-    private bool _isFollowingEnd = true;
+    /// <summary>横軸のスクロールの状態(最新を追いかけるか・ずらせる秒数)。バフ稼働率と同じ決まり。</summary>
+    private readonly MetricTimeAxisScroll _scroll = new();
     private bool _isSettingOffset;
     private bool _isSubscribedToCulture;
 
@@ -194,7 +189,7 @@ public sealed class MetricGraphChart : FrameworkElement
         _lineLayer.SetResourceReference(EffectProperty, "Effect.WidgetWindowTextShadow");
         _children = new VisualCollection(this) { _lineLayer };
         _valueLabels = CreateLabels(HorizontalGridCount + 1);
-        _secondLabels = CreateLabels(MaxSecondLabelIntervals + 1);
+        _secondLabels = CreateLabels(MetricTimeAxis.MaxLabelIntervals + 1);
 
         // 最後に足すので、線の層(全面で当たる)より上でマウスを受ける。
         _skillMarkerLayer = new Canvas();
@@ -296,25 +291,10 @@ public sealed class MetricGraphChart : FrameworkElement
     }
 
     /// <summary>横軸の数字の間隔。戦闘の秒に結び付けるので、スクロールすると数字も動く。スクロールバーの1段の移動もこれ。</summary>
-    public double GridStepSeconds
-    {
-        get
-        {
-            var visibleSeconds = VisibleSeconds;
-            foreach (var step in SecondLabelStepCandidates)
-            {
-                if (visibleSeconds / step <= MaxSecondLabelIntervals)
-                {
-                    return step;
-                }
-            }
-
-            return Math.Ceiling(visibleSeconds / MaxSecondLabelIntervals);
-        }
-    }
+    public double GridStepSeconds => MetricTimeAxis.GetLabelStepSeconds(VisibleSeconds);
 
     /// <summary>ずらせる秒数(最後の区切りの終わり − <see cref="VisibleSeconds"/>、足りなければ 0)。スクロールバーの最大値で、0 ならバーを出さない。</summary>
-    public double ScrollableSeconds { get; private set; }
+    public double ScrollableSeconds => _scroll.ScrollableSeconds;
 
     /// <summary><see cref="ScrollableSeconds"/> か <see cref="HorizontalOffset"/> が変わった(スクロールバーを合わせる合図)。</summary>
     public event EventHandler? ScrollMetricsChanged;
@@ -446,10 +426,7 @@ public sealed class MetricGraphChart : FrameworkElement
 
     private static object CoerceHorizontalOffset(DependencyObject d, object baseValue)
     {
-        var value = (double)baseValue;
-        return double.IsNaN(value)
-            ? 0d
-            : Math.Clamp(value, 0d, ((MetricGraphChart)d).ScrollableSeconds);
+        return ((MetricGraphChart)d)._scroll.Clamp((double)baseValue);
     }
 
     private static void OnHorizontalOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -458,7 +435,7 @@ public sealed class MetricGraphChart : FrameworkElement
         if (!chart._isSettingOffset)
         {
             // 手で動かした。右端にいる間だけ最新を追いかける。
-            chart._isFollowingEnd = chart.HorizontalOffset >= chart.ScrollableSeconds;
+            chart._scroll.OnOffsetSettled(chart.HorizontalOffset);
         }
 
         chart.Refresh();
@@ -644,7 +621,7 @@ public sealed class MetricGraphChart : FrameworkElement
 
         if (points.Count < _lastPointCount)
         {
-            _isFollowingEnd = true;
+            _scroll.RestartFollowing();
         }
 
         _lastPointCount = points.Count;
@@ -660,20 +637,19 @@ public sealed class MetricGraphChart : FrameworkElement
     /// </summary>
     private void UpdateScrollRange()
     {
-        var scrollableSeconds = Math.Max(_maxSeconds - VisibleSeconds, 0d);
-        ScrollableSeconds = scrollableSeconds;
+        var scrollableSeconds = _scroll.SetRange(_maxSeconds, VisibleSeconds);
 
         _isSettingOffset = true;
         try
         {
-            if (_isFollowingEnd)
+            if (_scroll.IsFollowingEnd)
             {
                 SetCurrentValue(HorizontalOffsetProperty, scrollableSeconds);
             }
             else
             {
                 CoerceValue(HorizontalOffsetProperty);
-                _isFollowingEnd = HorizontalOffset >= scrollableSeconds;
+                _scroll.OnOffsetSettled(HorizontalOffset);
             }
         }
         finally
@@ -708,23 +684,14 @@ public sealed class MetricGraphChart : FrameworkElement
                 : string.Empty;
         }
 
-        var offset = HorizontalOffset;
-        var step = GridStepSeconds;
-        _secondLabelSeconds.Clear();
-        for (var seconds = Math.Ceiling(offset / step) * step;
-             seconds <= offset + VisibleSeconds && _secondLabelSeconds.Count < _secondLabels.Length;
-             seconds += step)
-        {
-            _secondLabelSeconds.Add(seconds);
-        }
+        MetricTimeAxis.FillLabelSeconds(HorizontalOffset, VisibleSeconds, _secondLabelSeconds, _secondLabels.Length);
 
         for (var index = 0; index < _secondLabels.Length; index++)
         {
             var label = _secondLabels[index];
             if (index < _secondLabelSeconds.Count)
             {
-                var totalSeconds = (int)Math.Round(_secondLabelSeconds[index]);
-                label.Text = $"{totalSeconds / 60}:{totalSeconds % 60:00}";
+                label.Text = MetricTimeAxis.FormatSeconds(_secondLabelSeconds[index]);
                 label.Visibility = Visibility.Visible;
             }
             else
@@ -755,7 +722,8 @@ public sealed class MetricGraphChart : FrameworkElement
             return;
         }
 
-        // 線は戦闘の0秒・値0(描く領域の左下の原点)から始め、区切りの中央に置いた点を順につなぐ。
+        // 線は戦闘の0秒・値0(描く領域の左下の原点)から始め、区切りの終わりに置いた点を順につなぐ。
+        // 区切りの値はその区切りの中で入ったものだけなので、線が上がるのもその区切りの中だけになり、前の時刻へ漏れない。
         // 見ている窓の外は描く領域の左右で切る。高さは最大値で割る(全部0なら下端)。
         var geometry = new StreamGeometry();
         using (var context = geometry.Open())
@@ -769,7 +737,7 @@ public sealed class MetricGraphChart : FrameworkElement
                     : 0d;
                 context.LineTo(
                     new Point(
-                        ToX(plotBounds, (point.StartSeconds + point.EndSeconds) * 0.5d),
+                        ToX(plotBounds, point.EndSeconds),
                         plotBounds.Bottom - ratio * plotBounds.Height),
                     true,
                     false);
@@ -841,7 +809,7 @@ public sealed class MetricGraphChart : FrameworkElement
 
     private double ToX(Rect plotBounds, double seconds)
     {
-        return plotBounds.Left + (seconds - HorizontalOffset) / VisibleSeconds * plotBounds.Width;
+        return MetricTimeAxis.ToX(plotBounds.Left, plotBounds.Width, HorizontalOffset, VisibleSeconds, seconds);
     }
 
     /// <summary>

@@ -39,4 +39,4 @@ There are only the window settings and theme ([Common Widget Settings](Common-Wi
 - The type itself is not shown (it appears in the [Player List](Player-List) and [Player Info](Player-Info)). The Illusion-Breaking Psychoscope and the type-specific effects of advanced nodes are not shown either.
 - Other players' data arrives while they are around you. It does not arrive through party information.
 - For people who have left the Player List, the last known values remain. They are cleared when you log out.
-- While a history entry is open, the values from that time are shown for the people who were in that battle.
+- While a history entry is open, the values from that time are shown for people who were in that battle and are not around you now.

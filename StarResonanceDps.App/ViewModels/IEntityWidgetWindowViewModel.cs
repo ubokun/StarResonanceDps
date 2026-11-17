@@ -9,8 +9,8 @@ namespace StarResonanceDps.App.ViewModels;
 /// エンティティ(モンスター)に紐づくウィジェットウィンドウのViewModel。
 ///
 /// <para>
-/// バフ/デバフ一覧とバフ・デバフカードとエンティティ情報の3種類があり、
-/// <see cref="Services.WidgetWindowManager"/> は同じ一覧で扱う。
+/// バフ/デバフ一覧とバフ・デバフカードの2種類があり、
+/// <see cref="Services.WidgetWindowManager"/> は同じ一覧で扱う(ターゲット情報は1枚だけの窓で、ここに入らない)。
 /// </para>
 /// </summary>
 public interface IEntityWidgetWindowViewModel : INotifyPropertyChanged, IDisposable, IWidgetDataStatusSource
@@ -26,9 +26,6 @@ public interface IEntityWidgetWindowViewModel : INotifyPropertyChanged, IDisposa
 
     bool IsEntityAcquired { get; }
 
-    /// <summary>敵を待つ窓がまだ個体を捕まえていない(<see cref="Models.Widgets.EntityWindowTarget.CreateWaiting"/>)。</summary>
-    bool IsWaitingForEntity { get; }
-
     /// <summary>捕まえている実体の値。未捕獲なら <c>null</c>。</summary>
     EntityTargetInfo? Entity { get; }
 
@@ -38,6 +35,9 @@ public interface IEntityWidgetWindowViewModel : INotifyPropertyChanged, IDisposa
     string HeaderText { get; }
 
     bool RepresentsEntity(long entityUuid);
+
+    /// <summary>まだ捕まえておらず、その個体を捕まえられるか(種類と種別IDの一致、<see cref="EntityWindowTarget.CanCapture"/>)。</summary>
+    bool CanCaptureEntity(EntityTargetInfo entity);
 
     /// <summary>個体の値を採用する。未捕獲なら種別一致で捕まえる。</summary>
     bool TryApplyEntity(EntityTargetInfo entity);

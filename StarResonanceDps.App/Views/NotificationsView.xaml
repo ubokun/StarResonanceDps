@@ -307,6 +307,12 @@
                                    Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_TargetIdSourceNote]}" />
                     </StackPanel>
 
+                    <!-- リキャスト完了の注意書き。項目の注意書きは先頭(バフ・デバフ効果切れと同じ)。 -->
+                    <TextBlock Margin="0,0,0,6"
+                               Style="{StaticResource NotificationsView.Note}"
+                               Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_CooldownSelfOnlyNote]}"
+                               Visibility="{Binding ShowsCooldownReadySettings, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
                     <StackPanel Visibility="{Binding ShowsTargetSkill, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Grid Height="44">
                             <Grid.ColumnDefinitions>
@@ -323,7 +329,7 @@
                                      Height="32"
                                      Style="{StaticResource Input.PathBox}"
                                      VerticalContentAlignment="Center"
-                                     Tag="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_TargetSkillName_Placeholder]}"
+                                     Tag="{Binding TargetSkillNamePlaceholder}"
                                      Text="{Binding TargetName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
 
@@ -342,7 +348,7 @@
                                      Height="32"
                                      Style="{StaticResource Input.PathBox}"
                                      VerticalContentAlignment="Center"
-                                     Tag="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_TargetSkillId_Placeholder]}"
+                                     Tag="{Binding TargetSkillIdPlaceholder}"
                                      AllowDrop="False"
                                      InputMethod.IsInputMethodEnabled="False"
                                      behaviors:DigitsOnlyInputBehavior.IsEnabled="True"
@@ -358,7 +364,7 @@
                                    Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_TargetIdPriorityNote]}" />
                         <TextBlock Margin="0,0,0,6"
                                    Style="{StaticResource NotificationsView.Note}"
-                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_TargetIdSourceNote]}" />
+                                   Text="{Binding TargetSkillIdSourceNote}" />
                     </StackPanel>
 
                     <!-- ワールドチャットの一致ワード。スペースで区切った語が全部本文に含まれていれば通知する。 -->
@@ -387,14 +393,38 @@
                                    Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_MatchWordsAllNote]}" />
                     </StackPanel>
 
-                    <!-- バフ・デバフ効果切れだけの注意書き。2つ目は通知するバフの選び方(カードとグループの設定の「通知対象」)。 -->
-                    <StackPanel Visibility="{Binding ShowsBuffWidgetNote, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <!--
+                        バフ・デバフ効果切れの注意書きと通知条件。注意書きは先頭、通知条件は通知方法のすぐ上。
+                        注意書きの2つ目は通知するバフの選び方(カードとグループの設定の「通知対象」)。
+                        通知条件の並びは AppConfigDefaults.BuffExpiredLeadSeconds の添字と同じ。
+                    -->
+                    <StackPanel Visibility="{Binding ShowsBuffExpiredSettings, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TextBlock Margin="0,0,0,4"
                                    Style="{StaticResource NotificationsView.Note}"
                                    Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_BuffWidgetNote]}" />
                         <TextBlock Margin="0,0,0,6"
                                    Style="{StaticResource NotificationsView.Note}"
                                    Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_BuffTargetSettingsNote]}" />
+
+                        <Grid Height="44">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Style="{StaticResource NotificationsView.Label}"
+                                       Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_Condition]}" />
+
+                            <ComboBox Grid.Column="2"
+                                      Style="{StaticResource Input.SettingsComboBox}"
+                                      SelectedIndex="{Binding BuffExpiredConditionIndex, Mode=TwoWay}">
+                                <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[BuffExpiredCondition_OnExpiry]}" />
+                                <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[BuffExpiredCondition_1]}" />
+                                <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[BuffExpiredCondition_2]}" />
+                                <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[BuffExpiredCondition_3]}" />
+                            </ComboBox>
+                        </Grid>
                     </StackPanel>
 
                     <!-- 薬剤・料理効果切れの通知条件。並びは AppConfigDefaults.CuisinePotionLowMinutes の添字と同じ。 -->
@@ -436,6 +466,27 @@
                             <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[TelegraphedSkillCondition_1]}" />
                             <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[TelegraphedSkillCondition_2]}" />
                             <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[TelegraphedSkillCondition_3]}" />
+                        </ComboBox>
+                    </Grid>
+
+                    <!-- リキャスト完了の通知条件。並びは AppConfigDefaults.CooldownReadyLeadSeconds の添字と同じ。注意書きは先頭(対象スキルの行の上)。 -->
+                    <Grid Height="44" Visibility="{Binding ShowsCooldownReadySettings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Style="{StaticResource NotificationsView.Label}"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_Condition]}" />
+
+                        <ComboBox Grid.Column="2"
+                                  Style="{StaticResource Input.SettingsComboBox}"
+                                  SelectedIndex="{Binding CooldownReadyConditionIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[CooldownReadyCondition_OnReady]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[CooldownReadyCondition_1]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[CooldownReadyCondition_2]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[CooldownReadyCondition_3]}" />
                         </ComboBox>
                     </Grid>
 

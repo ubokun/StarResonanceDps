@@ -44,8 +44,14 @@ public sealed record PlayerInfoEntry
 
     public string SeasonStrengthText { get; private init; } = string.Empty;
 
-    /// <summary>現在地。自分と、いま周りに見えている人(自分と同じ場所)と、パーティのメンバー(パーティ情報のいる場所)だけ分かる。</summary>
-    public string LocationText { get; private init; } = string.Empty;
+    /// <summary>現在地の見出し(「現在地: 」)。</summary>
+    public string LocationLabelText { get; private init; } = string.Empty;
+
+    /// <summary>現在地。自分と、いま周りに見えている人(自分と同じ場所)と、パーティのメンバー(パーティ情報のいる場所)だけ分かる。分からなければ不明。</summary>
+    public string LocationValueText { get; private init; } = string.Empty;
+
+    /// <summary>現在地が分かっているか。分かっていれば下線を引き、押すとマップでその人を中心に出す。</summary>
+    public bool CanShowLocationOnMap { get; private init; }
 
     /// <summary>クラスアイコンの形。プレイヤーリストと同じ絵。</summary>
     public Brush? ClassIconMask { get; private init; }
@@ -141,7 +147,9 @@ public sealed record PlayerInfoEntry
             SeasonRankText = $"{localization.GetString("PlayerInfo_SeasonRank")}: {seasonRankName}",
             AbilityScoreText = $"{localization.GetString("PlayerInfo_AbilityScore")}: {(isProfileUnknown ? unknownText : FormatInteger(player.CombatPower))}",
             SeasonStrengthText = $"{localization.GetString("PlayerInfo_SeasonStrength")}: {(isProfileUnknown ? unknownText : FormatInteger(player.SeasonStrength))}",
-            LocationText = $"{localization.GetString("PlayerInfo_Location")}: {(string.IsNullOrEmpty(location) ? unknownText : location)}",
+            LocationLabelText = $"{localization.GetString("PlayerInfo_Location")}: ",
+            LocationValueText = string.IsNullOrEmpty(location) ? unknownText : location,
+            CanShowLocationOnMap = !string.IsNullOrEmpty(location),
             ClassIconMask = ResolveMask($"Icon.Profession.{classKey}"),
             ClassIconBrush = iconPalette.GetBrush(classKey),
             ClassSpecText = GetProfessionSpecDisplayName(player.ClassSpec, localization),
@@ -151,64 +159,6 @@ public sealed record PlayerInfoEntry
             SeasonTalentText = player.SeasonTalentBuffId <= 0 && player.IsSeasonTalentInactive
                 ? localization.GetString("PlayerInfo_SeasonTalentInactive")
                 : PlayerInfoFormatFormatter.GetSeasonTalentText(player.SeasonTalentBuffId, player.IsSeasonTalentInactive),
-            SeasonIconMask = season.Mask,
-            SeasonIconBrush = season.Brush,
-            IsSeasonUnknown = season.IsUnknown,
-            SeasonText = season.Text,
-            UnknownIconBrush = iconPalette.GetBrush(UnknownColorKey)
-        };
-    }
-
-    /// <summary>
-    /// 相手がまだ一覧に載っていないときの表示値。窓が覚えている素性(保存から戻した名前と UID を含む)だけを出し、
-    /// ほかの値は「不明」。今のシーズンは相手に依らないので、分かれば出す。
-    /// </summary>
-    /// <param name="name">覚えている名前。無ければ空。</param>
-    /// <param name="uid">覚えている UID。無ければ 0。</param>
-    /// <param name="seasonId">今のシーズン番号。まだ分からなければ 0。</param>
-    /// <param name="iconPalette">アイコンカラーの塗り。</param>
-    public static PlayerInfoEntry CreateUnknown(
-        string? name,
-        long uid,
-        bool isSelf,
-        bool isNpc,
-        int professionId,
-        int seasonId,
-        PlayerInfoIconPalette iconPalette)
-    {
-        var localization = LocalizationManager.Instance;
-        var unknownText = localization.GetString("PlayerInfo_Unknown");
-        var nameDisplayMode = PlayerRosterPresentationStore.Instance.NameDisplayMode;
-        var isIdentityUnknown = string.IsNullOrWhiteSpace(name) && uid == 0;
-
-        // 名前を伏せる設定ならUIDも伏せる(名簿の伏せ方と同じ)。
-        var uidText = PlayerInfoFormatFormatter.ShouldHideName(isSelf, nameDisplayMode)
-            ? PlayerRosterPresentationStore.HiddenPlayerName
-            : uid != 0
-                ? uid.ToString(CultureInfo.InvariantCulture)
-                : unknownText;
-
-        var season = CreateSeasonBadge(seasonId, unknownText, iconPalette);
-        var classKey = PlayerProfession.GetKey(professionId);
-        var seasonTalent = ResolveSeasonTalentIcon(0, isInactive: false);
-
-        return new PlayerInfoEntry
-        {
-            NameText = isIdentityUnknown
-                ? unknownText
-                : PlayerInfoFormatFormatter.GetDisplayName(name, uid, isSelf, isNpc, professionId, nameDisplayMode),
-            UidText = $"{localization.GetString("PlayerInfo_Uid")}: {uidText}",
-            LevelText = $"{localization.GetString("PlayerInfo_Level")}: {unknownText}",
-            SeasonRankText = $"{localization.GetString("PlayerInfo_SeasonRank")}: {unknownText}",
-            AbilityScoreText = $"{localization.GetString("PlayerInfo_AbilityScore")}: {unknownText}",
-            SeasonStrengthText = $"{localization.GetString("PlayerInfo_SeasonStrength")}: {unknownText}",
-            LocationText = $"{localization.GetString("PlayerInfo_Location")}: {unknownText}",
-            ClassIconMask = ResolveMask($"Icon.Profession.{classKey}"),
-            ClassIconBrush = iconPalette.GetBrush(classKey),
-            ClassSpecText = localization.GetString("ClassSpec_Unknown"),
-            SeasonTalentIconMask = seasonTalent.Mask,
-            SeasonTalentIconBrush = iconPalette.GetBrush(seasonTalent.ColorKey),
-            SeasonTalentText = PlayerInfoFormatFormatter.GetSeasonTalentText(0, isSeasonTalentInactive: false),
             SeasonIconMask = season.Mask,
             SeasonIconBrush = season.Brush,
             IsSeasonUnknown = season.IsUnknown,

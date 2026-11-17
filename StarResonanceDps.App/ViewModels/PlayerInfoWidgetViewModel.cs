@@ -15,7 +15,10 @@ public sealed partial class PlayerInfoWidgetViewModel : PlayerWidgetWindowViewMo
     /// <summary>名刺の既定の絵。写真を取れたとき以外はこれを出す。</summary>
     private const string DefaultCardResourceKey = "Icon.IdCard.idcard_common_01";
 
-    /// <summary>表示値。相手も覚えている素性も無い間は null(画面ごと隠す)。値で比べ、前回と同じなら差し替えない(画面を作り直さない)。</summary>
+    /// <summary>
+    /// 表示値。相手の行が無い間(ゲームから何も届いていない・起動し直した直後・ログアウトの後)は、覚えている名前があっても null(画面ごと隠す)。
+    /// 値で比べ、前回と同じなら差し替えない(画面を作り直さない)。
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPlayerInfo))]
     private PlayerInfoEntry? _playerInfo;
@@ -30,28 +33,29 @@ public sealed partial class PlayerInfoWidgetViewModel : PlayerWidgetWindowViewMo
 
     private readonly PlayerPhotoSlot _avatarSlot;
     private readonly PlayerPhotoSlot _cardSlot;
+    private readonly Action<long> _showPlayerOnMap;
     private PlayerRosterEntry? _player;
 
-    /// <summary>アイコンカラーの塗り。基底のコンストラクタから描き直しが呼ばれることがあるので、既定値で始める。</summary>
-    private PlayerInfoIconPalette _iconPalette = new(WidgetConfigDefaults.CreatePlayerInfoSettings());
+    /// <summary>アイコンカラーの塗り。</summary>
+    private PlayerInfoIconPalette _iconPalette;
 
     private bool _isDisposed;
 
     public PlayerInfoWidgetViewModel(
         WidgetListItemViewModel infoWidget,
         long? requestedCharacterId,
-        PlayerRosterEntry? initialPlayer)
+        PlayerRosterEntry? initialPlayer,
+        Action<long> showPlayerOnMap)
         : base(infoWidget, requestedCharacterId)
     {
+        _showPlayerOnMap = showPlayerOnMap;
         _iconPalette = new PlayerInfoIconPalette(infoWidget.GetPlayerInfoSettingsSnapshot());
         infoWidget.PlayerInfoSettingsChanged += InfoWidget_PlayerInfoSettingsChanged;
         _avatarSlot = new PlayerPhotoSlot(PlayerPhotoLoader.DefaultAvatarResourceKey, image => AvatarImage = image);
         _cardSlot = new PlayerPhotoSlot(DefaultCardResourceKey, image => CardImage = image);
-        // 相手が決まる前から既定の絵を用意する(何も分からない間は画面ごと隠れる)。
+        // 相手が決まる前から既定の絵を用意する(相手の行が無い間は画面ごと隠れる)。
         RefreshPhotos(force: true);
         InitializePlayer(initialPlayer);
-        // 相手がまだ一覧に載っていなくても、覚えている素性があれば見出しと「不明」を出す。
-        RenderPlayerInfo();
     }
 
     public WidgetListItemViewModel InfoWidget => PlayerWidget;
@@ -67,6 +71,17 @@ public sealed partial class PlayerInfoWidgetViewModel : PlayerWidgetWindowViewMo
 
     /// <summary>自分の名刺の写真を出しているときだけ、その写真。扱いは顔と同じ。</summary>
     public PlayerPhoto? SavableCardPhoto => _player?.IsSelf == true ? _cardSlot.Photo : null;
+
+    /// <summary>現在地を押した。マップでこの人を中心に出す(現在地が分からなければ何もしない)。</summary>
+    public void ShowLocationOnMap()
+    {
+        if (_player is null || PlayerInfo?.CanShowLocationOnMap != true)
+        {
+            return;
+        }
+
+        _showPlayerOnMap(_player.CharacterId);
+    }
 
     public void Dispose()
     {
@@ -113,15 +128,6 @@ public sealed partial class PlayerInfoWidgetViewModel : PlayerWidgetWindowViewMo
         RefreshPhotos(force: false);
     }
 
-    /// <summary>
-    /// ログアウト。出していた行は基底が捨てる(相手が変わったときと同じく既定の絵に戻る)。
-    /// 行が無い表示は覚えている素性(捨てた NPC の印と職業を含む)から作るので出し直す。
-    /// </summary>
-    protected override void OnResetToStartup()
-    {
-        RenderPlayerInfo();
-    }
-
     protected override WidgetDataStatus CreateDataStatus(GameReceptionSnapshot reception, PlayerRosterEntry? player)
     {
         var hasPhoto = player is not null
@@ -134,35 +140,13 @@ public sealed partial class PlayerInfoWidgetViewModel : PlayerWidgetWindowViewMo
             hasPhoto);
     }
 
-    /// <summary>相手がまだ一覧に載っていない間は、覚えている素性(保存から戻した名前と UID)が入ったら出し直す。</summary>
-    protected override void OnLastKnownPlayerChanged()
-    {
-        if (_player is null)
-        {
-            RenderPlayerInfo();
-        }
-    }
-
+    /// <summary>
+    /// ほかのウィジェットと同じく、相手の行が無い間は何も出さない。タイトルは覚えている名前のまま(基底が出す)。
+    /// </summary>
     private void RenderPlayerInfo()
     {
-        // 相手も覚えている素性も無い(タイトルに名前が出ない)間は何も出さない。
-        if (_player is null
-            && string.IsNullOrWhiteSpace(LastKnownPlayerName)
-            && LastKnownPlayerUid == 0)
-        {
-            PlayerInfo = null;
-            return;
-        }
-
         PlayerInfo = _player is null
-            ? PlayerInfoEntry.CreateUnknown(
-                LastKnownPlayerName,
-                LastKnownPlayerUid,
-                IsSelfTarget,
-                LastKnownIsNpc,
-                LastKnownProfessionId,
-                RosterSeasonId,
-                _iconPalette)
+            ? null
             : PlayerInfoEntry.Create(
                 _player,
                 RosterMapName,

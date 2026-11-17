@@ -172,11 +172,12 @@ public sealed partial class PlayerBuffEntry : ObservableObject
 
     private void ApplyIcon(string? iconName)
     {
-        IconPath = CombatIconResolver.ResolveBuffIcon(iconName);
-        IconMask = CombatIconResolver.ResolveBuffIconMask(iconName);
-        IsModuleEffectIcon = CombatDataCatalog.IsModEffectIcon(iconName);
-        IsFactorIcon = CombatIconResolver.IsFactorIcon(iconName);
-        ShowsUnknownIcon = !string.IsNullOrWhiteSpace(iconName) && IconPath is null && IconMask is null;
+        var icon = BuffIconDisplay.Resolve(iconName);
+        IconPath = icon.IconPath;
+        IconMask = icon.IconMask;
+        IsModuleEffectIcon = icon.IsModuleEffectIcon;
+        IsFactorIcon = icon.IsFactorIcon;
+        ShowsUnknownIcon = icon.ShowsUnknownIcon;
     }
 
     /// <summary>

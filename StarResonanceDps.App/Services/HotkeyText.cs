@@ -22,7 +22,6 @@ public static class HotkeyText
             HotkeyAction.StartFavoritesOrStopAll => JoinMenuTexts("Manager_WidgetAction_StartAllFavorites", "Manager_WidgetAction_StopAll"),
             HotkeyAction.PinRunningOrUnpinAll => JoinMenuTexts("Manager_WidgetAction_PinAllRunning", "Manager_WidgetAction_UnpinAll"),
             HotkeyAction.ClickThroughPinnedOrClearAll => JoinMenuTexts("Manager_WidgetAction_ClickThroughAllPinned", "Manager_WidgetAction_ClearAllClickThrough"),
-            HotkeyAction.WidgetWindowTopmostAlwaysOrPinnedOnly => JoinMenuTexts("WidgetWindowTopmost_Always", "WidgetWindowTopmost_PinnedOnly"),
             HotkeyAction.Benchmark => localization.GetString("Meter_Benchmark"),
             HotkeyAction.ResetEncounter => localization.GetString("Meter_Reset"),
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, null)

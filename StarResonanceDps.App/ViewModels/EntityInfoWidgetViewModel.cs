@@ -10,30 +10,39 @@ using StarResonanceDps.App.Models.Widgets;
 using StarResonanceDps.App.Services;
 using StarResonanceDps.Core.CombatRuntime;
 using StarResonanceDps.Core.Models;
+using StarResonanceDps.Core.Services;
 
 namespace StarResonanceDps.App.ViewModels;
 
 /// <summary>
-/// エンティティ情報。エンティティリストの実体1つの、1行目(エンティティリストの1行と同じ作りで、得点は出さない)・ヘイトの行・バフとデバフの枠。
+/// ターゲット情報(内部名はエンティティ情報。保存のキー <c>EntityInfo</c> を 4.0.0 から変えないため)。1枚だけ開く窓で、
+/// 敵1体の、1行目(エンティティリストの1行と同じ作りで、得点は出さない)・ヘイトの行・バフとデバフの枠を出す。
 ///
 /// <para>
-/// 1行目とヘイトは、周りの実体の一覧(<see cref="UpdateNearbyEntities"/>)と名簿(<see cref="UpdateRoster"/>)から、窓ごとに自分の行(<see cref="Row"/>)を
+/// 映す敵は、既定では自分のターゲット(自分が最後に技を向けた敵、<see cref="SelfTargetStore"/>。その敵が周りから消えるとターゲットも消える)。
+/// エンティティリストの行・マップの敵の印から選んだ敵(<see cref="ShowEntity"/>)を映している間は、ヘッダーに「ターゲットに戻る」を出す
+/// (<see cref="IsShowingChosenEntity"/>、<see cref="ReturnToTargetCommand"/>)。選んだ敵に自分が技を向けたら、ターゲットへ戻った扱いにする。
+/// 選んだ敵が周りの実体の一覧から消えたら(倒された・周りから外れた)、選んだ敵を外してターゲットに戻る。
+/// 選んだ敵は保存せず、ログアウトでも外す。
+/// </para>
+///
+/// <para>
+/// 1行目とヘイトは、周りの実体の一覧(<see cref="UpdateNearbyEntities"/>)と名簿(<see cref="UpdateRoster"/>)から、窓の行(<see cref="Row"/>)を
 /// このウィジェットの設定で組む(名前の書式・ヘイトの人数などがエンティティリストと別なので、エンティティリストの行は使わない)。
-/// 窓が追う個体は <see cref="EntityWindowTarget"/> が決める(エンティティのバフ一覧と同じ)。
-/// 個体が周りの実体の一覧に居ない(倒された・周りから外れた)間は、エンティティリストと同じく何も出さない(バフ・デバフも)。
-/// 同じ個体が一覧に戻れば、また出す。ログアウトで個体を放したら中身を空にする。
+/// 映す敵が無い間と、映す敵が周りの実体の一覧に居ない間は、エンティティリストと同じく何も出さない(バフ・デバフも)。
 /// 何も出さない間は中身の高さが 0 になり、窓は高さ自動の決まりどおり今の高さで待つ。
 /// </para>
 ///
 /// <para>
+/// 自分のターゲットの知らせはパケットのスレッドで来るので、画面のスレッドへ回して読み直す。
 /// バフ・デバフはエンティティのバフ一覧と同じく1秒ごとに読む(名前の書式・優先表示リスト・非表示リスト・同種バフの表示はこのウィジェットの設定)。枠は値だけ入れ替える。
 /// 詠唱の文字とゲージの 0.1 秒ごとの当て直しは画面が受け持つ(エンティティリストと同じ)。
 /// </para>
 /// </summary>
-public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWidgetWindowViewModel
+public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, IWidgetWindowHiddenAware
 {
     private readonly WidgetListItemViewModel _widget;
-    private readonly EntityWindowTarget _target;
+    private readonly Dispatcher _dispatcher;
 
     /// <summary>枠からバフリスト・デバフリストを開く経路。</summary>
     private readonly Action<WidgetKind, EntityTargetInfo> _openList;
@@ -49,20 +58,30 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
     private EntityInfoWidgetSettingsConfig _settings;
     private EntityRowSettings _rowSettings;
 
+    /// <summary>最後に受けた周りの実体の一覧。映す敵が替わったときに、すぐその敵の値を引くのに使う。</summary>
+    private IReadOnlyList<NearbyEntityEntry> _nearbyEntities;
+
+    /// <summary>自分のターゲットの、最後に読んだ値(<see cref="SelfTargetStore.TargetUuid"/>)。無ければ 0。</summary>
+    private long _targetUuid;
+
+    /// <summary>エンティティリスト・マップから選んで映している敵の実体の UUID。自分のターゲットを映している間は 0。</summary>
+    private long _chosenEntityUuid;
+
     /// <summary>
-    /// 窓が追う個体の、最後に受けた周りの実体の値。名簿や設定が変わったときに行を組み直すのに使う。
-    /// 個体が周りの実体の一覧に居ない間は null(1行目・ヘイト・バフ・デバフを出さない)。
+    /// 映す敵の、最後に受けた周りの実体の値。名簿や設定が変わったときに行を組み直すのに使う。
+    /// 映す敵が無い間と、周りの実体の一覧に居ない間は null(1行目・ヘイト・バフ・デバフを出さない)。
     /// </summary>
     private NearbyEntityEntry? _lastEntity;
 
     private bool _isDisposed;
 
-    /// <summary>1行目とヘイトの行。窓が追う個体の値をまだ受けていなければ null(何も出さない)。</summary>
+    /// <summary>1行目とヘイトの行。映す敵の値をまだ受けていなければ null(何も出さない)。</summary>
     [ObservableProperty]
     private EntityListEntry? _row;
 
+    /// <summary>選んだ敵を映しているか。ヘッダーの「ターゲットに戻る」はこの間だけ出す。</summary>
     [ObservableProperty]
-    private string _headerText = string.Empty;
+    private bool _isShowingChosenEntity;
 
     /// <summary>右クリックのメニューを開いた枠。メニューの文言(バフかデバフか、優先表示の項目は今の状態も)はこの枠で決める。</summary>
     [ObservableProperty]
@@ -74,19 +93,20 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
 
     public EntityInfoWidgetViewModel(
         WidgetListItemViewModel widget,
-        EntityWindowTarget target,
         IReadOnlyList<PlayerRosterEntry> roster,
         IReadOnlyList<NearbyEntityEntry> nearbyEntities,
         Action<WidgetKind, EntityTargetInfo> openList,
         Action<EntityWindowTarget, PlayerBuffListKind, string, int> openCard)
     {
         _widget = widget;
-        _target = target;
+        _dispatcher = Dispatcher.CurrentDispatcher;
         _openList = openList;
         _openCard = openCard;
         _settings = widget.GetEntityInfoSettingsSnapshot();
         _rowSettings = EntityRowSettings.FromEntityInfo(_settings);
         _hatePlayers.SetRoster(roster);
+        _nearbyEntities = nearbyEntities;
+        _targetUuid = SelfTargetStore.Instance.TargetUuid;
         Buffs = new ReadOnlyObservableCollection<PlayerBuffEntry>(_buffs);
         Debuffs = new ReadOnlyObservableCollection<PlayerBuffEntry>(_debuffs);
         _refreshTimer = new DispatcherTimer
@@ -94,13 +114,11 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
             Interval = TimeSpan.FromSeconds(1)
         };
         _refreshTimer.Tick += RefreshTimer_Tick;
-        _target.Changed += Target_Changed;
+        SelfTargetStore.Instance.Changed += SelfTargetStore_Changed;
         _widget.EntityInfoSettingsChanged += Widget_EntityInfoSettingsChanged;
         LocalizationManager.Instance.CultureChanged += LocalizationManager_CultureChanged;
-        RefreshPresentation();
-        UpdateNearbyEntities(nearbyEntities);
+        ApplyShownEntity();
         RefreshBuffs();
-        RefreshDataStatus();
         _refreshTimer.Start();
     }
 
@@ -108,19 +126,8 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
 
     public event EventHandler? DataStatusChanged;
 
-    public long EntityId => _target.EntityId;
-
-    public Zproto.EEntityType? EntityType => _target.EntityType;
-
-    public long EntityUuid => _target.EntityUuid;
-
-    public bool IsEntityAcquired => _target.IsAcquired;
-
-    public bool IsWaitingForEntity => _target.IsWaitingForEntity;
-
-    public EntityTargetInfo? Entity => _target.Entity;
-
-    public string TargetName => _target.Name;
+    /// <summary>映す敵の実体の UUID。選んだ敵があればその敵、無ければ自分のターゲット。どちらも無ければ 0。</summary>
+    private long ShownEntityUuid => _chosenEntityUuid != 0 ? _chosenEntityUuid : _targetUuid;
 
     /// <summary>メニューと TIPS の色を引くウィジェット。</summary>
     public WidgetListItemViewModel Widget => _widget;
@@ -161,10 +168,21 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
             ? "BuffList_Menu_HideDebuff"
             : "BuffList_Menu_HideBuff");
 
-    /// <summary>出現時の一覧の受信と周りから外れたことは対象の変化を伴わないので、1秒ごとの読み直しでも見る(エンティティのバフ一覧と同じ)。</summary>
+    /// <summary>
+    /// 状態の印。映す敵の決まりはエンティティのバフ一覧と同じ(<see cref="WidgetDataStatusRules.ForEntityBuffs"/>)。映す敵がまだ無い間は欠けている情報が無い。
+    /// 出現時の一覧の受信と周りから外れたことは映す敵の変化を伴わないので、1秒ごとの読み直しでも見る。
+    /// </summary>
     public void RefreshDataStatus()
     {
-        var status = _target.CreateDataStatus(GameReceptionStateStore.Current);
+        var entityUuid = ShownEntityUuid;
+        var status = entityUuid == 0
+            ? WidgetDataStatus.Complete
+            : WidgetDataStatusRules.ForEntityBuffs(
+                GameReceptionStateStore.Current,
+                isAcquired: true,
+                MeterSnapshotProvider.HasReceivedEntityAppearBuffList(entityUuid),
+                NearbyEntityStore.Instance.Contains(entityUuid),
+                _lastEntity?.EntityId == 0);
         if (status == DataStatus)
         {
             return;
@@ -174,70 +192,165 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         DataStatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public bool RepresentsEntity(long entityUuid)
-    {
-        return _target.Represents(entityUuid);
-    }
-
-    public bool TryApplyEntity(EntityTargetInfo entity)
-    {
-        return _target.TryApply(entity);
-    }
-
-    public void ReleaseEntity()
-    {
-        _target.Release();
-    }
-
-    public void RefreshPresentation()
-    {
-        HeaderText = WidgetHeaderText.Join(_widget.DisplayName, _target.Name);
-    }
-
     /// <summary>
-    /// 周りの実体の一覧が変わった。窓が追う個体の値で1行目とヘイトを組み直す。値が同じなら組み直さない。
-    /// 個体が一覧に居ない(倒された・周りから外れた)間は、1行目・ヘイト・バフ・デバフを出さない(エンティティリストと同じ)。
-    /// 同じ個体が一覧に戻れば、また出す。未捕獲の窓は何もしない。
+    /// エンティティリストの行・マップの敵の印から選んだ敵を映す。自分のターゲットと同じ敵なら、ターゲットを映している扱いにする。
     /// </summary>
-    public void UpdateNearbyEntities(IReadOnlyList<NearbyEntityEntry> nearbyEntities)
+    public void ShowEntity(EntityTargetInfo entity)
     {
-        if (_isDisposed || !_target.IsAcquired)
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (_isDisposed)
         {
             return;
         }
 
-        var entityUuid = _target.EntityUuid;
-        foreach (var entity in nearbyEntities)
-        {
-            if (entity.EntityUuid != entityUuid)
-            {
-                continue;
-            }
+        _chosenEntityUuid = entity.EntityUuid == _targetUuid ? 0 : entity.EntityUuid;
+        ApplyShownEntity();
+    }
 
-            if (entity == _lastEntity)
+    /// <summary>ログアウトで起動時の状態へ戻した。選んだ敵を外し、自分のターゲット(消えている)を読み直す。</summary>
+    public void ResetToStartup()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _chosenEntityUuid = 0;
+        _targetUuid = SelfTargetStore.Instance.TargetUuid;
+        ApplyShownEntity();
+    }
+
+    /// <summary>
+    /// 周りの実体の一覧が変わった。映す敵の値で1行目とヘイトを組み直す。値が同じなら組み直さない。
+    /// 映す敵が一覧に居ない間は、1行目・ヘイト・バフ・デバフを出さない(エンティティリストと同じ)。
+    /// 選んだ敵が一覧から消えたら、選んだ敵を外して自分のターゲットに戻る。
+    /// </summary>
+    public void UpdateNearbyEntities(IReadOnlyList<NearbyEntityEntry> nearbyEntities)
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _nearbyEntities = nearbyEntities;
+        ApplyNearbyEntity();
+    }
+
+    /// <summary>ヘッダーの「ターゲットに戻る」。選んだ敵を外し、自分のターゲットを映す。</summary>
+    [RelayCommand]
+    private void ReturnToTarget()
+    {
+        _chosenEntityUuid = 0;
+        ApplyShownEntity();
+    }
+
+    /// <summary>映す敵が替わった(か、替わったかもしれない)。ボタンの出し入れと、映す敵の値・状態の印を当て直す。</summary>
+    private void ApplyShownEntity()
+    {
+        IsShowingChosenEntity = _chosenEntityUuid != 0;
+        ApplyNearbyEntity();
+        RefreshDataStatus();
+    }
+
+    /// <summary>
+    /// 最後に受けた周りの実体の一覧から、映す敵の値を引いて1行目とヘイトを組む。値が同じなら組み直さない。
+    /// 選んだ敵が一覧に居なければ(倒された・周りから外れた)、選んだ敵を外して自分のターゲットに戻る。
+    /// </summary>
+    private void ApplyNearbyEntity()
+    {
+        var found = FindNearbyEntity(ShownEntityUuid);
+        var hasReleasedChosenEntity = false;
+        if (found is null && _chosenEntityUuid != 0)
+        {
+            _chosenEntityUuid = 0;
+            IsShowingChosenEntity = false;
+            hasReleasedChosenEntity = true;
+            found = FindNearbyEntity(ShownEntityUuid);
+        }
+
+        ApplyFoundEntity(found);
+        if (hasReleasedChosenEntity)
+        {
+            RefreshDataStatus();
+        }
+    }
+
+    private NearbyEntityEntry? FindNearbyEntity(long entityUuid)
+    {
+        if (entityUuid == 0)
+        {
+            return null;
+        }
+
+        foreach (var entity in _nearbyEntities)
+        {
+            if (entity.EntityUuid == entityUuid)
+            {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>映す敵の値(一覧に居なければ null)を当てる。映す敵が替わった・一覧に現れた・一覧から外れたときは、バフ・デバフも読み直す。</summary>
+    private void ApplyFoundEntity(NearbyEntityEntry? found)
+    {
+        if (found is null)
+        {
+            if (_lastEntity is null)
             {
                 return;
             }
 
-            var returned = _lastEntity is null;
-            _lastEntity = entity;
-            ApplyRow();
-            if (returned)
-            {
-                RefreshBuffs();
-            }
-
+            _lastEntity = null;
+            Row = null;
+            RefreshBuffs();
             return;
         }
 
-        if (_lastEntity is null)
+        if (found == _lastEntity)
         {
             return;
         }
 
-        _lastEntity = null;
-        Row = null;
-        RefreshBuffs();
+        var isOtherEntity = _lastEntity?.EntityUuid != found.EntityUuid;
+        _lastEntity = found;
+        ApplyRow();
+        if (isOtherEntity)
+        {
+            RefreshBuffs();
+        }
+    }
+
+    /// <summary>自分のターゲットが変わった(パケットのスレッド)。画面のスレッドで読み直す。</summary>
+    private void SelfTargetStore_Changed(object? sender, EventArgs e)
+    {
+        _dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(RefreshTarget));
+    }
+
+    /// <summary>自分のターゲットを読み直す。選んだ敵に自分が技を向けたら、ターゲットへ戻った扱いにする。</summary>
+    private void RefreshTarget()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        var targetUuid = SelfTargetStore.Instance.TargetUuid;
+        if (targetUuid == _targetUuid)
+        {
+            return;
+        }
+
+        _targetUuid = targetUuid;
+        if (_chosenEntityUuid != 0 && _chosenEntityUuid == targetUuid)
+        {
+            _chosenEntityUuid = 0;
+        }
+
+        ApplyShownEntity();
     }
 
     /// <summary>名簿が変わった(ヘイトの枠の名前・クラス・特化を引き直す)。</summary>
@@ -264,11 +377,11 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         Row?.RefreshCast(DateTime.UtcNow);
     }
 
-    /// <summary>枠の左クリックとメニューの1つ目。バフの枠ならその個体のバフリスト、デバフの枠ならデバフリストを開く。</summary>
+    /// <summary>枠の左クリックとメニューの1つ目。バフの枠なら映している敵のバフリスト、デバフの枠ならデバフリストを開く。</summary>
     [RelayCommand]
     private void OpenList(PlayerBuffEntry? entry)
     {
-        if (entry is null || _target.Entity is not { } entity)
+        if (entry is null || Row?.Target is not { } entity)
         {
             return;
         }
@@ -276,15 +389,20 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         _openList(entry.IsDebuff ? WidgetKind.DebuffList : WidgetKind.BuffList, entity);
     }
 
+    /// <summary>メニューの2つ目。映している敵のバフカード・デバフカードを開く(カードはその敵を追い続ける)。</summary>
     [RelayCommand]
     private void OpenCard(PlayerBuffEntry? entry)
     {
-        if (entry is null)
+        if (entry is null || Row?.Target is not { } entity)
         {
             return;
         }
 
-        _openCard(_target, entry.IsDebuff ? PlayerBuffListKind.Debuff : PlayerBuffListKind.Buff, entry.CardKey, entry.BaseId);
+        _openCard(
+            new EntityWindowTarget(entity),
+            entry.IsDebuff ? PlayerBuffListKind.Debuff : PlayerBuffListKind.Buff,
+            entry.CardKey,
+            entry.BaseId);
     }
 
     [RelayCommand]
@@ -321,7 +439,7 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         _isDisposed = true;
         _refreshTimer.Stop();
         _refreshTimer.Tick -= RefreshTimer_Tick;
-        _target.Changed -= Target_Changed;
+        SelfTargetStore.Instance.Changed -= SelfTargetStore_Changed;
         _widget.EntityInfoSettingsChanged -= Widget_EntityInfoSettingsChanged;
         LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
     }
@@ -335,22 +453,21 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         RefreshBuffs();
     }
 
-    private void RefreshTimer_Tick(object? sender, EventArgs e)
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
     {
-        RefreshBuffs();
-        RefreshDataStatus();
-    }
-
-    /// <summary>個体を捕まえた・放した・名前が変わった。放したら中身を空にする(次に捕まえた個体の値が来るまで何も出さない)。</summary>
-    private void Target_Changed(object? sender, EventArgs e)
-    {
-        if (!_target.IsAcquired)
+        if (isHidden)
         {
-            _lastEntity = null;
-            Row = null;
+            _refreshTimer.Stop();
+            return;
         }
 
-        RefreshPresentation();
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
+    }
+
+    private void RefreshTimer_Tick(object? sender, EventArgs e)
+    {
         RefreshBuffs();
         RefreshDataStatus();
     }
@@ -361,7 +478,6 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         OnPropertyChanged(nameof(CardMenuText));
         OnPropertyChanged(nameof(PriorityMenuText));
         OnPropertyChanged(nameof(HideMenuText));
-        RefreshPresentation();
         ApplyRow();
         RefreshBuffs();
     }
@@ -406,12 +522,12 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         PlayerBuffListKind kind,
         bool groupsSameBuffs)
     {
-        // 個体が周りの一覧に居ない間は出さない(倒された後もバフの控えが残ることがある)。
-        IReadOnlyList<PlayerBuffSnapshot> snapshots = _lastEntity is null
+        // 映す敵が周りの一覧に居ない間は出さない(倒された後もバフの控えが残ることがある)。
+        IReadOnlyList<PlayerBuffSnapshot> snapshots = _lastEntity is not { } entity
             ? []
             : BuffListSnapshotFilter.Apply(
                 _settings,
-                MeterSnapshotProvider.GetEntityBuffs(EntityUuid, kind, groupsSameBuffs));
+                MeterSnapshotProvider.GetEntityBuffs(entity.EntityUuid, kind, groupsSameBuffs));
         var snapshotKeys = snapshots
             .Select(snapshot => snapshot.Key)
             .ToHashSet(StringComparer.Ordinal);
@@ -430,13 +546,13 @@ public sealed partial class EntityInfoWidgetViewModel : ViewModelBase, IEntityWi
         for (var index = 0; index < snapshots.Count; index++)
         {
             var snapshot = snapshots[index];
-            // 対象者名とレベルはエンティティのバフ一覧と同じく窓の対象のもの。
+            // 対象者名とレベルはエンティティのバフ一覧と同じく映している敵のもの。
             var name = BuffListRowName.Format(
                 _settings.BuffInfoFormatString,
                 _settings.CasterNameDisplayModeIndex,
                 snapshot,
-                _target.Name,
-                _target.Level);
+                Row?.Target.Name ?? string.Empty,
+                Row?.Target.Level ?? 0);
             var existingIndex = FindEntryIndex(entries, snapshot.Key);
             if (existingIndex < 0)
             {

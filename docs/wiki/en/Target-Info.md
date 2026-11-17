@@ -1,24 +1,27 @@
-![Entity Info](images/en/EntityInfo1.png)
+![Target Info](images/en/EntityInfo1.png)
 
-This widget shows one enemy from the Entity List in one place: its HP, chanting, the player it is targeting and aggro, and its buffs and debuffs.
+This widget shows the enemy you are targeting in one place: its HP, chanting, the player it is targeting and aggro, and its buffs and debuffs.
 
 ## How to open
 
-- Click a row in the [Entity List](Entity-List), or right-click a row and choose "Entity Info".
-- You can also open it from the "Entity Info" card in "[Widgets](Widgets)". The drop-down list in the name field shows the same enemies in the same order as the Entity List (the default is the first enemy). If there are no enemies, an empty window that waits for an enemy to appear opens and shows the enemy that appears.
-- A window is opened per enemy. If a window for the same enemy is already open, that window is brought to the front.
+- Open it from the "Target Info" card in "[Widgets](Widgets)". There is only one window.
+- Click a row in the [Entity List](Entity-List), or right-click a row and choose "Target Info", to open the window and show that enemy. Clicking an enemy icon on the [Map](Map) does the same.
 
 ## What it shows
 
-- Title: "Entity Info - enemy name".
+- Title: "Target Info".
+- Enemy shown: Your target. Your target is the enemy you last used a skill on. Selecting a target in the game does not change it; it changes when you use a skill. When you use a skill without a target, the previous enemy stays.
+- While an enemy chosen from the Entity List or the map is shown, "Back to Target" appears in the header.
+- Nothing is shown until you use a skill.
 - First line: The same as the row in the Entity List (points are not shown). While the enemy is chanting, the skill name appears to the right of the name, and the chanting gauge appears at the right end. The length of the HP bar changes with the width of the window.
 - Second line: The player the enemy is targeting now and the players in order of aggro. The crosshair marks and gauges are read the same way as the aggro slots in the Entity List. If they do not fit, they wrap.
 - Below that: The buffs on the enemy, and then the debuffs on a new line. The name ("Buff Name" in the display settings) appears above each slot, the number of stacks (when 2 or more) over the icon, and the remaining seconds below the icon.
 - Order of buffs and debuffs: Those turned on in the Priority List come first (in the order of the list), and the rest follow in the order they were applied.
-- While the enemy is not around you (defeated or moved away), nothing is shown. If the same enemy returns, it is shown again.
+- When the target enemy is no longer around you (defeated or moved away), the target is cleared and nothing is shown. After that, the enemy you next use a skill on becomes the target (even if it is the same enemy). While the enemy is around you, it stays the target even after combat ends.
 
 ## Controls
 
+- Click "Back to Target" in the header to show your target. It also returns to showing your target when you use a skill on the chosen enemy, or when the chosen enemy is no longer around you (defeated or moved away).
 - Click a buff slot to open the enemy's [Buff List](Buff-List), or click a debuff slot to open its [Debuff List](Debuff-List).
 - Right-click a slot to choose "Buff List", "Buff Card", "Prioritize This Buff" ("Stop Prioritizing This Buff" while it is prioritized), or "Hide This Buff" (debuff slots have the matching debuff items, such as "Debuff List", "Debuff Card", and "Hide This Debuff"). Prioritizing and hiding are saved immediately.
 - Hover to see a tooltip: the name for buff and debuff slots, "In Combat" for the combat state icon, and the class spec followed by "(Targeted)" or "(Aggro: value)" for an aggro slot.
@@ -44,7 +47,7 @@ The window settings and theme are described in [Common Widget Settings](Common-W
 - Combat State: Choose how the combat state icon is shown from "Show" and "Hide" (default: "Show").
 - Targeted Player: Whether the player the enemy is targeting now is shown at the left end of the second line (default: "Show").
 - Aggro: Choose how many people are shown on the second line from "Show All", "Show Top 5", "Show Top 4", "Show Top 3", "Show Top 2", and "Show Top Aggro Only" (default: "Show All").
-- Same Buffs: Choose from "Don't Group" and "Group". "Don't Group" shows buffs applied by players in a separate slot for each player who applied them (default: "Don't Group").
+- Same Buffs: Choose from "Don't Group" and "Group". "Don't Group" shows buffs applied by players in a separate slot for each caster (default: "Don't Group").
 - Caster Player Name: Choose from "Show", "Hide", and "Applied by Others" (default: "Applied by Others").
 
 ### Priority List
@@ -61,7 +64,8 @@ Choose the colors of the type icons and of the class icons in the aggro slots. T
 
 ## Notes
 
-- The window follows the one enemy it was opened for.
+- Which enemy you have selected as a target in the game cannot be obtained, so the enemy you last used a skill on is shown as your target.
+- The chosen enemy is not saved. When you restart the app, your target is shown.
 - Buffs and debuffs are read again every second.
 - The circle in the window title turns yellow for enemies that were around you before the app started, or while information about the enemy is still missing. Approaching the enemy again fixes it.
 - The height of the window changes to fit the number of rows.

@@ -37,7 +37,7 @@ public sealed record MetricElementIconSegment(Brush PrimaryMask, Brush? Secondar
     public bool HasSecondary => SecondaryMask is not null;
 }
 
-public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable
+public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, IDisposable, IWidgetWindowHiddenAware
 {
     /// <summary>タイプ(書式の{Type}と行のTIPS)の並び。enumの値の順ではない。</summary>
     private static readonly Zproto.EDamageMode[] DamageModeDisplayOrder =
@@ -239,6 +239,19 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
 
         _pendingWheelVisibleSeconds = null;
         PlayerWidget.SaveMetricGraphVisibleSeconds(visibleSeconds);
+    }
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
     }
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)
@@ -456,8 +469,20 @@ public sealed class PlayerMetricWidgetViewModel : PlayerWidgetWindowViewModel, I
     /// </summary>
     private static Color ResolveGraphColor(MetricGraphWidgetSettingsConfig settings, string classKey)
     {
-        var palette = settings.ClassColorPalettes[classKey];
-        var hex = palette[Math.Clamp(settings.ClassColorIndexes[classKey], 0, palette.Count - 1)];
+        return ResolveGraphColor(settings.ClassColorIndexes, settings.ClassColorPalettes, classKey);
+    }
+
+    /// <summary>
+    /// グラフカラーの <paramref name="classKey"/> の選んでいる色を不透明にした色(推移グラフの線とバフ稼働率のバー)。
+    /// 設定はそろえた後なので、鍵の行と色の形は必ずある。
+    /// </summary>
+    internal static Color ResolveGraphColor(
+        IReadOnlyDictionary<string, int> classColorIndexes,
+        IReadOnlyDictionary<string, List<string>> classColorPalettes,
+        string classKey)
+    {
+        var palette = classColorPalettes[classKey];
+        var hex = palette[Math.Clamp(classColorIndexes[classKey], 0, palette.Count - 1)];
         if (!ColorUtilities.TryParseHex(hex, out var color))
         {
             throw new InvalidOperationException($"Graph color is not a valid color (class={classKey}, value={hex}).");

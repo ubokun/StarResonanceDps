@@ -19,8 +19,8 @@ Click the start button on the "Entity List" card in "[Widgets](Widgets)".
 
 ## Controls
 
-- Click a row to open that enemy's [Entity Info](Entity-Info).
-- Right-click a row to choose and open that enemy's "Entity Info", "Buff List", or "Debuff List".
+- Click a row to show that enemy in [Target Info](Target-Info).
+- Right-click a row to choose and open that enemy's "Target Info", "Buff List", or "Debuff List".
 - Hover to see a tooltip: "In Combat" for the combat state icon, and the class spec followed by "(Targeted)" or "(Aggro: value)" for an aggro slot.
 - If the rows do not fit in the window, scroll with the mouse wheel or the scroll bar on the right.
 

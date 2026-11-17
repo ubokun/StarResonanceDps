@@ -13,7 +13,7 @@ Click the start button on the "Buff & Debuff Group" card in "[Widgets](Widgets)"
 - Rows that are applied: Show the remaining time and a gauge. The gauge color is the Buff Colors for buff rows and the Debuff Colors for debuff rows. The remaining time and the gauge are read the same way as in the [Buff List](Buff-List).
 - Rows that are not applied: Show "No effect" at the right end and no gauge. They also show "No effect" when the time runs out or the effect is removed.
 - The cuisine and potion rows are single "Cuisine" and "Potion" rows, whichever cuisine or potion is applied.
-- When the same buff is applied by several people, the one with the longest remaining time is shown. The name of the person who applied it is not shown.
+- When the same buff is applied by several people, the one with the longest remaining time is shown. The caster's name is not shown.
 - Among the default rows, the ones other than cuisine and potions are debuffs that are applied after Imagine skills such as the "Arcane!" ones. While they are applied, you cannot do the following.
 
 | Row | While it is applied |

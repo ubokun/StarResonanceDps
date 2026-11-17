@@ -66,6 +66,13 @@ You can post to GitHub Issues from "Feedback" in the app. You can also post dire
 
 You can add features with plugins. For how to make plugins, see [Plugin Development](https://github.com/kokoukohiro/StarResonanceDps/wiki/Plugin-Development). The SDK package (`.nupkg`) is published in Releases, alongside the app zip.
 
+### Available plugins
+
+| Plugin | Type | Author | Where to get |
+|---|---|---|---|
+| [ただのモジュールツール](https://github.com/kokoukohiro/StarResonanceDps/wiki/ただのモジュールツール-(English)) | Module Tool | kokoukohiro | Bundled with this app (also `ModuleTool.dll` in Releases) |
+| BPSR：パッド勢を救いたい | Keybind Tool | kokoukohiro | [BPSRControllerHelper](https://github.com/kokoukohiro/BPSRControllerHelper) |
+
 ## ✅ Safety & Privacy
 
 - The app does not modify the game client.

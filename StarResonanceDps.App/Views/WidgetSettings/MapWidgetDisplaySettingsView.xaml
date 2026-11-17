@@ -1,0 +1,235 @@
+<!-- This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms. -->
+<UserControl x:Class="StarResonanceDps.App.Views.WidgetSettings.MapWidgetDisplaySettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:localization="clr-namespace:StarResonanceDps.App.Localization"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
+    <!-- マップの表示設定。フィルターの選択肢はプレイヤーリストとエンティティリストの「フィルター」と同じ。
+         「プレイヤー名」の選択肢の並びはフィルター「プレイヤー」と同じ。
+         「交戦中の簡略化表示」「交戦中の名前非表示」の選択肢は同じ並びで、最後が「しない」。
+         スライダーの行の作りはウィンドウ設定の「ウィンドウの不透明度」と同じ。 -->
+    <StackPanel>
+        <TextBlock Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Section_Display_Title]}"
+                   Foreground="{DynamicResource Brush.TextPrimary}"
+                   FontSize="16"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,10" />
+
+        <ContentControl Style="{StaticResource Panel.SettingSection}"
+                        Margin="0,0,0,12">
+            <StackPanel>
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_PlayerFilter]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding PartyDisplayModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource Input.SettingsComboBox}">
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PartyDisplay_All]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PartyDisplay_MembersOnly]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PartyDisplay_NonMembersOnly]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PartyDisplay_SelfOnly]}" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_EntityFilter]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding EntityDisplayModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource Input.SettingsComboBox}">
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[EntityDisplay_All]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[EntityDisplay_HideObjects]}" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_PlayerName]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding PlayerNamePartyDisplayModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource Input.SettingsComboBox}">
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PartyDisplay_All]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[MapPlayerNameDisplay_MembersOnly]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[MapPlayerNameDisplay_NonMembersOnly]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[CombatStateDisplay_SelfOnly]}" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_EntityName]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding EntityNameDisplayModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource Input.SettingsComboBox}">
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PlayerNameDisplay_Show]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[PlayerNameDisplay_Hide]}" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_HideNamesInCombat]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding HideNamesInCombatModeIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource Input.SettingsComboBox}">
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Notification_Target_All]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[MapInCombatTarget_Players]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[MapInCombatTarget_Entities]}" />
+                            <ComboBoxItem Content="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[MapHideNamesTarget_None]}" />
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_SimplifyPlayersInCombat]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <ToggleButton Style="{StaticResource Input.Switch}"
+                                          IsChecked="{Binding SimplifiesPlayersInCombat, Mode=TwoWay}" />
+                            <TextBlock Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       MinWidth="28"
+                                       Text="{Binding SimplifiesPlayersInCombatStateText}"
+                                       Foreground="{DynamicResource Brush.TextPrimary}"
+                                       FontSize="14"
+                                       FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingField}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_AlwaysSimplifySelf]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <ToggleButton Style="{StaticResource Input.Switch}"
+                                          IsChecked="{Binding AlwaysSimplifiesSelf, Mode=TwoWay}" />
+                            <TextBlock Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       MinWidth="28"
+                                       Text="{Binding AlwaysSimplifiesSelfStateText}"
+                                       Foreground="{DynamicResource Brush.TextPrimary}"
+                                       FontSize="14"
+                                       FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource Panel.SettingFieldLast}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock VerticalAlignment="Center"
+                                   Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Map_Opacity]}"
+                                   Foreground="{DynamicResource Brush.TextPrimary}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+
+                        <Grid Grid.Column="1" Width="260" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="35" />
+                            </Grid.ColumnDefinitions>
+
+                            <Slider Grid.Column="0"
+                                    IsSnapToTickEnabled="True"
+                                    TickFrequency="1"
+                                    Style="{StaticResource Input.ValueSlider}"
+                                    Value="{Binding MapOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Grid.Column="2"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource Brush.TextPrimary}"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Text="{Binding MapOpacity, StringFormat={}{0:0}%}" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ContentControl>
+    </StackPanel>
+</UserControl>

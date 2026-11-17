@@ -175,6 +175,27 @@ public readonly record struct BuffDebuffCardContent(
     }
 
     /// <summary>
+    /// カードの窓(バフかデバフか・追うバフ・まとまり)が、指定のバフのカードか。人のカードと敵のカードが共有する。
+    /// まとまり(料理・薬剤)を追う窓は、個別のバフのキーが違っても同じ窓。
+    /// </summary>
+    public static bool RepresentsBuff(
+        PlayerBuffListKind cardKind,
+        string? cardBuffKey,
+        BuffGroup cardGroup,
+        PlayerBuffListKind kind,
+        string? buffKey,
+        BuffGroup group)
+    {
+        if (cardKind != kind || cardGroup != group)
+        {
+            return false;
+        }
+
+        return group != BuffGroup.None
+            || string.Equals(cardBuffKey, buffKey, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// 倍率の保存キー。まとまりを追う窓は <c>{対象ID}:group:{まとまり}</c>、
     /// 個別のバフを追う窓は <c>{対象ID}:{バフキー}</c>。
     ///

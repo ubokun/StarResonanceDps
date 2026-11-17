@@ -1,0 +1,335 @@
+<!-- This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms. -->
+<UserControl x:Class="StarResonanceDps.App.Views.Widgets.BuffUptimeWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:StarResonanceDps.App.Controls"
+             xmlns:local="clr-namespace:StarResonanceDps.App.Views.Widgets"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             Loaded="BuffUptimeWidgetView_Loaded"
+             Unloaded="BuffUptimeWidgetView_Unloaded"
+             DataContextChanged="BuffUptimeWidgetView_DataContextChanged">
+    <UserControl.Resources>
+        <!--
+            行のレールと今の時刻の縦線。推移グラフの軸と同じく<b>枠のレイヤー(WidgetWindow.FrameOverlayHost)へ差し込む</b>(分割線と同じく窓の不透明度で合成する)。
+            色と太さは推移グラフの格子と同じ。縦線はまだ来ていない時刻が見えている間だけ出る(出すかは部品が決める)。
+        -->
+        <controls:BuffUptimeRailLayer x:Key="RailLayer"
+                                      LineThickness="1"
+                                      Brush="{Binding DataContext.WidgetWindowPalette.WidgetWindowDividerBrush, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+
+        <!-- 行の文字。バフリストの行と同じ。 -->
+        <Style x:Key="BuffUptime.RowText" TargetType="TextBlock" BasedOn="{StaticResource Text.WidgetWindow}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <!-- 稼働率。行の右端の列に右寄せ。 -->
+        <Style x:Key="BuffUptime.Rate" TargetType="TextBlock" BasedOn="{StaticResource BuffUptime.RowText}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+
+        <!--
+            行の右クリックのメニュー。作りはバフリストと同じ。
+            メニューの DataContext は窓の ViewModel(BuffUptimeWidgetViewModel)で、色はその Widget から引く。
+        -->
+        <CornerRadius x:Key="Menu.WidgetWindowBuffUptimeContextMenuItem.FirstCornerRadius">5,5,0,0</CornerRadius>
+        <CornerRadius x:Key="Menu.WidgetWindowBuffUptimeContextMenuItem.LastCornerRadius">0,0,5,5</CornerRadius>
+
+        <Style x:Key="Menu.WidgetWindowBuffUptimeContextMenu"
+               TargetType="{x:Type ContextMenu}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Background" Value="{Binding Widget.WidgetWindowPalette.WidgetWindowMenuSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{Binding Widget.WidgetWindowPalette.WidgetWindowDividerBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="HasDropShadow" Value="False" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ContextMenu}">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="{StaticResource Radius.Default}"
+                                    Opacity="{Binding Widget.WidgetWindowPalette.MenuOpacity}" />
+                            <Border BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{StaticResource Radius.Default}"
+                                    Opacity="{Binding Widget.WidgetWindowPalette.MenuOpacity}" />
+                            <StackPanel Margin="{TemplateBinding Padding}"
+                                        IsItemsHost="True"
+                                        KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="DataTemplate.WidgetWindowMenuText">
+            <TextBlock Style="{StaticResource Text.WidgetWindow}"
+                       Text="{Binding}" />
+        </DataTemplate>
+
+        <Style x:Key="Menu.WidgetWindowBuffUptimeContextMenuItem"
+               TargetType="{x:Type MenuItem}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="HeaderTemplate" Value="{StaticResource DataTemplate.WidgetWindowMenuText}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="InteractionBackground"
+                                    Background="{Binding Widget.WidgetWindowPalette.WidgetWindowScrollThumbBrush}"
+                                    CornerRadius="{TemplateBinding Tag}"
+                                    Opacity="{Binding Widget.WidgetWindowPalette.MenuOpacity}"
+                                    Visibility="Collapsed" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              Content="{TemplateBinding Header}"
+                                              ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                              ContentStringFormat="{TemplateBinding HeaderStringFormat}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="InteractionBackground"
+                                        Property="Visibility"
+                                        Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Menu.WidgetWindowBuffUptimeContextMenuItem.First"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource Menu.WidgetWindowBuffUptimeContextMenuItem}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Tag" Value="{StaticResource Menu.WidgetWindowBuffUptimeContextMenuItem.FirstCornerRadius}" />
+        </Style>
+
+        <Style x:Key="Menu.WidgetWindowBuffUptimeContextMenuItem.Last"
+               TargetType="{x:Type MenuItem}"
+               BasedOn="{StaticResource Menu.WidgetWindowBuffUptimeContextMenuItem}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Tag" Value="{StaticResource Menu.WidgetWindowBuffUptimeContextMenuItem.LastCornerRadius}" />
+        </Style>
+    </UserControl.Resources>
+
+    <!--
+        行と横軸の数字の行は同じ列の組み方(アイコン 30・名前・バー *・稼働率)で、バーの列と数字の列の左右がそろう。
+        名前の列と稼働率の列は、作られている行の一番長い文字の幅で、全部の行で同じ幅(SharedSizeGroup)。
+        一覧は仮想化して先読みを 0 にし、見えている行(端が少しでも見える行を含む)だけを作るので、幅は見えている行だけで決まる。
+        外れた行の部品が残ると幅が縮まないので、使い回し(Recycling)にする。余白はバフリストと同じ(左5・右0)。
+    -->
+    <Grid Grid.IsSharedSizeScope="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--
+            入りきらない行は窓の枠のスクロールバーかホイールで縦に動かす。仮想化は一覧自身のテンプレートの中に ScrollViewer が無いと効かない。
+            行の部品は別の行に使い回すので、外される行のメニューは閉じる(CleanUpVirtualizedItem)。
+        -->
+        <ItemsControl x:Name="RowsItemsControl"
+                      Grid.Row="0"
+                      Margin="5,5,0,0"
+                      ItemsSource="{Binding Entries}"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      VirtualizingPanel.ScrollUnit="Pixel"
+                      VirtualizingPanel.CacheLength="0"
+                      VirtualizingPanel.CacheLengthUnit="Item"
+                      VirtualizingStackPanel.CleanUpVirtualizedItem="RowsItemsControl_CleanUpVirtualizedItem">
+            <ItemsControl.Template>
+                <ControlTemplate TargetType="ItemsControl">
+                    <ScrollViewer x:Name="RowsScrollViewer"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Hidden"
+                                  CanContentScroll="True"
+                                  Focusable="False">
+                        <ItemsPresenter />
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Height="31"
+                          Background="Transparent"
+                          ContextMenuService.IsEnabled="False"
+                          PreviewMouseRightButtonDown="Row_PreviewMouseRightButtonDown"
+                          Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type local:BuffUptimeWidgetView}}}">
+                        <Grid.ContextMenu>
+                            <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
+                                         Placement="MousePoint"
+                                         Style="{StaticResource Menu.WidgetWindowBuffUptimeContextMenu}">
+                                <MenuItem Header="{Binding PriorityMenuText}"
+                                          Style="{StaticResource Menu.WidgetWindowBuffUptimeContextMenuItem.First}"
+                                          Command="{Binding TogglePriorityCommand}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
+                                <MenuItem Header="{Binding HideMenuText}"
+                                          Style="{StaticResource Menu.WidgetWindowBuffUptimeContextMenuItem.Last}"
+                                          Command="{Binding HideBuffCommand}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" />
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="30" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="BuffUptimeName" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="BuffUptimeRate" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- アイコンはバフリストの行と同じ作り(モジュール効果は小さく、因子は左へずらす、絵が無ければはてな、Icons.xaml の絵は型抜き)。 -->
+                        <Grid Grid.Column="0"
+                              Width="30"
+                              Height="30"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center">
+                            <Image Source="{Binding IconPath, TargetNullValue={x:Null}}"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsModuleEffectIcon}" Value="True">
+                                                <Setter Property="Width" Value="26" />
+                                                <Setter Property="Height" Value="26" />
+                                                <Setter Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <TranslateTransform X="-1" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsFactorIcon}" Value="True">
+                                                <Setter Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <TranslateTransform X="-1" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+
+                            <Rectangle Fill="White"
+                                       Effect="{StaticResource Effect.ProfessionIconShadow}">
+                                <Rectangle.OpacityMask>
+                                    <ImageBrush ImageSource="{StaticResource Icon.Profession.Unknown}" Stretch="Uniform" />
+                                </Rectangle.OpacityMask>
+                                <Rectangle.Style>
+                                    <Style TargetType="Rectangle">
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowsUnknownIcon}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Rectangle.Style>
+                            </Rectangle>
+
+                            <Rectangle Fill="White"
+                                       OpacityMask="{Binding IconMask}"
+                                       Effect="{StaticResource Effect.ProfessionIconShadow}">
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="-0.5" />
+                                </Rectangle.RenderTransform>
+                                <Rectangle.Style>
+                                    <Style TargetType="Rectangle">
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IconMask}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Rectangle.Style>
+                            </Rectangle>
+                        </Grid>
+
+                        <TextBlock Grid.Column="1"
+                                   Margin="5,0,5,0"
+                                   Style="{StaticResource BuffUptime.RowText}"
+                                   Text="{Binding Name}" />
+
+                        <!-- 付いていた区間。高さの中央にレール(枠のレイヤー)が通る。 -->
+                        <controls:BuffUptimeBar x:Name="UptimeBar"
+                                                Grid.Column="2"
+                                                Height="10"
+                                                VerticalAlignment="Center"
+                                                Effect="{StaticResource Effect.ProfessionIconShadow}"
+                                                Spans="{Binding Spans}"
+                                                Fill="{Binding DataContext.BarBrush, RelativeSource={RelativeSource AncestorType={x:Type local:BuffUptimeWidgetView}}}"
+                                                HorizontalOffset="{Binding DataContext.HorizontalOffset, RelativeSource={RelativeSource AncestorType={x:Type local:BuffUptimeWidgetView}}}"
+                                                VisibleSeconds="{Binding DataContext.VisibleSeconds, RelativeSource={RelativeSource AncestorType={x:Type local:BuffUptimeWidgetView}}}" />
+
+                        <TextBlock Grid.Column="3"
+                                   Margin="6,0,5,0"
+                                   Style="{StaticResource BuffUptime.Rate}"
+                                   Text="{Binding RateText}" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- 横軸の数字。行が無い間は出さない(何も届いていない間は本文を空にする)。 -->
+        <Grid Grid.Row="1"
+              Margin="5,2,0,5">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Entries.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="BuffUptimeName" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" SharedSizeGroup="BuffUptimeRate" />
+            </Grid.ColumnDefinitions>
+            <!-- 数字の列の幅がバーの列の幅。画面のコードが VM へ知らせ、見える秒数(幅 ÷ 1秒の幅)を決める。 -->
+            <controls:MetricTimeAxisLabels Grid.Column="2"
+                                           HorizontalOffset="{Binding HorizontalOffset}"
+                                           VisibleSeconds="{Binding VisibleSeconds}"
+                                           SizeChanged="AxisLabels_SizeChanged" />
+        </Grid>
+    </Grid>
+</UserControl>

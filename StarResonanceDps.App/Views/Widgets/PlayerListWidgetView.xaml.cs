@@ -10,7 +10,7 @@ using StarResonanceDps.App.ViewModels;
 
 namespace StarResonanceDps.App.Views.Widgets;
 
-public partial class PlayerListWidgetView : UserControl, IWidgetVerticalScrollContent
+public partial class PlayerListWidgetView : UserControl, IWidgetVerticalScrollContent, IWidgetWindowHiddenAware
 {
     private const string PlayerSelectionContextMenuStyleKey = "Menu.WidgetWindowPlayerSelectionContextMenu";
     private const string PlayerSelectionContextMenuFirstItemStyleKey = "Menu.WidgetWindowPlayerSelectionContextMenuItem.First";
@@ -19,6 +19,9 @@ public partial class PlayerListWidgetView : UserControl, IWidgetVerticalScrollCo
 
     private readonly DispatcherTimer _skillRefreshTimer;
     private readonly DispatcherTimer _skillEffectRefreshTimer;
+
+    /// <summary>窓が隠れているか(全体設定「ゲーム非アクティブ時にウィジェットを隠す」)。隠れている間は技の枠を当て直さない。</summary>
+    private bool _isWindowHidden;
 
     /// <summary>一覧のテンプレートの中の ScrollViewer(仮想化のため一覧の中に置く)。読み込むまでは null。</summary>
     private ScrollViewer? _scrollViewer;
@@ -88,9 +91,11 @@ public partial class PlayerListWidgetView : UserControl, IWidgetVerticalScrollCo
             _scrollViewer.ScrollChanged += PlayerListScrollViewer_ScrollChanged;
         }
 
-        _skillRefreshTimer.Start();
-        _skillEffectRefreshTimer.Start();
-        RefreshSkillEntries(refreshEffects: true);
+        if (!_isWindowHidden)
+        {
+            StartSkillRefresh();
+        }
+
         NotifyVerticalScrollMetricsChanged();
     }
 
@@ -99,6 +104,31 @@ public partial class PlayerListWidgetView : UserControl, IWidgetVerticalScrollCo
         _skillRefreshTimer.Stop();
         _skillEffectRefreshTimer.Stop();
         ClosePlayerSelectionMenu();
+    }
+
+    /// <summary>窓が隠れたら技の枠の定期の当て直しを止め、見えたら(読み込み済みなら)当て直してから再開する。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        _isWindowHidden = isHidden;
+        if (isHidden)
+        {
+            _skillRefreshTimer.Stop();
+            _skillEffectRefreshTimer.Stop();
+            return;
+        }
+
+        if (IsLoaded)
+        {
+            StartSkillRefresh();
+        }
+    }
+
+    /// <summary>技の枠の定期の当て直しを始め、今の値で当て直す。</summary>
+    private void StartSkillRefresh()
+    {
+        _skillRefreshTimer.Start();
+        _skillEffectRefreshTimer.Start();
+        RefreshSkillEntries(refreshEffects: true);
     }
 
     private void SkillRefreshTimer_Tick(object? sender, EventArgs e)

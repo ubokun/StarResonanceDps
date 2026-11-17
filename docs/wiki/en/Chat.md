@@ -18,7 +18,8 @@ This widget shows the game's chat in one window per channel or per private chat 
   - URLs are underlined links.
   - Stickers are shown as images. Stickers with no image show "[Sticker]".
   - Voice messages show "[Voice Message]" (followed by the text, if there is any).
-  - Game links such as Personal Space, Master Seal, and fishing records are shown with the same text as in the game (they cannot be clicked). When they cannot be turned into text, they show "[Link]". Player names inside links are not hidden by the "Player name" setting.
+  - A shared position link is underlined and can be clicked. Its text keeps the Message color.
+  - Other game links such as Personal Space, Master Seal, and fishing records are shown with the same text as in the game (they cannot be clicked). When they cannot be turned into text, they show "[Link]". Player names inside links are not hidden by the "Player name" setting.
 - Order: Older messages are at the top. While you are viewing the bottom, the view follows new messages.
 
 ## Controls
@@ -27,6 +28,9 @@ This widget shows the game's chat in one window per channel or per private chat 
 - When text is selected, right-click to choose "Copy". While the window is active, you can also copy with Ctrl+C.
 - In copied text, each message has "name time" followed by the text on the next line. Emoticons become emoji characters, and stickers become "[Sticker]".
 - Click a URL to open it in your default browser.
+- Click a shared position link to open the [Map](Map) window, center it on that spot, and show the map of that spot's layer (such as "Wasteland" and "Deepreach") with a marker. The marker uses the same image as the game.
+- When the linked spot is on another map or another layer, the map keeps showing that spot and layer even when you move, until you click "Back to My Map" in the header or the right-click menu, or move to another map. When you move to that layer, or when you click a link on your current map and layer, the map returns to the normal view and centers on you when you move.
+- You can remove the marker with "Clear Position Marker" in the right-click menu (the shown spot and layer stay as they are).
 - Scroll with the mouse wheel or the scroll bar on the right.
 
 ## Settings
@@ -35,7 +39,7 @@ The window settings and theme are described in [Common Widget Settings](Common-W
 
 ### Text Colors
 
-The text colors of Player name, Time, and Message (the text). The Message color does not apply to URLs.
+The text colors of Player name, Time, and Message (the text). The Message color does not apply to URLs (it does apply to shared position links).
 
 ## Notes
 

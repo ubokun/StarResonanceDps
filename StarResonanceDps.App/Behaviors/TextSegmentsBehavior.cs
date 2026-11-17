@@ -19,11 +19,19 @@ public sealed record TextRunSegment(string Text, Brush Foreground);
 public sealed record TextLinkSegment(string Text, Uri Uri);
 
 /// <summary>
+/// 押すとアプリの中で何かをするリンクの文字(チャットの座標のリンクなど)。<see cref="TextSegmentsBehavior"/> が <see cref="Hyperlink"/> にする。
+/// 見た目は URL のリンクとは別の <see cref="TextSegmentsBehavior.ActionLinkStyleProperty"/>。
+/// </summary>
+public sealed record TextActionLinkSegment(string Text, Action OnClick);
+
+/// <summary>
 /// 文字とアイコンを混ぜた1行を <see cref="TextBlock"/> に流し込む。
 ///
 /// <para>
-/// 素の文字列と色つきの文字(<see cref="TextRunSegment"/>)は <see cref="Run"/>、リンク(<see cref="TextLinkSegment"/>)は <see cref="Hyperlink"/>
-/// (見た目は <see cref="LinkStyleProperty"/>、押したら <see cref="ExternalLinkOpener"/> で開く)、それ以外は <see cref="InlineUIContainer"/> の中の
+/// 素の文字列と色つきの文字(<see cref="TextRunSegment"/>)は <see cref="Run"/>、リンクは <see cref="Hyperlink"/>
+/// (URL の <see cref="TextLinkSegment"/> は見た目が <see cref="LinkStyleProperty"/> で押したら <see cref="ExternalLinkOpener"/> で開き、
+/// <see cref="TextActionLinkSegment"/> は見た目が <see cref="ActionLinkStyleProperty"/> で押したら渡された処理を呼ぶ)、
+/// それ以外は <see cref="InlineUIContainer"/> の中の
 /// <see cref="ContentPresenter"/> になり、型ごとの <see cref="DataTemplate"/>(<c>DataType</c> 指定)で描かれる。TextBlock のまま組むので、文字の省略表示が効く。
 /// </para>
 /// </summary>
@@ -35,9 +43,16 @@ public static class TextSegmentsBehavior
         typeof(TextSegmentsBehavior),
         new PropertyMetadata(null, OnSegmentsChanged));
 
-    /// <summary>リンクの <see cref="Hyperlink"/> に当てるスタイル。変わったら行を組み直す。</summary>
+    /// <summary>URL のリンク(<see cref="TextLinkSegment"/>)の <see cref="Hyperlink"/> に当てるスタイル。変わったら行を組み直す。</summary>
     public static readonly DependencyProperty LinkStyleProperty = DependencyProperty.RegisterAttached(
         "LinkStyle",
+        typeof(Style),
+        typeof(TextSegmentsBehavior),
+        new PropertyMetadata(null, OnSegmentsChanged));
+
+    /// <summary>アプリの中で何かをするリンク(<see cref="TextActionLinkSegment"/>)の <see cref="Hyperlink"/> に当てるスタイル。変わったら行を組み直す。</summary>
+    public static readonly DependencyProperty ActionLinkStyleProperty = DependencyProperty.RegisterAttached(
+        "ActionLinkStyle",
         typeof(Style),
         typeof(TextSegmentsBehavior),
         new PropertyMetadata(null, OnSegmentsChanged));
@@ -62,6 +77,16 @@ public static class TextSegmentsBehavior
         obj.SetValue(LinkStyleProperty, value);
     }
 
+    public static Style? GetActionLinkStyle(DependencyObject obj)
+    {
+        return (Style?)obj.GetValue(ActionLinkStyleProperty);
+    }
+
+    public static void SetActionLinkStyle(DependencyObject obj, Style? value)
+    {
+        obj.SetValue(ActionLinkStyleProperty, value);
+    }
+
     private static void OnSegmentsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not TextBlock textBlock)
@@ -82,6 +107,7 @@ public static class TextSegmentsBehavior
                 string text => new Run(text),
                 TextRunSegment run => new Run(run.Text) { Foreground = run.Foreground },
                 TextLinkSegment link => CreateHyperlink(link, GetLinkStyle(textBlock)),
+                TextActionLinkSegment link => CreateActionHyperlink(link, GetActionLinkStyle(textBlock)),
                 _ => new InlineUIContainer(new ContentPresenter { Content = segment })
                 {
                     BaselineAlignment = BaselineAlignment.Center
@@ -98,6 +124,16 @@ public static class TextSegmentsBehavior
             Style = style
         };
         hyperlink.Click += (_, _) => ExternalLinkOpener.Open(link.Uri.AbsoluteUri);
+        return hyperlink;
+    }
+
+    private static Hyperlink CreateActionHyperlink(TextActionLinkSegment link, Style? style)
+    {
+        var hyperlink = new Hyperlink(new Run(link.Text))
+        {
+            Style = style
+        };
+        hyperlink.Click += (_, _) => link.OnClick();
         return hyperlink;
     }
 }

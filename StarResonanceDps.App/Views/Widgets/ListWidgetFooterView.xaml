@@ -2,6 +2,7 @@
 <UserControl x:Class="StarResonanceDps.App.Views.Widgets.ListWidgetFooterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:StarResonanceDps.App.Controls"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
     <Grid>
@@ -20,50 +21,21 @@
                    TextAlignment="Left"
                    TextTrimming="CharacterEllipsis" />
 
-        <!-- 交戦中と現在(得点)か付近(個数)。並べ方はメーターの右下の2組と同じ。見出しは言語で長さが違うので幅を文字に合わせる。
-             値の欄は得点の4桁(「4444分」で約43)と10の空き。個数は3桁の「999마리」で約48。 -->
-        <Grid Grid.Column="1"
-              Margin="8,0,10,0"
-              VerticalAlignment="Center">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="53" />
-                <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="53" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Column="0"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding FooterCombatLabel}" />
-
-            <TextBlock Grid.Column="1"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding FooterCombatValueText}"
-                       TextAlignment="Right"
-                       TextTrimming="CharacterEllipsis" />
-
-            <TextBlock Grid.Column="3"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding FooterOverallLabel}" />
-
-            <TextBlock Grid.Column="4"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource Text.WidgetWindow}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Text="{Binding FooterOverallValueText}"
-                       TextAlignment="Right"
-                       TextTrimming="CharacterEllipsis" />
-        </Grid>
+        <!--
+            右の2組(プレイヤーリスト・エンティティリスト・マップ)。見出しのコロンから数字の右端までの間隔は数字の欄の幅で、
+            日本語の個数の表示(「12体」を幅53の欄に右寄せしていたとき)と同じ40。4桁の得点「0000」は29で、11の空きが残る。
+        -->
+        <StackPanel Grid.Column="1"
+                    Margin="8,0,10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+            <controls:FooterValuePair Label="{Binding FooterCombatLabel}"
+                                      Value="{Binding FooterCombatValue}"
+                                      NumberWidth="40" />
+            <controls:FooterValuePair Margin="16,0,0,0"
+                                      Label="{Binding FooterOverallLabel}"
+                                      Value="{Binding FooterOverallValue}"
+                                      NumberWidth="40" />
+        </StackPanel>
     </Grid>
 </UserControl>

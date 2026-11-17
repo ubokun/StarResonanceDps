@@ -23,12 +23,6 @@ public enum HotkeyAction
     /// <summary>1つでもクリック透過中なら「クリック透過をすべて解除」、無ければ「ピン留めをクリック透過」。</summary>
     ClickThroughPinnedOrClearAll,
 
-    /// <summary>
-    /// 常に最前面なら「ピン留め時のみ最前面」、そうでなければ「常に最前面」に切り替える。
-    /// 全体設定のウィジェット設定「ウィジェットウィンドウ」と同じ値を書き換えて保存する。
-    /// </summary>
-    WidgetWindowTopmostAlwaysOrPinnedOnly,
-
     /// <summary>計測(計測中なら止める)。集計タブのボタンと同じ。</summary>
     Benchmark,
 
@@ -55,8 +49,6 @@ public sealed class HotkeySettingsConfig
 
     public HotkeyBindingConfig ClickThroughPinnedOrClearAll { get; set; } = null!;
 
-    public HotkeyBindingConfig WidgetWindowTopmostAlwaysOrPinnedOnly { get; set; } = null!;
-
     public HotkeyBindingConfig Benchmark { get; set; } = null!;
 
     public HotkeyBindingConfig ResetEncounter { get; set; } = null!;
@@ -69,7 +61,6 @@ public sealed class HotkeySettingsConfig
             HotkeyAction.StartFavoritesOrStopAll => StartFavoritesOrStopAll,
             HotkeyAction.PinRunningOrUnpinAll => PinRunningOrUnpinAll,
             HotkeyAction.ClickThroughPinnedOrClearAll => ClickThroughPinnedOrClearAll,
-            HotkeyAction.WidgetWindowTopmostAlwaysOrPinnedOnly => WidgetWindowTopmostAlwaysOrPinnedOnly,
             HotkeyAction.Benchmark => Benchmark,
             HotkeyAction.ResetEncounter => ResetEncounter,
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, null)
@@ -91,9 +82,6 @@ public sealed class HotkeySettingsConfig
                 break;
             case HotkeyAction.ClickThroughPinnedOrClearAll:
                 ClickThroughPinnedOrClearAll = binding;
-                break;
-            case HotkeyAction.WidgetWindowTopmostAlwaysOrPinnedOnly:
-                WidgetWindowTopmostAlwaysOrPinnedOnly = binding;
                 break;
             case HotkeyAction.Benchmark:
                 Benchmark = binding;
@@ -119,7 +107,6 @@ public sealed class HotkeySettingsConfig
             StartFavoritesOrStopAll = StartFavoritesOrStopAll?.Clone() ?? new(),
             PinRunningOrUnpinAll = PinRunningOrUnpinAll?.Clone() ?? new(),
             ClickThroughPinnedOrClearAll = ClickThroughPinnedOrClearAll?.Clone() ?? new(),
-            WidgetWindowTopmostAlwaysOrPinnedOnly = WidgetWindowTopmostAlwaysOrPinnedOnly?.Clone() ?? new(),
             Benchmark = Benchmark?.Clone() ?? new(),
             ResetEncounter = ResetEncounter?.Clone() ?? new()
         };

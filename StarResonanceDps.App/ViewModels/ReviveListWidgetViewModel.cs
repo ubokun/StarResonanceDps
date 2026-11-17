@@ -45,7 +45,7 @@ namespace StarResonanceDps.App.ViewModels;
 /// 行の左クリックと右クリックのメニューはプレイヤーリストと同じ。開く窓は窓の管理へ頼む(<see cref="_requestPlayerWindow"/>、メーターと同じ形)。
 /// </para>
 /// </summary>
-public sealed partial class ReviveListWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource
+public sealed partial class ReviveListWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, IWidgetWindowHiddenAware
 {
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(1);
 
@@ -141,6 +141,19 @@ public sealed partial class ReviveListWidgetViewModel : ViewModelBase, IDisposab
         _refreshTimer.Tick -= RefreshTimer_Tick;
         _widget.ReviveListSettingsChanged -= Widget_ReviveListSettingsChanged;
         LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
+    }
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
     }
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)

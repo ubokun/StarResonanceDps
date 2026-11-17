@@ -64,6 +64,10 @@ public sealed partial class NotificationsViewModel : ObservableObject
                     ("EntityName", "Settings_EntityInfo_Field_Name", "{EntityName}")
                 ]),
             new NotificationItemViewModel(
+                NotificationKind.CooldownReady,
+                "Notification_CooldownReady",
+                [("SkillName", "Metric_SkillName", "{SkillName}")]),
+            new NotificationItemViewModel(
                 NotificationKind.BuffExpired,
                 "Settings_BuffCardNotification_Expired",
                 [

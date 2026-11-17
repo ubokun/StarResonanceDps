@@ -30,6 +30,12 @@ public sealed class EnemyContributionBaseline
     private readonly Dictionary<long, Dictionary<long, ulong>> _hateByEnemy = [];
     private readonly Dictionary<long, int> _stunnedByEnemy = [];
 
+    /// <summary>
+    /// <see cref="UpdateHate"/> が次の基準を作る作業用の辞書。直前の基準の辞書と入れ替えて使い回し、使っていない間は空。
+    /// 大きさは一覧の人数の最大まで。
+    /// </summary>
+    private Dictionary<long, ulong> _scratchHate = [];
+
     private EnemyContributionBaseline()
     {
     }
@@ -70,41 +76,55 @@ public sealed class EnemyContributionBaseline
     }
 
     /// <summary>
-    /// 差分で届いた一覧を、直前の一覧と比べて人ごとの増えを返し、基準を置き換える。
+    /// 差分で届いた一覧を、直前の一覧と比べて人ごとの増えを <paramref name="increases"/> に入れ(先に空にする)、基準を置き換える。
     /// 初めての一覧(出現を見ていない敵)と、誰かの値が減った一覧(10億の上限を越えた・ローグライクの一部の敵の戻り、notes/174)は、
-    /// その更新の増えが分からないので、基準を置き直すだけで空を返す。
+    /// その更新の増えが分からないので、基準を置き直すだけで何も入れない。
+    ///
+    /// <para>
+    /// 差分ごとに届くので、何も作らない。次の基準は作業用の辞書(<see cref="_scratchHate"/>)に作って直前の基準と入れ替え、
+    /// 直前の基準の辞書は空にして次の作業用に回す。辞書を新しく作るのは、その敵の初めての一覧のときだけ。
+    /// </para>
     /// </summary>
-    public IReadOnlyList<HateIncrease> UpdateHate(long enemyUuid, IReadOnlyList<HateInfo> hateList)
+    /// <param name="increases">増えを入れる一覧。呼び手が使い回す。</param>
+    public void UpdateHate(long enemyUuid, IReadOnlyList<HateInfo> hateList, List<HateIncrease> increases)
     {
-        var current = ToPlayerValues(hateList);
+        increases.Clear();
         lock (_sync)
         {
-            var hasPrevious = _hateByEnemy.TryGetValue(enemyUuid, out var previous);
+            if (!_hateByEnemy.TryGetValue(enemyUuid, out var previous))
+            {
+                _hateByEnemy[enemyUuid] = ToPlayerValues(hateList);
+                return;
+            }
+
+            var current = _scratchHate;
+            FillPlayerValues(hateList, current);
             _hateByEnemy[enemyUuid] = current;
-            if (!hasPrevious)
-            {
-                return [];
-            }
+            _scratchHate = previous;
 
+            var hasDecrease = false;
             foreach (var (playerUuid, value) in current)
             {
-                if (previous!.TryGetValue(playerUuid, out var previousValue) && value < previousValue)
+                if (previous.TryGetValue(playerUuid, out var previousValue) && value < previousValue)
                 {
-                    return [];
+                    hasDecrease = true;
+                    break;
                 }
             }
 
-            var increases = new List<HateIncrease>();
-            foreach (var (playerUuid, value) in current)
+            if (!hasDecrease)
             {
-                var wasListed = previous!.TryGetValue(playerUuid, out var previousValue);
-                if (value > previousValue)
+                foreach (var (playerUuid, value) in current)
                 {
-                    increases.Add(new HateIncrease(playerUuid, value - previousValue, !wasListed));
+                    var wasListed = previous.TryGetValue(playerUuid, out var previousValue);
+                    if (value > previousValue)
+                    {
+                        increases.Add(new HateIncrease(playerUuid, value - previousValue, !wasListed));
+                    }
                 }
             }
 
-            return increases;
+            previous.Clear();
         }
     }
 
@@ -137,10 +157,18 @@ public sealed class EnemyContributionBaseline
         }
     }
 
-    /// <summary>一覧のプレイヤーの値だけ。同じ人が2度あれば後の値。</summary>
+    /// <summary>一覧のプレイヤーの値だけを持つ新しい辞書。その敵の初めての一覧と出現のときに使う。</summary>
     private static Dictionary<long, ulong> ToPlayerValues(IReadOnlyList<HateInfo> hateList)
     {
         var values = new Dictionary<long, ulong>(hateList.Count);
+        FillPlayerValues(hateList, values);
+        return values;
+    }
+
+    /// <summary><paramref name="values"/> を空にして、一覧のプレイヤーの値だけを入れる。同じ人が2度あれば後の値。</summary>
+    private static void FillPlayerValues(IReadOnlyList<HateInfo> hateList, Dictionary<long, ulong> values)
+    {
+        values.Clear();
         foreach (var hate in hateList)
         {
             if (hate.Uuid != 0 && Utils.UuidToEntityType(hate.Uuid) == (long)EEntityType.EntChar)
@@ -148,7 +176,5 @@ public sealed class EnemyContributionBaseline
                 values[hate.Uuid] = hate.HateVal;
             }
         }
-
-        return values;
     }
 }

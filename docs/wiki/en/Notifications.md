@@ -25,7 +25,8 @@ This tab notifies you of events in the game with Windows notifications or by rea
 | Player appeared | When a player whose name or UID matches a target appears nearby. | {PlayerName} appeared |
 | Entity appeared | When an enemy whose name or ID matches a target appears nearby. | {EntityName} appeared |
 | Targeted Player | When an enemy in "Target entity" keeps targeting a player in "Target players" for the number of seconds in "Notify when". | {PlayerName} became the target of {EntityName}'s attacks |
-| Buff & Debuff expired | When a buff or debuff shown in a running [Buff & Debuff Card](Buff-&-Debuff-Card) or [Buff & Debuff Group](Buff-&-Debuff-Group) disappears because its time runs out. | {BuffName} on {TargetName} has expired |
+| Cooldown ready | When one of your own skills whose name or ID matches a target becomes usable, at the time in "Notify when". For skills with charges, when the remaining charges go from 0 back to 1. | {SkillName} is ready |
+| Buff & Debuff expired | When a buff or debuff shown in a running [Buff & Debuff Card](Buff-&-Debuff-Card) or [Buff & Debuff Group](Buff-&-Debuff-Group) disappears because its time runs out, at the time in "Notify when". | {BuffName} on {TargetName} has expired |
 | Potion/cuisine expired | When the remaining time of a potion or cuisine buff drops below the time in "Notify when". | {TargetName}'s {BuffName} effect is about to expire |
 | Telegraphed skill | When a boss skill that the game announces or warns about is coming. | {SkillName} incoming |
 | Entity chanting | When an enemy with an HP bar starts chanting a skill whose name or ID matches a target. | {EntityName} is chanting |
@@ -46,8 +47,13 @@ This tab notifies you of events in the game with Windows notifications or by rea
   - Target players: "All", "Party members", "Non-Guardian classes", or "Non-Guardian party members" (default: "Non-Guardian classes").
   - Target entity: "Bosses only", "Bosses and elites", or "All" (default: "Bosses only").
   - Notify when: "Immediately", "Targeted for 1s or more", "Targeted for 2s or more", or "Targeted for 3s or more" (default: "Targeted for 3s or more").
+- Cooldown ready
+  - Target skill name and Target skill ID: Your own skills to notify about (default: empty). You can enter multiple values separated by "|". If you enter an ID, it takes priority over the name. IDs can be shown with "Internal ID" in Settings, and you can check them on the skill slots of the [Player List](Player-List).
+  - Notify when: "When ready", "1s before ready", "2s before ready", or "3s before ready" (default: "When ready").
 - Buff & Debuff expired
   - Choose the buffs and debuffs to notify about in "Notification Targets" in the settings of the card and the group. You can also switch them by right-clicking a row in a card or group.
+  - Notify when: "On expiry", "1s before expiry", "2s before expiry", or "3s before expiry" (default: "On expiry"). "On expiry" notifies after confirming that the buff or debuff has disappeared. "1s–3s before expiry" works out when it expires from the remaining time and notifies that many seconds before. It does not notify for buffs and debuffs whose duration is that many seconds or less, or for ones that appear after their remaining time has dropped below that.
+  - When "Notify when" is 1s–3s before expiry, the default text is "{BuffName} on {TargetName} is about to expire". If you use the default text, the text changes when you choose "Notify when" again.
 - Potion/cuisine expired
   - Notify when: "1 min or less left", "2 min or less left", "5 min or less left", or "10 min or less left" (default: "2 min or less left").
 - Telegraphed skill
@@ -67,7 +73,8 @@ This tab notifies you of events in the game with Windows notifications or by rea
 ## Notes
 
 - "Buff & Debuff expired", and "Potion/cuisine expired" for other players, notify only while the widget is running. The other items notify even when no widget is open.
-- Player appeared, Entity appeared, Entity chanting, and World Chat do not notify even when turned on unless you enter names, IDs, or match words.
+- Player appeared, Cooldown ready, Entity appeared, Entity chanting, and World Chat do not notify even when turned on unless you enter names, IDs, or match words.
+- Cooldown ready notifies only for your own skills. Other players' skill cooldowns are estimates by the app, so they are not covered.
 - "Player name" in Settings applies to names (`*****` when it is set to "Hide").
 - During games, Windows notifications may not arrive because of the Windows setting "Turn on do not disturb automatically". If they do not arrive, turn off the options for playing a game and for full-screen apps under "Notifications" in Windows Settings.
 - Read-aloud messages are read one at a time in the order they arrive, without overlapping.

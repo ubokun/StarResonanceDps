@@ -156,6 +156,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                             lock (encounter.Entities)
                             {
                                 encounter.FillTakenSnapshotsForSave();
+                                encounter.FillBuffUptimeForSave();
                                 try
                                 {
                                     serializer.Serialize(writer, SelectPersistedEntities(encounter));
@@ -163,6 +164,7 @@ namespace StarResonanceDps.Core.CombatRuntime
                                 finally
                                 {
                                     encounter.ClearTakenSnapshotsAfterSave();
+                                    encounter.ClearBuffUptimeAfterSave();
                                 }
                             }
                             writer.Flush();

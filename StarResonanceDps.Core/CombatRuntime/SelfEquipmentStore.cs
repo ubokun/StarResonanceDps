@@ -178,6 +178,29 @@ public static class SelfEquipmentStore
         return false;
     }
 
+    /// <summary>着けている装備の値の全部(部位の順)。値を持っていなければ <c>null</c>。袋に無い部位は入れない。</summary>
+    public static IReadOnlyList<SelfEquipmentSlot>? GetSlots()
+    {
+        lock (StateLock)
+        {
+            if (!_hasState)
+            {
+                return null;
+            }
+
+            var slots = new List<SelfEquipmentSlot>(SlotItems.Count);
+            foreach (var (slot, uuid) in SlotItems.OrderBy(pair => pair.Key))
+            {
+                if (Items.TryGetValue(uuid, out var item))
+                {
+                    slots.Add(item.ToSlot(slot));
+                }
+            }
+
+            return slots;
+        }
+    }
+
     private static bool TouchesEquipPackage(BlobHashMapDelta<int, BinaryPackage> changes)
     {
         return changes.ReplacesExisting

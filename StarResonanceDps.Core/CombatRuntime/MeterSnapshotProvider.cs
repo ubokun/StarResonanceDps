@@ -79,10 +79,10 @@ public sealed record BenchmarkStateSnapshot(
     bool IsCompleted);
 
 /// <summary>
-/// 推移の区切り1つ。<see cref="StartSeconds"/>〜<see cref="EndSeconds"/> は <c>FirstDamageTimeStamp</c> からの秒(右閉じ)、
+/// 推移の区切り1つ。<see cref="EndSeconds"/> は区切りの終わりの <c>FirstDamageTimeStamp</c> からの秒、
 /// <see cref="ValuePerSecond"/> はその区切りの合計 ÷ 区切りの長さ。
 /// </summary>
-public readonly record struct MetricGraphPoint(double StartSeconds, double EndSeconds, double ValuePerSecond);
+public readonly record struct MetricGraphPoint(double EndSeconds, double ValuePerSecond);
 
 /// <summary>
 /// 推移グラフの横軸の下に出す、プレイヤーの技の開始1件。<see cref="Seconds"/> は戦闘の時計の経過(<c>Encounter.ToCombatOffset</c>)で、
@@ -1459,8 +1459,8 @@ public static class MeterSnapshotProvider
         }
 
         // 変更検知のトークンは実際の表示元と一致させる。
-        // Entity 側に一覧が無いときは保持している一覧が表示元になるので、そちらを指す。
-        skillSourceToken = entity?.GetAttrKV("AttrSkillLevelIdList");
+        // 保存した回の自分はその回のアクションバー、Entity 側に一覧が無いときは保持している一覧が表示元になるので、そちらを指す。
+        skillSourceToken = (object?)entity?.RecordedSelf?.ActionBar ?? entity?.GetAttrKV("AttrSkillLevelIdList");
         if (skillSourceToken is null
             && PartyMemberCache.Instance.TryGetSkillLevels(characterId, out var cachedSkillLevels))
         {
@@ -1497,6 +1497,12 @@ public static class MeterSnapshotProvider
         if (isSelf)
         {
             return CreateSelfActionBarLoadout(entityUuid);
+        }
+
+        // 保存した回の自分は、その回のアクションバーから同じ形で組み立てる。
+        if (entity?.RecordedSelf?.ActionBar is { } recordedActionBar)
+        {
+            return CreateRecordedActionBarLoadout(entityUuid, recordedActionBar);
         }
 
         var skillLevels = ResolvePlayerSkillLevels(entityUuid, entity, characterId);
@@ -1643,7 +1649,83 @@ public static class MeterSnapshotProvider
         return result;
     }
 
+    /// <summary>
+    /// 保存した回の自分のイマジン/ロール枠を、その回のアクションバーの枠番号どおりに組み立てる。
+    /// 空枠は <c>null</c> のまま返す(<see cref="CreateSelfActionBarLoadout"/> と同じ形)。
+    /// </summary>
+    private static PlayerImagineRoleSkillLoadoutSnapshot CreateRecordedActionBarLoadout(
+        long entityUuid,
+        IReadOnlyList<RecordedActionBarSlot> actionBar)
+    {
+        var imagineSkills = BuildRecordedActionBarSlots(actionBar, SelfImagineSlotIds);
+        var roleSkills = BuildRecordedActionBarSlots(actionBar, SelfRoleSlotIds);
+        return new PlayerImagineRoleSkillLoadoutSnapshot(
+            entityUuid,
+            imagineSkills,
+            roleSkills,
+            roleSkills.Length);
+    }
+
+    private static PlayerCooldownSkillSnapshot?[] BuildRecordedActionBarSlots(
+        IReadOnlyList<RecordedActionBarSlot> actionBar,
+        IReadOnlyList<int> slotIds)
+    {
+        var result = new PlayerCooldownSkillSnapshot?[slotIds.Count];
+        for (var index = 0; index < slotIds.Count; index++)
+        {
+            foreach (var slot in actionBar)
+            {
+                if (slot.SlotId == slotIds[index])
+                {
+                    result[index] = CreateSlotSnapshot(slot.SkillId, slot.Level, slot.Tier);
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 自分のアクションバーのイマジンとロールスキルの枠を、保存する形に写す(<see cref="RecordedSelfData.ActionBar"/>)。
+    /// レベルと改造段階は今の値。アクションバーが未受信なら <c>null</c>。空の枠は入れない。
+    /// </summary>
+    internal static IReadOnlyList<RecordedActionBarSlot>? CaptureSelfActionBar(long selfUuid)
+    {
+        if (!PlayerSkillLevelStateStore.HasSelfActionBarSlots)
+        {
+            return null;
+        }
+
+        var slots = new List<RecordedActionBarSlot>(SelfImagineSlotIds.Length + SelfRoleSlotIds.Length);
+        AddCapturedActionBarSlots(slots, selfUuid, SelfImagineSlotIds);
+        AddCapturedActionBarSlots(slots, selfUuid, SelfRoleSlotIds);
+        return slots.ToArray();
+    }
+
+    private static void AddCapturedActionBarSlots(List<RecordedActionBarSlot> slots, long selfUuid, IReadOnlyList<int> slotIds)
+    {
+        foreach (var slotId in slotIds)
+        {
+            var skillId = PlayerSkillLevelStateStore.GetSelfActionBarSkillId(slotId);
+            if (skillId <= 0)
+            {
+                continue;
+            }
+
+            var (currentLevel, tier) = ResolveSelfSlotLevel(selfUuid, skillId);
+            slots.Add(new RecordedActionBarSlot(slotId, skillId, currentLevel, tier));
+        }
+    }
+
     private static PlayerCooldownSkillSnapshot CreateSelfSlotSnapshot(long entityUuid, int skillId)
+    {
+        var (currentLevel, tier) = ResolveSelfSlotLevel(entityUuid, skillId);
+        return CreateSlotSnapshot(skillId, currentLevel, tier);
+    }
+
+    /// <summary>自分のアクションバーの技の、今のレベルと改造段階。</summary>
+    private static (int CurrentLevel, int Tier) ResolveSelfSlotLevel(long entityUuid, int skillId)
     {
         PlayerSkillLevelStateStore.TryGetSelfLearnedSkill(skillId, out var learnedLevel, out var tier);
         var skillLevel = new DataTypes.Skills.SkillLevelInfo
@@ -1653,11 +1735,15 @@ public static class MeterSnapshotProvider
             Tier = tier
         };
 
+        return (ResolvePlayerSkillCurrentLevel(entityUuid, skillLevel), tier);
+    }
+
+    private static PlayerCooldownSkillSnapshot CreateSlotSnapshot(int skillId, int currentLevel, int tier)
+    {
         var iconName = CombatDataCatalog.GetSkillIconName(skillId, string.Empty);
         var isImagine = CombatDataCatalog.IsSkillImagine(skillId, iconName);
         var isRole = CombatDataCatalog.IsSkillRole(skillId);
         var showLevel = isRole && CombatDataCatalog.HasLevelDependentCooldown(skillId);
-        var currentLevel = ResolvePlayerSkillCurrentLevel(entityUuid, skillLevel);
         var maxCharges = CombatDataCatalog.GetSkillMaxCharges(skillId);
         return new PlayerCooldownSkillSnapshot(
             skillId,
@@ -2472,7 +2558,6 @@ public static class MeterSnapshotProvider
             changed |= buffer.SetPoint(
                 bucket,
                 new MetricGraphPoint(
-                    bucket * (double)intervalSeconds,
                     (bucket + 1) * (double)intervalSeconds,
                     bucketTotals[bucket] / intervalSeconds));
         }
@@ -2482,13 +2567,28 @@ public static class MeterSnapshotProvider
             changed |= buffer.SetPoint(
                 fullBucketCount,
                 new MetricGraphPoint(
-                    fullBucketCount * (double)intervalSeconds,
                     elapsedSeconds,
                     bucketTotals[fullBucketCount] / partialBucketSeconds));
         }
 
         changed |= buffer.SetCount(bucketCount);
         return changed;
+    }
+
+    /// <summary>
+    /// <paramref name="characterId"/> のバフ稼働率(表示中の回、<see cref="ResolveActiveEncounter"/>)。人が居ないか、戦闘の時計の起点が無ければ null。
+    /// 毎回全部を読み直す(区間はまだ付いているバフの分だけ時計と一緒に伸びる)。
+    /// </summary>
+    public static BuffUptimeSnapshot? GetPlayerBuffUptime(long characterId)
+    {
+        var encounter = ResolveActiveEncounter();
+        if (encounter is null
+            || !TryResolvePlayerEntity(encounter, characterId, out var entityUuid, out _))
+        {
+            return null;
+        }
+
+        return encounter.ReadBuffUptime(entityUuid, DateTime.UtcNow);
     }
 
     /// <summary>

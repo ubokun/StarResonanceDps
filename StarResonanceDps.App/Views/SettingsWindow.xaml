@@ -654,6 +654,36 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
 
+                                                <TextBlock Grid.Column="0"
+                                                           VerticalAlignment="Center"
+                                                           Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Widget_HideWhenGameInactive]}"
+                                                           Foreground="{DynamicResource Brush.TextPrimary}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold" />
+
+                                                <StackPanel Grid.Column="1"
+                                                            Orientation="Horizontal"
+                                                            VerticalAlignment="Center">
+                                                    <ToggleButton Style="{StaticResource Input.Switch}"
+                                                                  IsChecked="{Binding HidesWidgetsWhenGameInactive, Mode=TwoWay}" />
+                                                    <TextBlock Margin="8,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               MinWidth="28"
+                                                               Foreground="{DynamicResource Brush.TextPrimary}"
+                                                               FontSize="14"
+                                                               FontWeight="SemiBold"
+                                                               Text="{Binding HidesWidgetsWhenGameInactiveStateText}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border Style="{StaticResource Panel.SettingField}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
                                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Source={x:Static localization:LocalizationManager.Instance}, Path=[Settings_Display_WidgetWindow]}"
                                                                Foreground="{DynamicResource Brush.TextPrimary}"

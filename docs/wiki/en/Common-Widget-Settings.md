@@ -5,11 +5,11 @@ These are the window rules and the settings window shared by all widgets. The se
 ## Widget windows
 
 - Header: The top row of the window. From the left, it has the status circle, the title, and the close button (×). Some widgets have action buttons (such as "Benchmark" in the DPS Meter) to the left of the close button.
-- Footer: The bottom row of the window. The Player List, Entity List, DPS Meter, HPS Meter, Threat Meter, Break Meter, and Damage Taken Log have one.
+- Footer: The bottom row of the window. The Player List, Entity List, Map, DPS Meter, HPS Meter, Threat Meter, Break Meter, and Damage Taken Log have one.
 - To move a window: Drag it by the area around the title in the header.
 - To resize a window: Drag its edge.
 - The position and size are saved, and the window appears in the same place the next time it opens. The size of Player Info and the height of Equipment Info are not saved; they open at the default size every time.
-- In Status, Buff & Debuff Group, Damage Details, Healing Details, Damage Taken Details, and Entity Info, the height of the window changes to fit the content when the number of rows changes.
+- In Status, Buff & Debuff Group, Damage Details, Healing Details, Damage Taken Details, and Target Info, the height of the window changes to fit the content when the number of rows changes.
 - Click the close button to close that window. A widget whose windows are all closed is stopped.
 
 ## Status circle
@@ -44,6 +44,7 @@ Both are switched with the card buttons in "[Widgets](Widgets)" and apply to all
 - Pin: The window can no longer be moved or resized. Clicking the window does not make it active, so it does not interfere with playing the game. You can hide the header and footer with "Window" below.
 - Click-through: The window does not take mouse input and passes it straight to the screen below (such as the game). The window's buttons and scrolling cannot be used either.
 - On top: By default, widget windows are always on top. If you select "On Top Only While Pinned" in "Widget Windows" in Settings, only pinned windows are on top.
+- While using other windows: By default, widget windows are hidden while you are using a window other than the game or this app. If you turn off "Hide widgets when the game is inactive" in Settings, they are always shown.
 
 ## Settings window
 

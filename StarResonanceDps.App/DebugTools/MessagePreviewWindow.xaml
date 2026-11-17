@@ -69,6 +69,8 @@
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_Error_RestoreFailed" Tag="{x:Static services:AppUpdateFailure.RestoreFailed}" Click="UpdateError_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_RestartFailed" Click="UpdateRestartFailed_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_RestartFailedNotUpdated" Click="UpdateRestartFailedNotUpdated_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_FileInUse" Click="UpdateFileInUse_Click" />
+                        <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Update_FileInUseUnknownProgram" Click="UpdateFileInUseUnknownProgram_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_Opened" Click="FeedbackOpened_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_OpenedMany" Click="FeedbackOpenedMany_Click" />
                         <Button Margin="0,0,0,6" Style="{StaticResource Button.Text}" Width="Auto" Content="Feedback_AlreadyReported" Click="FeedbackAlreadyReported_Click" />

@@ -1,0 +1,16 @@
+name: 问题反馈与功能建议
+description: 反馈问题或建议功能
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: 内容
+      description: 请填写发生的情况和重现步骤，或希望添加的功能。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境
+      description: 从应用的“反馈”打开时会自动填写。
+      render: text

@@ -45,7 +45,7 @@ public sealed class ActiveBuffStore
 
     /// <summary>
     /// プレイヤーごとの BaseId -> 付与元(種類と番号)の対応。バフからスキルを逆引きする多段解決に使う。
-    /// 読むのは技の枠のバッジだけなので、プレイヤーの分だけを持つ。
+    /// 読むのは技の枠のバッジだけなので、プレイヤーの分だけを持つ。召喚体が自分の技で付けたバフは、召喚者の分に「召喚体を出した技」を付与元として持つ(<see cref="RecordSummonBuffSource"/>)。
     /// 期限切れや解除で消えたバフの分も残す(索引であって表示ソースではない)。周りから消えても残し、マップ切替で消える(人数と番号の種類で頭打ち)。
     /// これが痩せると、直接一致しないスキル(ロールスキル等)の紐付けが解決できなくなる。
     /// <b>種類を落とさない。</b>付与元の番号はスキルの表とバフの表で重なるので、番号だけでは辿り先が決まらない。
@@ -232,6 +232,16 @@ public sealed class ActiveBuffStore
     }
 
     /// <summary>
+    /// サーバの付与時刻から経ったミリ秒。残り時間と同じ決め方(<see cref="ResolveElapsedNoLock"/>)で、差し引けないとき(付与時刻・持続・サーバ時刻のどれかが無い)は null。
+    /// バフ稼働率が、除去の届かない実体の終わりを決めるのに使う。
+    /// </summary>
+    internal static double? GetKnownElapsedMilliseconds(DateTime? serverCreateTimeUtc, int durationMilliseconds)
+    {
+        var elapsed = ResolveElapsedNoLock(serverCreateTimeUtc, durationMilliseconds);
+        return elapsed.Known ? elapsed.Milliseconds : null;
+    }
+
+    /// <summary>
     /// サーバの付与時刻から「もう何ミリ秒経ったか」を出す。
     ///
     /// <para>
@@ -275,19 +285,86 @@ public sealed class ActiveBuffStore
             return;
         }
 
+        AddSourceParentNoLock(entityUuid, buffEvent.BaseId, new BuffSource(buffEvent.FightSourceType, buffEvent.SourceConfigId));
+    }
+
+    private void AddSourceParentNoLock(long entityUuid, int baseId, BuffSource source)
+    {
         if (!_sourceParentsByEntity.TryGetValue(entityUuid, out var parents))
         {
             parents = [];
             _sourceParentsByEntity.Add(entityUuid, parents);
         }
 
-        if (!parents.TryGetValue(buffEvent.BaseId, out var sources))
+        if (!parents.TryGetValue(baseId, out var sources))
         {
             sources = [];
-            parents.Add(buffEvent.BaseId, sources);
+            parents.Add(baseId, sources);
         }
 
-        sources.Add(new BuffSource(buffEvent.FightSourceType, buffEvent.SourceConfigId));
+        sources.Add(source);
+    }
+
+    /// <summary>
+    /// 召喚体が自分の技で付けたバフを、召喚者の付与元の対応に「そのバフ → 召喚体を出した技」として持つ。
+    ///
+    /// <para>
+    /// 召喚体に付いたバフが召喚者に子のバフを付けると、子の付与元はそのバフを指すが、そのバフは召喚者に付いていないので
+    /// 召喚者のバフからは親をたどれない(奥義！精密点射の機能強化。付与元の眼球王光环は召喚体に付く)。
+    /// 召喚体を出した技は <see cref="SummonSourceIndex"/>(通信の <c>AttrFightSourceInfo</c>)から引く。
+    /// </para>
+    ///
+    /// <para>
+    /// 対象は、付与元が技で、その技が召喚体の種別ID の <c>MonsterTable</c> の <c>BornSkillId</c>・<c>SkillIds</c> にあるバフだけ。
+    /// 召喚者が自分の別の技で召喚体に付けたバフは入れない。召喚者はプレイヤーだけ(読むのは技の枠のバッジ)。
+    /// </para>
+    /// </summary>
+    /// <param name="holderMonsterId">付いた相手の種別ID(<c>AttrId</c>)。</param>
+    public void RecordSummonBuffSource(long holderUuid, long holderMonsterId, BuffEvent buffEvent)
+    {
+        if (buffEvent is null
+            || buffEvent.BaseId <= 0
+            || buffEvent.FightSourceType != (int)Zproto.EFightSource.Skill
+            || buffEvent.SourceConfigId <= 0
+            || holderMonsterId <= 0
+            || Utils.UuidToEntityType(holderUuid) == (long)Zproto.EEntityType.EntChar
+            || !SummonSourceIndex.Instance.TryGet(holderUuid, out var summonSource)
+            || summonSource.SkillId <= 0
+            || Utils.UuidToEntityType(summonSource.SummonerUuid) != (long)Zproto.EEntityType.EntChar
+            || !HelperMethods.DataTables.Monsters.Data.TryGetValue(holderMonsterId.ToString(), out var monster)
+            || !IsMonsterSkill(monster, buffEvent.SourceConfigId))
+        {
+            return;
+        }
+
+        lock (_sync)
+        {
+            AddSourceParentNoLock(
+                summonSource.SummonerUuid,
+                buffEvent.BaseId,
+                new BuffSource((int)Zproto.EFightSource.Skill, summonSource.SkillId));
+        }
+    }
+
+    private static bool IsMonsterSkill(CombatRuntime.DataTypes.Monster monster, int skillId)
+    {
+        if (monster.BornSkillId == skillId)
+        {
+            return true;
+        }
+
+        if (monster.SkillIds is not null)
+        {
+            foreach (var monsterSkillId in monster.SkillIds)
+            {
+                if (monsterSkillId == skillId)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

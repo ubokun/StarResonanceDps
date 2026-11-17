@@ -41,6 +41,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             EncounterManager.EnterDungeon(keepPastEncounterInMeter: true, force: true, reason: EncounterStartReason.Force);
 
             // バフはエンカウンター境界では消さないが、マップ移動では持ち越さない。
+            EncounterManager.Current.DiscardCarriedBuffUptime();
             Services.ActiveBuffStore.Instance.Clear();
             Services.BuffInstanceIndex.Instance.Clear();
             Services.SummonSourceIndex.Instance.Clear();
@@ -48,6 +49,9 @@ namespace StarResonanceDps.Core.CombatRuntime
             Services.BuffOriginResolver.Instance.Clear();
             Services.NearbyMonsterIndex.Instance.Clear();
             Services.EnemyContributionBaseline.Instance.Clear();
+            Services.EntityPositionStore.Instance.ClearNearby();
+            Services.FieldMarkStore.Instance.Clear();
+            Services.SelfTargetStore.Instance.Clear();
             Services.EntityOriginIndex.Instance.Clear();
             Services.BossDbmBarStore.Instance.Clear();
             Services.WarningSkillCastStore.Instance.Clear();

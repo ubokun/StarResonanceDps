@@ -38,4 +38,4 @@ There are only the window settings and theme ([Common Widget Settings](Common-Wi
 - Your own effects are built from the data that arrives when you log in or change maps, and they change immediately when you change modules. If you start the app while the game is already running, they are shown the same way as for other players until you change maps.
 - Other players' data arrives while they are around you. It does not arrive through party information.
 - For people who have left the Player List, the last known values remain. They are cleared when you log out.
-- While a history entry is open, the effects from that time are shown without levels for the people who were in that battle.
+- While a history entry is open, the effects from that time are shown for people who were in that battle and are not around you now. Levels are shown only for yourself in that battle.

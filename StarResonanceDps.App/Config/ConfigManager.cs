@@ -40,9 +40,6 @@ public sealed class ConfigManager
 
     public event EventHandler? SettingsPreviewChanged;
 
-    /// <summary><see cref="SaveWidgetWindowTopmostModeIndex"/> が保存した。開いている全体設定の画面が表示と保存済みの控えを合わせる。</summary>
-    public event EventHandler? WidgetWindowTopmostModeSaved;
-
     /// <summary><see cref="SavePlayerNameDisplayModeIndex"/> が保存した。開いている全体設定の画面が表示と保存済みの控えを合わせる。</summary>
     public event EventHandler? PlayerNameDisplayModeSaved;
 
@@ -95,24 +92,6 @@ public sealed class ConfigManager
         ApplyRuntimeSettings(AppConfig.Settings);
         Save();
         SettingsChanged?.Invoke(this, EventArgs.Empty);
-        SettingsPreviewChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>
-    /// ウィジェット設定「ウィジェットウィンドウ」(最前面の選び方)だけを書き換えて保存する。ホットキーの切り替えが使う。
-    /// 全体設定の画面で変更中の値(プレビュー)があれば、その中の同じ項目も合わせる。
-    /// ほかの項目のプレビューは保存しない(画面の未保存の変更を巻き込まない)。
-    /// </summary>
-    public void SaveWidgetWindowTopmostModeIndex(int index)
-    {
-        AppConfig.Settings.WidgetWindowTopmostModeIndex = index;
-        if (_settingsPreview is not null)
-        {
-            _settingsPreview.WidgetWindowTopmostModeIndex = index;
-        }
-
-        Save();
-        WidgetWindowTopmostModeSaved?.Invoke(this, EventArgs.Empty);
         SettingsPreviewChanged?.Invoke(this, EventArgs.Empty);
     }
 

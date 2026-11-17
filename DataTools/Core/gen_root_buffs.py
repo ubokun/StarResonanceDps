@@ -421,7 +421,7 @@ def pick_name(kind, buff_id, rows, conflicts, resolved, lang):
 
     named.sort(key=lambda row: row[0])
     if len({name for _, name, _, _ in named}) > 1:
-        resolved.append("%s %s %d → 並びの一番小さい行の「%s」(ほか%s)"
+        resolved.append("%s %s %d → 並びの一番小さい行の「%s」(他: %s)"
                         % (lang, kind, buff_id, named[0][1],
                            " / ".join(sorted({name for _, name, _, _ in named[1:] if name != named[0][1]}))))
     return named[0][1]
@@ -460,7 +460,7 @@ def main():
                     continue
                 module_names[lang][key] = effect["Name"]
                 if effect["OtherNames"]:
-                    resolved.append("%s ModuleEffects %d → 段階の一番小さい行の「%s」(ほか%s)"
+                    resolved.append("%s ModuleEffects %d → 段階の一番小さい行の「%s」(他: %s)"
                                     % (lang, effect_id, effect["Name"], " / ".join(effect["OtherNames"])))
         print("%-6sモジュール効果%3d" % (lang, len(module_names[lang])))
 

@@ -48,7 +48,8 @@ public sealed record ChatStickerSegment(string IconPath);
 ///
 /// <para>
 /// 本文はメッセージの種類で決める。スタンプは絵(絵が無ければ「[スタンプ]」、定型文は本文の文字)、画像・ボイスはゲームの表示名(ボイスは文字起こしが続く)、
-/// リンクの発言は表の文の型を差し込みの値で埋めた文(<see cref="ChatHyperlinkFormatter"/>、解けなければ前後の文と「[リンク]」)、
+/// リンクの発言は表の文の型を差し込みの値で埋めた文(<see cref="ChatHyperlinkFormatter"/>、解けなければ前後の文と「[リンク]」。
+/// 位置を共有したリンクは、押すとマップの窓がその場所を出す)、
 /// ほかは本文の文字で、その中の <c>&lt;sprite=N&gt;</c> は顔文字(番号が表の外ならそのままの文字)、<c>http://</c> と <c>https://</c> の URL は押せるリンクにする。
 /// スタンプは文字の入ったものに言語別の絵が、リンクの発言は言語ごとの文の型があるので、表示言語が変わったら行を作り直す。
 /// </para>
@@ -57,7 +58,7 @@ public sealed record ChatStickerSegment(string IconPath);
 /// 画面で選んだ文字は、右クリックの「コピー」で文字にする(<see cref="CreateCopyText"/>)。
 /// </para>
 /// </summary>
-public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, ITextRowsCopySource
+public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IWidgetDataStatusSource, ITextRowsCopySource, IWidgetWindowHiddenAware
 {
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromMilliseconds(250);
 
@@ -68,6 +69,10 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
     private static readonly HashSet<uint> LoggedUnresolvedHyperlinkIds = [];
 
     private readonly WidgetListItemViewModel _widget;
+
+    /// <summary>座標のリンクを押した。マップの窓をその場所に合わせて印を置く(窓の管理が渡す)。</summary>
+    private readonly Action<MapSharedPosition> _showSharedPosition;
+
     private readonly ConfigManager _configManager = ConfigManager.Instance;
     private readonly DispatcherTimer _refreshTimer;
     private readonly List<ChatMessageRecord> _records = [];
@@ -87,9 +92,11 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
         WidgetListItemViewModel widget,
         ChitChatChannelType channel,
         long partnerId,
-        string? savedPartnerName)
+        string? savedPartnerName,
+        Action<MapSharedPosition> showSharedPosition)
     {
         _widget = widget;
+        _showSharedPosition = showSharedPosition;
         Channel = channel;
         PartnerId = partnerId;
         LastKnownPartnerName = savedPartnerName;
@@ -216,6 +223,9 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
                 case TextLinkSegment link:
                     text.Append(link.Text);
                     break;
+                case TextActionLinkSegment link:
+                    text.Append(link.Text);
+                    break;
                 case ChatEmojiSegment emoji:
                     text.Append(emoji.Emoji);
                     break;
@@ -226,6 +236,19 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
         }
 
         return text.ToString();
+    }
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
     }
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)
@@ -327,7 +350,7 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
         return new ChatEntry(senderName, _senderNameBrush, timeText, _timeBrush, segments, _messageBrush, _widget);
     }
 
-    private static void AddBodySegments(List<object> segments, ChatMessageRecord record)
+    private void AddBodySegments(List<object> segments, ChatMessageRecord record)
     {
         var localization = LocalizationManager.Instance;
         switch (record.MessageType)
@@ -385,8 +408,13 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
     /// <summary>
     /// リンクの発言は、表の文の型を差し込みの値で埋めた文。文を組めなかったとき(表に番号が無い・型が空・値の取れない差し込みがある)は、
     /// 発言した人が打った前後の文のあいだに「[リンク]」の文字を出す。
+    ///
+    /// <para>
+    /// 位置を共有したリンクだけは、リンクの文字を押せるようにする(<see cref="MapSharedPosition"/>)。ほかのリンクはゲームの中の画面を開くもので、
+    /// アプリから同じことはできないので押せない文字のまま出す。
+    /// </para>
     /// </summary>
-    private static void AddHyperlinkSegments(List<object> segments, ChatMessageRecord record)
+    private void AddHyperlinkSegments(List<object> segments, ChatMessageRecord record)
     {
         if (record.Hyperlink is not { } hyperlink)
         {
@@ -402,6 +430,16 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
         var text = ChatHyperlinkFormatter.Format(hyperlink, record.SenderName);
         if (text.Text is not null)
         {
+            if (text.LinkLength > 0 && TryGetSharedPosition(hyperlink) is { } position)
+            {
+                AddTextSegments(segments, text.Text[..text.LinkStart]);
+                segments.Add(new TextActionLinkSegment(
+                    text.Text.Substring(text.LinkStart, text.LinkLength),
+                    () => _showSharedPosition(position)));
+                AddTextSegments(segments, text.Text[(text.LinkStart + text.LinkLength)..]);
+                return;
+            }
+
             AddTextSegments(segments, text.Text);
             return;
         }
@@ -417,6 +455,28 @@ public sealed partial class ChatWidgetViewModel : ViewModelBase, IDisposable, IW
         AddTextSegments(segments, text.Before);
         segments.Add(LocalizationManager.Instance.GetString("Chat_Hyperlink"));
         AddTextSegments(segments, text.After);
+    }
+
+    /// <summary>
+    /// 位置を共有したリンクなら、マップに出す場所と階層。ほかのリンクは null。
+    /// 高さ(<c>PositionY</c>)はマップに要らないので持たない。
+    /// </summary>
+    private static MapSharedPosition? TryGetSharedPosition(ChatHyperlinkRecord hyperlink)
+    {
+        foreach (var value in hyperlink.Values)
+        {
+            if (value.Value is PlaceHolderScenePosition position)
+            {
+                return new MapSharedPosition(
+                    position.SceneId,
+                    (uint)Math.Max(position.LineId, 0),
+                    position.PositionX,
+                    position.PositionZ,
+                    position.MapLayerId);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>文の本文を、文字・顔文字(<c>&lt;sprite=N&gt;</c>)・リンク(URL)に分ける。</summary>

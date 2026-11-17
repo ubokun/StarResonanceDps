@@ -1,7 +1,6 @@
 // This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 
 using System.Collections.ObjectModel;
-using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using StarResonanceDps.App.Config;
 using StarResonanceDps.App.Localization;
@@ -11,16 +10,14 @@ namespace StarResonanceDps.App.ViewModels.WidgetSettings;
 
 /// <summary>
 /// 推移グラフ(DPS / HPS)の設定。表示設定(描画間隔・横軸の長さ・スキルログを表示)と、線の色(グラフカラー)。
-/// グラフカラーの形はメーターのクラスカラーと同じ(クラスごとの色。不透明度は持たない)で、アイコンの欄には折れ線の見本を出す。
+/// グラフカラーの節はバフ稼働率と共有の部品(<see cref="GraphColorSettingsViewModel"/>)で、アイコンの欄には折れ線の見本を出す。
 /// 行の並びと既定は読み替え先のメーター(<see cref="WidgetConfigDefaults.GetMetricGraphColorDefaultSource"/>)と同じ。
 /// 横軸の長さはウィジェットの窓の上のホイールでも変わり、そのときは <see cref="SetVisibleSecondsFromWidget"/> で受ける。
 /// </summary>
 public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObject, IDisposable
 {
     private readonly WidgetKind _kind;
-    private readonly WidgetKind _colorDefaultSource;
     private readonly ObservableCollection<MetricGraphSecondsOption> _availableAggregationIntervals = [];
-    private readonly Dictionary<string, MeterClassColorItemViewModel> _classColorItemsByKey = new(StringComparer.OrdinalIgnoreCase);
     private MetricGraphWidgetSettingsConfig _lastSaved;
     private bool _isLoading;
 
@@ -37,25 +34,10 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
     public MetricGraphWidgetSettingsViewModel(WidgetKind kind, MetricGraphWidgetSettingsConfig? config)
     {
         _kind = kind;
-        _colorDefaultSource = WidgetConfigDefaults.GetMetricGraphColorDefaultSource(kind);
         AvailableAggregationIntervals = new ReadOnlyObservableCollection<MetricGraphSecondsOption>(_availableAggregationIntervals);
 
-        var items = new ObservableCollection<MeterClassColorItemViewModel>();
-        var classColorKeys = WidgetConfigDefaults.GetClassColorKeys(_colorDefaultSource);
-        for (var index = 0; index < classColorKeys.Count; index++)
-        {
-            var key = classColorKeys[index];
-            var colors = new ColorPaletteViewModel(
-                WidgetConfigDefaults.CreateDefaultClassColors(_colorDefaultSource, key),
-                WidgetConfigDefaults.MaxPaletteColorCount);
-            colors.PaletteChanged += Colors_PaletteChanged;
-
-            var item = new MeterClassColorItemViewModel(key, colors, index == classColorKeys.Count - 1);
-            _classColorItemsByKey.Add(key, item);
-            items.Add(item);
-        }
-
-        ClassColorItems = new ReadOnlyObservableCollection<MeterClassColorItemViewModel>(items);
+        GraphColors = new GraphColorSettingsViewModel(WidgetConfigDefaults.GetMetricGraphColorDefaultSource(kind), usesBarSwatch: false);
+        GraphColors.Changed += NotifyChanged;
 
         LocalizationManager.Instance.CultureChanged += LocalizationManager_CultureChanged;
 
@@ -87,21 +69,16 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
     public string ShowSkillLogStateText => LocalizationManager.Instance.GetString(
         ShowSkillLog ? "Settings_Switch_On" : "Settings_Switch_Off");
 
-    /// <summary>グラフカラーの行。クラスごとに色見本(最大5枠)と、選んでいる枠を持つ。</summary>
-    public ReadOnlyObservableCollection<MeterClassColorItemViewModel> ClassColorItems { get; }
-
-    public string GraphColorSectionTitle => LocalizationManager.Instance.GetString("Settings_Section_GraphColors_Title");
+    /// <summary>グラフカラーの節(線の色)。</summary>
+    public GraphColorSettingsViewModel GraphColors { get; }
 
     public bool HasUnsavedChanges => !SettingsEqual(CreateConfig(), _lastSaved);
 
     public void Dispose()
     {
         LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
-
-        foreach (var item in ClassColorItems)
-        {
-            item.Colors.PaletteChanged -= Colors_PaletteChanged;
-        }
+        GraphColors.Changed -= NotifyChanged;
+        GraphColors.Dispose();
     }
 
     public MetricGraphWidgetSettingsConfig CreateConfig()
@@ -115,12 +92,7 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
             ClassColorPalettes = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
         };
 
-        foreach (var item in ClassColorItems)
-        {
-            config.ClassColorIndexes[item.Key] = item.Colors.SelectedIndex;
-            config.ClassColorPalettes[item.Key] = [.. item.Colors.GetHexColors()];
-        }
-
+        GraphColors.WriteTo(config.ClassColorIndexes, config.ClassColorPalettes);
         return WidgetConfigDefaults.CloneNormalizedMetricGraph(_kind, config);
     }
 
@@ -165,16 +137,6 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
         OnPropertyChanged(nameof(HasUnsavedChanges));
     }
 
-    public Color GetSelectedClassColor(string key)
-    {
-        return _classColorItemsByKey[key].Colors.SelectedColor;
-    }
-
-    public void ApplyClassColor(string key, Color color)
-    {
-        _classColorItemsByKey[key].Colors.AddOrSelect(color);
-    }
-
     private void Load(MetricGraphWidgetSettingsConfig? config)
     {
         var normalized = WidgetConfigDefaults.CloneNormalizedMetricGraph(_kind, config);
@@ -185,11 +147,7 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
             AggregationIntervalSeconds = normalized.AggregationIntervalSeconds;
             VisibleSeconds = normalized.VisibleSeconds;
             ShowSkillLog = normalized.ShowSkillLog;
-
-            foreach (var item in ClassColorItems)
-            {
-                item.Colors.Load(normalized.ClassColorPalettes[item.Key], normalized.ClassColorIndexes[item.Key]);
-            }
+            GraphColors.Load(normalized.ClassColorIndexes, normalized.ClassColorPalettes);
         }
         finally
         {
@@ -222,13 +180,6 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
     private void LocalizationManager_CultureChanged(object? sender, EventArgs e)
     {
         RebuildSecondsOptions();
-
-        foreach (var item in ClassColorItems)
-        {
-            item.RefreshDisplayName();
-        }
-
-        OnPropertyChanged(nameof(GraphColorSectionTitle));
         OnPropertyChanged(nameof(ShowSkillLogStateText));
         OnPropertyChanged(nameof(VisibleSecondsText));
         OnPropertyChanged(nameof(VisibleSecondsMaxText));
@@ -243,28 +194,14 @@ public sealed partial class MetricGraphWidgetSettingsViewModel : ObservableObjec
         MetricGraphWidgetSettingsConfig left,
         MetricGraphWidgetSettingsConfig right)
     {
-        if (left.AggregationIntervalSeconds != right.AggregationIntervalSeconds
-            || left.VisibleSeconds != right.VisibleSeconds
-            || left.ShowSkillLog != right.ShowSkillLog)
-        {
-            return false;
-        }
-
-        foreach (var key in WidgetConfigDefaults.GetClassColorKeys(_colorDefaultSource))
-        {
-            if (left.ClassColorIndexes[key] != right.ClassColorIndexes[key]
-                || !left.ClassColorPalettes[key].SequenceEqual(right.ClassColorPalettes[key], StringComparer.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private void Colors_PaletteChanged(object? sender, EventArgs e)
-    {
-        NotifyChanged();
+        return left.AggregationIntervalSeconds == right.AggregationIntervalSeconds
+            && left.VisibleSeconds == right.VisibleSeconds
+            && left.ShowSkillLog == right.ShowSkillLog
+            && GraphColors.ColorsEqual(
+                left.ClassColorIndexes,
+                left.ClassColorPalettes,
+                right.ClassColorIndexes,
+                right.ClassColorPalettes);
     }
 
     private void NotifyChanged()

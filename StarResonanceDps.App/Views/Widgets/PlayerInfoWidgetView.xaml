@@ -132,6 +132,21 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+        <!--
+            現在地の値。分かっている間だけ下線と手の形のカーソルで押せることを示す(押すとマップでその人を中心に出す)。
+            色はまわりの文字のまま。
+        -->
+        <Style x:Key="PlayerInfo.LocationLink"
+               TargetType="{x:Type Hyperlink}"
+               BasedOn="{StaticResource Hyperlink.Base}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CanShowLocationOnMap}" Value="False">
+                    <Setter Property="TextDecorations" Value="{x:Null}" />
+                    <Setter Property="Cursor" Value="{x:Null}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <!-- 顔の下の文字の行の枠。行の高さはステータス詳細の行と同じ。文字は枠の中で上下の真ん中に置く。 -->
         <Style x:Key="PlayerInfo.Line" TargetType="Grid">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -151,7 +166,7 @@
 
     <!--
         左に顔・名前・文字の行・バッジ、右に名刺。顔と名刺は窓の VM の写真、それ以外は PlayerInfo。
-        相手も覚えている素性も無い間(PlayerInfo が null)は、ほかのウィンドウと同じく何も出さない。
+        相手の行が無い間(PlayerInfo が null)は、タイトルに名前があっても、ほかのウィンドウと同じく何も出さない。
     -->
     <Grid Margin="12,8,12,12"
           HorizontalAlignment="Left"
@@ -203,7 +218,7 @@
                     <TextBlock Style="{StaticResource PlayerInfo.RowText}" VerticalAlignment="Center" Text="{Binding SeasonRankText}" />
                 </Grid>
                 <Grid Style="{StaticResource PlayerInfo.Line}">
-                    <TextBlock Style="{StaticResource PlayerInfo.RowText}" VerticalAlignment="Center" Text="{Binding LocationText}" />
+                    <TextBlock Style="{StaticResource PlayerInfo.RowText}" VerticalAlignment="Center"><Run Text="{Binding LocationLabelText, Mode=OneWay}" /><Hyperlink Style="{StaticResource PlayerInfo.LocationLink}" Click="LocationLink_Click"><Run Text="{Binding LocationValueText, Mode=OneWay}" /></Hyperlink></TextBlock>
                 </Grid>
                 <Grid Style="{StaticResource PlayerInfo.Line}">
                     <TextBlock Style="{StaticResource PlayerInfo.RowText}" VerticalAlignment="Center" Text="{Binding AbilityScoreText}" />

@@ -103,6 +103,9 @@ public partial class WidgetWindow : Window
 
     private bool _isPinned;
 
+    /// <summary>全体設定「ゲーム非アクティブ時にウィジェットを隠す」で隠しているか(開いたときにまだ出していない窓も含む)。</summary>
+    private bool _isHiddenByForeground;
+
     /// <summary>中身から高さを合わせる合図が来て、まだ合わせていないか(<see cref="FitHeightToContent"/>)。</summary>
     private bool _isFitHeightPending;
 
@@ -142,6 +145,7 @@ public partial class WidgetWindow : Window
         SetFooterContent(footerContent);
         _widget.PropertyChanged += Widget_PropertyChanged;
         ConfigManager.Instance.SettingsPreviewChanged += ConfigManager_SettingsPreviewChanged;
+        GameForegroundWatcher.Instance.HidesWidgetsChanged += GameForegroundWatcher_HidesWidgetsChanged;
         _dataStatusSource.DataStatusChanged += DataStatusSource_DataStatusChanged;
         LocalizationManager.Instance.CultureChanged += LocalizationManager_CultureChanged;
         // 中身によっては、作った後に何か届くまで印を計算しない。開いた時点の事実で一度計算させる。
@@ -287,6 +291,65 @@ public partial class WidgetWindow : Window
         DataStatusText = WidgetDataStatusText.Format(status);
         IsDataStatusMarkShown = isMarkShown;
         IsDataStatusTipShown = isMarkShown && !isNormal;
+    }
+
+    /// <summary>
+    /// 開いた窓を出す(窓を作った側は <c>Show()</c> の代わりにこれを呼ぶ)。
+    /// 全体設定「ゲーム非アクティブ時にウィジェットを隠す」で今は隠す間なら、出さずに隠したままにし(起動時の復元などで一瞬見えないように)、
+    /// ゲームかこのアプリが前面になったときに出す。
+    /// </summary>
+    public void ShowRespectingForeground()
+    {
+        if (GameForegroundWatcher.Instance.HidesWidgets)
+        {
+            _isHiddenByForeground = true;
+            NotifyContentHidden(true);
+            return;
+        }
+
+        Show();
+    }
+
+    /// <summary>
+    /// 前面がゲームでもこのアプリでもなくなった・戻った。閉じずに隠す・出す(起動中・位置・大きさ・ピン留め・クリック透過は変えず、保存もしない)。
+    /// 出すときはアクティブにしない(ゲームから入力を奪わない)。中身には定期の更新を止める・再開する合図を送る。
+    /// </summary>
+    private void GameForegroundWatcher_HidesWidgetsChanged(object? sender, EventArgs e)
+    {
+        var hides = GameForegroundWatcher.Instance.HidesWidgets;
+        if (hides == _isHiddenByForeground)
+        {
+            return;
+        }
+
+        _isHiddenByForeground = hides;
+        if (hides)
+        {
+            Hide();
+            NotifyContentHidden(true);
+            return;
+        }
+
+        NotifyContentHidden(false);
+        var showActivated = ShowActivated;
+        ShowActivated = false;
+        Show();
+        ShowActivated = showActivated;
+        ApplyTopmost();
+    }
+
+    /// <summary>中身の画面とそのビューモデルのうち、隠れている間に更新を止めるものへ知らせる(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    private void NotifyContentHidden(bool isHidden)
+    {
+        if (WidgetContentHost.Content is IWidgetWindowHiddenAware content)
+        {
+            content.SetWindowHidden(isHidden);
+        }
+
+        if (WidgetContentHost.Content is FrameworkElement { DataContext: IWidgetWindowHiddenAware viewModel })
+        {
+            viewModel.SetWindowHidden(isHidden);
+        }
     }
 
     /// <summary>
@@ -548,11 +611,12 @@ public partial class WidgetWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         // 動かしてから保存待ちの間に閉じた窓は、その移動も種別ごとの位置へ書く。
-        SaveBounds(isMoveOrResize: _saveBoundsTimer.IsEnabled);
+        SaveBounds(isMoveOrResize: _saveBoundsTimer.IsEnabled, isClosing: true);
         _saveBoundsTimer.Stop();
         _saveBoundsTimer.Tick -= SaveBoundsTimer_Tick;
         _widget.PropertyChanged -= Widget_PropertyChanged;
         ConfigManager.Instance.SettingsPreviewChanged -= ConfigManager_SettingsPreviewChanged;
+        GameForegroundWatcher.Instance.HidesWidgetsChanged -= GameForegroundWatcher_HidesWidgetsChanged;
         _dataStatusSource.DataStatusChanged -= DataStatusSource_DataStatusChanged;
         LocalizationManager.Instance.CultureChanged -= LocalizationManager_CultureChanged;
 
@@ -944,6 +1008,7 @@ public partial class WidgetWindow : Window
         {
             WidgetContentScrollBar.Visibility = Visibility.Collapsed;
             WidgetContentScrollBarColumn.Width = new GridLength(5);
+            SpanHorizontalScrollBar(verticalScrollBarVisible: false);
             return;
         }
 
@@ -970,11 +1035,26 @@ public partial class WidgetWindow : Window
             WidgetContentScrollBarColumn.Width = isScrollBarVisible
                 ? new GridLength(16)
                 : new GridLength(5);
+            SpanHorizontalScrollBar(isScrollBarVisible);
         }
         finally
         {
             _isSynchronizingContentScrollBar = false;
         }
+    }
+
+    /// <summary>
+    /// 縦と横の両方を持つ中身の横のバーの長さ。縦のバーが出ている間は縦のバーの列の手前で止め、出ていない間は縦のバーの列まで伸ばす
+    /// (枠の層の縦のバーの列は幅16のままなので、伸ばさないと中身の右端より手前で止まる)。縦のバーを持たない中身はいつも伸ばしてある。
+    /// </summary>
+    private void SpanHorizontalScrollBar(bool verticalScrollBarVisible)
+    {
+        if (_horizontalScrollContent is null || _verticalScrollContent is null)
+        {
+            return;
+        }
+
+        Grid.SetColumnSpan(WidgetContentHorizontalScrollBar, verticalScrollBarVisible ? 1 : 2);
     }
 
     private void WidgetWindow_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -1093,7 +1173,11 @@ public partial class WidgetWindow : Window
     /// <param name="isMoveOrResize">
     /// 動かした・大きさを変えたことによる保存か。閉じたときの保存は、その保存待ちが残っているときだけ真。
     /// </param>
-    private void SaveBounds(bool isMoveOrResize)
+    /// <param name="isClosing">
+    /// 閉じたときの保存か。<see cref="SaveWindowBoundsOverride"/> の窓は閉じたときに呼ばない
+    /// (窓の管理が、閉じた窓を一覧から外した後に保存し直す)。
+    /// </param>
+    private void SaveBounds(bool isMoveOrResize, bool isClosing = false)
     {
         if (_isRestoringBounds
             || !IsLoaded
@@ -1108,7 +1192,11 @@ public partial class WidgetWindow : Window
 
         if (SaveWindowBoundsOverride is not null)
         {
-            SaveWindowBoundsOverride();
+            if (!isClosing)
+            {
+                SaveWindowBoundsOverride();
+            }
+
             if (!isMoveOrResize)
             {
                 return;
@@ -1130,9 +1218,8 @@ public partial class WidgetWindow : Window
     ///
     /// <para>
     /// <b>まだ測れていない項目は、復元に使った値をそのまま返す。</b>
-    /// この窓を <c>Show()</c> する前に <c>SaveOpenTargets</c> が走る経路があり
-    /// (窓を作った直後・対象名が判明したとき・別の窓が閉じたとき)、そこでは
-    /// <see cref="FrameworkElement.ActualWidth"/> がまだ 0 になっている。
+    /// 窓を出した直後など、レイアウトがまだ済まず <see cref="FrameworkElement.ActualWidth"/> が 0 の間に
+    /// <c>SaveOpenTargets</c> が走ることがある(窓の管理は窓を出した直後に保存する)。
     /// </para>
     ///
     /// <para>

@@ -19,6 +19,9 @@ internal static class WidgetIntegrationChecks
         check(kinds.Distinct().Count()==kinds.Length,"upstream and custom widget kinds have no numeric aliases");
         var legacyKinds=System.Text.Json.JsonSerializer.Deserialize<WidgetKind[]>("[30,31,32,33,34]")!;
         check(legacyKinds.SequenceEqual(new[]{WidgetKind.UserBuildLibrary,WidgetKind.CombatExtensionTimeline,WidgetKind.HatePs,WidgetKind.PartyDps,WidgetKind.EnemyCatalog}),"previous custom widget identifiers keep their meaning after upstream meter integration");
+        var r20Meters = System.Text.Json.JsonSerializer.Deserialize<WidgetKind[]>("[35,36,37,38,39,40]")!;
+        check(r20Meters.SequenceEqual(new[] { WidgetKind.HateMeter, WidgetKind.BreakMeter, WidgetKind.HateSkillDetail, WidgetKind.BreakSkillDetail, WidgetKind.HateGraph, WidgetKind.BreakGraph }), "r20 meter identifiers remain compatible with saved settings");
+        check((int)WidgetKind.Map == 41 && (int)WidgetKind.BuffUptime == 42, "new upstream widgets use unoccupied identifiers");
         foreach (var kind in new[] { WidgetKind.UserBuildLibrary, WidgetKind.CombatExtensionTimeline, WidgetKind.PartyDps, WidgetKind.EnemyCatalog })
         {
             var vm = new WidgetListItemViewModel { Kind = kind, DisplayNameResourceKey = kind.ToString() };

@@ -15,7 +15,7 @@ using StarResonanceDps.Core.Services;
 
 namespace StarResonanceDps.App.ViewModels;
 
-public sealed partial class PlayerBuffListWidgetViewModel : PlayerWidgetWindowViewModel, IBuffListWindowViewModel, IDisposable
+public sealed partial class PlayerBuffListWidgetViewModel : PlayerWidgetWindowViewModel, IBuffListWindowViewModel, IDisposable, IWidgetWindowHiddenAware
 {
     private readonly PlayerBuffListKind _kind;
 
@@ -221,6 +221,19 @@ public sealed partial class PlayerBuffListWidgetViewModel : PlayerWidgetWindowVi
         }
 
         _shortcutAdder!.AddShortcut(BuffEntryKey.ForBuffDebuffGroup(entry!.BaseId));
+    }
+
+    /// <summary>窓が隠れたら定期の読み直しを止め、見えたら1回読み直してから再開する(<see cref="IWidgetWindowHiddenAware"/>)。</summary>
+    public void SetWindowHidden(bool isHidden)
+    {
+        if (isHidden)
+        {
+            _refreshTimer.Stop();
+            return;
+        }
+
+        RefreshTimer_Tick(this, EventArgs.Empty);
+        _refreshTimer.Start();
     }
 
     private void RefreshTimer_Tick(object? sender, EventArgs e)

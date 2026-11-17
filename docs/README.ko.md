@@ -66,6 +66,13 @@
 
 플러그인으로 기능을 추가할 수 있습니다. 만드는 방법은 [플러그인 개발](https://github.com/kokoukohiro/StarResonanceDps/wiki/플러그인-개발)을 참조하세요. SDK 패키지(`.nupkg`)는 Releases에 앱의 zip과 함께 공개되어 있습니다.
 
+### 공개 중인 플러그인
+
+| 플러그인 | 종류 | 제작자 | 받는 곳 |
+|---|---|---|---|
+| [ただのモジュールツール](https://github.com/kokoukohiro/StarResonanceDps/wiki/ただのモジュールツール(한국어)) | 모듈 도구 | kokoukohiro | 이 앱에 포함(Releases에도 `ModuleTool.dll`) |
+| BPSR：パッド勢を救いたい | 키 바인드 도구 | kokoukohiro | [BPSRControllerHelper](https://github.com/kokoukohiro/BPSRControllerHelper) |
+
 ## ✅ 안전성과 개인 정보
 
 - 게임 클라이언트를 수정하지 않습니다.

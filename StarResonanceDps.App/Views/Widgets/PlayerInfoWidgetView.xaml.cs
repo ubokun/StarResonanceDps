@@ -28,6 +28,11 @@ public partial class PlayerInfoWidgetView : UserControl
         InitializeComponent();
     }
 
+    private void LocationLink_Click(object sender, RoutedEventArgs e)
+    {
+        (DataContext as PlayerInfoWidgetViewModel)?.ShowLocationOnMap();
+    }
+
     private void AvatarImage_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         OpenImageMenu(sender, (DataContext as PlayerInfoWidgetViewModel)?.SavableAvatarPhoto, e);

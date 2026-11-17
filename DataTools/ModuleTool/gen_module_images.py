@@ -63,7 +63,7 @@ def exists(name):
 
 
 def uses_text(uses):
-    return " / ".join(uses[:3]) + ("(ほか%d)" % (len(uses) - 3) if len(uses) > 3 else "")
+    return " / ".join(uses[:3]) + ("(他%d)" % (len(uses) - 3) if len(uses) > 3 else "")
 
 
 def write_missing(targets, need):

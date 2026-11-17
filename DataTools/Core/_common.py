@@ -1,6 +1,6 @@
 # This file is part of StarResonanceDps. See LICENSING.md for the license, additional permissions and additional terms.
 # DataTools共通。パスと入出力、データソースのマージ、名前の判定と取り出し、上書きファイルへの名前の書き足し、
-# アドレス一覧とバンドル(UnityFS)の読み方、バンドルからの画像の取り出しを持つ。
+# アドレス一覧とバンドル(UnityFS)の読み方、バンドルからの画像の取り出し、地図の範囲の読み方を持つ。
 #
 # 各ツールは単体で実行できる。作業ディレクトリはどこでもよい
 # (このファイルの位置からリポジトリを求める)。
@@ -847,3 +847,52 @@ def compare_image(current_path, image):
     if numpy.count_nonzero(alpha > 8) <= total * 0.005 and numpy.count_nonzero((color > 40) & solid) <= total * 0.01:
         return "exporter"
     return "edited"
+
+
+# ---------------------------------------------------------------------------
+# 地図(シーンごとの画像と、ワールド座標の範囲)
+#
+# アドレスは`ui/textures/scenemaps/<地図のキー>/…`。キーは`SceneResourceTable.SceneFile`の最後の部分。
+
+MAP_ADDRESS_PREFIX = "ui/textures/scenemaps/"
+MONO_BEHAVIOUR_CLASS_ID = 114
+
+# 範囲のMonoBehaviourの、名前の前にある項目(m_GameObject・m_Enabled・m_Script)のバイト数
+MAP_REGION_HEADER_BYTES = 28
+MAP_REGION_VALUE_COUNT = 9
+
+
+def map_region_address(key):
+    """地図の範囲のアドレス。"""
+    return "%s%s/%s_region_data" % (MAP_ADDRESS_PREFIX, key, key)
+
+
+def map_image_address(key, layer=0):
+    """地図の画像のアドレス。階層0が基本の画像で、ほかの階層は`layer_<階層>`のフォルダにある。"""
+    if layer == 0:
+        return "%s%s/%s_%s" % (MAP_ADDRESS_PREFIX, key, key, key)
+    return "%s%s/layer_%d/%s_%s" % (MAP_ADDRESS_PREFIX, key, layer, key, key)
+
+
+def read_map_region(path):
+    """
+    地図の範囲のバンドルから`(地図のキー, [小数9個])`を返す。
+
+    中身はMonoBehaviourが1つで、名前、地図のキーの文字列、小数9個が並ぶ。
+    5つ目が地図の左端のワールド座標のx、7つ目が下端のz、8つ目と9つ目がx・zの幅。
+    MonoBehaviourが1つでない・残りが小数9個でなければ止まる。
+    """
+    found = []
+    for name, serialized in read_unityfs(path).items():
+        if is_resource_node(name):
+            continue
+        endian, objects = serialized_objects(serialized)
+        found.extend((endian, body) for _, class_id, body in objects if class_id == MONO_BEHAVIOUR_CLASS_ID)
+    if len(found) != 1:
+        raise ValueError("%sのMonoBehaviourが%d個" % (path, len(found)))
+    endian, body = found[0]
+    _, position = object_name(body, endian, MAP_REGION_HEADER_BYTES)
+    key, position = object_name(body, endian, position)
+    if len(body) - position != MAP_REGION_VALUE_COUNT * 4:
+        raise ValueError("%sの範囲の値が%dバイト(小数%d個ではない)" % (path, len(body) - position, MAP_REGION_VALUE_COUNT))
+    return key, list(struct.unpack_from("%s%df" % (endian, MAP_REGION_VALUE_COUNT), body, position))

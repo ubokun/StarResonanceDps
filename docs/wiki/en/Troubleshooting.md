@@ -107,6 +107,10 @@ Click-through is on. Turn it off on its card in "[Widgets](Widgets)".
 
 When "Widget Windows" in Settings is set to "On Top Only While Pinned", windows that are not pinned are hidden behind the game. Set it back to "Always on Top" or pin the window.
 
+### Widgets disappear when you use other windows
+
+When "Hide widgets when the game is inactive" in Settings is on, widgets are hidden while you are using a window other than the game or this app. They appear again when you return to the game or a window of this app. To always show them, turn it off.
+
 ### A widget went off the screen
 
 If you stop the widget on its card in "[Widgets](Widgets)" and start it again, it appears on the screen.
@@ -120,7 +124,6 @@ Check whether you pressed a hotkey. The table shows what happens with the defaul
 | All running widgets closed | Ctrl+F8 | Start them on their cards in "Widgets" |
 | Windows cannot be moved, or headers disappeared | Ctrl+F7 | Press the key again |
 | Windows cannot be clicked | Ctrl+F6 | Press the key again |
-| Windows are hidden behind the game | Ctrl+F5 | Press the key again |
 | Names became `*****` | Ctrl+F11 | Press the key again |
 | The meter became empty, and "[Benchmarking]" appeared in the footer | Ctrl+F10 | Press the key again |
 | The meter became empty | Ctrl+F9 | The previous results can be opened from the history in "[Aggregation](Aggregation)" |
@@ -160,7 +163,7 @@ Skills that have no display name in the game are shown with their internal name 
 ## The app cannot be updated
 
 - The details in the "Update Error" window show how to fix the problem.
-- If the update stops at "Waiting for files in use to be released…", close File Explorer or any other program that has the app folder open.
+- If "The update cannot continue because another program is using a file." appears during the update, close the program it names, then click "Yes".
 - If the update does not succeed, download the zip from Releases and overwrite the app folder with its contents ([Installation and Updates](Installation-and-Updates)).
 
 ## A plugin does not work

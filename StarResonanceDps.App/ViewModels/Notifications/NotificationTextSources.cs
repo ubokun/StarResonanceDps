@@ -35,9 +35,12 @@ internal sealed class HostNotificationTextSource : INotificationTextSource
         _fieldDefinitions = fieldDefinitions;
     }
 
+    /// <summary>項目で選んでいる、バフ・デバフ効果切れの通知条件の番号(既定の文を替える)。項目の画面が選び直すたびに入れる。</summary>
+    public int BuffExpiredConditionIndex { get; set; } = AppConfigDefaults.DefaultBuffExpiredConditionIndex;
+
     public string GetDefaultText()
     {
-        return LocalizationManager.Instance.GetString(NotificationTextFormatter.GetDefaultKey(_kind));
+        return LocalizationManager.Instance.GetString(NotificationTextFormatter.GetDefaultKey(_kind, BuffExpiredConditionIndex));
     }
 
     public string FormatPreview(string format)

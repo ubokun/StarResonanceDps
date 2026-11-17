@@ -19,6 +19,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             AppState.PartyTeamId = 0;
             _currentTeamMemberType = null;
             PartyState.ResetUnknown();
+            EntityPositionStore.Instance.ClearPartyMembers();
         }
 
         internal static void ProcessEntityTeamId(long entityUuid, long teamId)
@@ -275,6 +276,7 @@ namespace StarResonanceDps.Core.CombatRuntime
             if (vData.VRequest.CharId > 0)
             {
                 PartyState.RemoveMember(vData.VRequest.CharId);
+                EntityPositionStore.Instance.RemovePartyMember(vData.VRequest.CharId);
             }
 
             if (vData.VRequest.CharId == AppState.PlayerUID)
@@ -476,6 +478,18 @@ namespace StarResonanceDps.Core.CombatRuntime
 
             // HP も最大HPも 0 の同期は位置などだけの同期で、状態も入っていない(0)。戦闘不能の印は HP を運ぶ同期でだけ下ろす。
             var carriesHp = fastSyncData.Hp > 0 || fastSyncData.MaxHp > 0;
+
+            // 位置は名簿の行に入れず、位置の控えへ書く(マップが読む)。位置を運ばない同期では前の値を残す。
+            if (fastSyncData.Position is { } position)
+            {
+                EntityPositionStore.Instance.SetPartyMemberLocation(
+                    charId,
+                    fastSyncData.SceneId,
+                    fastSyncData.SceneAreaId,
+                    position.X,
+                    position.Y,
+                    position.Z);
+            }
 
             PartyState.UpdateSupplement(
                 AppState.PartyTeamId,
